@@ -1,0 +1,249 @@
+Project nusapala_things {
+    database_type: 'PostgreSQL'
+    Note: 'Migration-backed schema. Requires pgcrypto, timescaledb, and pg_trgm extensions. telemetry_records and action_logs are TimescaleDB hypertables with 7 day chunks.'
+}
+
+Table permissions {
+    id          UUID        [pk, default: `gen_random_uuid()`]
+    name        TEXT        [not null, unique]
+    description TEXT        [not null, default: '']
+    preferences JSONB       [not null, default: `'{}'::jsonb`]
+    created_at  TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at  TIMESTAMPTZ
+    deleted_at  TIMESTAMPTZ
+    created_by  UUID
+    updated_by  UUID
+    deleted_by  UUID
+
+    Indexes {
+        name [type: gin, name: 'idx_permissions_name_trgm', note: 'gin_trgm_ops']
+        deleted_at [name: 'idx_permissions_deleted_at']
+    }
+}
+
+Table roles {
+    id          UUID        [pk, default: `gen_random_uuid()`]
+    name        TEXT        [not null, unique]
+    description TEXT        [not null, default: '']
+    is_default  BOOLEAN     [not null, default: false]
+    preferences JSONB       [not null, default: `'{}'::jsonb`]
+    created_at  TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at  TIMESTAMPTZ
+    deleted_at  TIMESTAMPTZ
+    created_by  UUID
+    updated_by  UUID
+    deleted_by  UUID
+
+    Indexes {
+        name [type: gin, name: 'idx_roles_name_trgm', note: 'gin_trgm_ops']
+        is_default [unique, name: 'uq_roles_is_default_true', note: 'Partial unique index: WHERE is_default = TRUE']
+        deleted_at [name: 'idx_roles_deleted_at']
+    }
+}
+
+Table role_permission {
+    id              UUID        [pk, default: `gen_random_uuid()`]
+    role_id         UUID        [not null]
+    permission_id   UUID        [not null]
+    created_at      TIMESTAMPTZ [not null, default: `NOW()`]
+    created_by      UUID
+
+    Indexes {
+        (role_id, permission_id) [unique, name: 'uq_role_permission_role_id_permission_id']
+        role_id [name: 'idx_role_permission_role_id']
+        permission_id [name: 'idx_role_permission_permission_id']
+    }
+}
+
+Table users {
+    id              UUID        [pk, default: `gen_random_uuid()`]
+    role_id         UUID        [not null]
+    name            TEXT        [not null]
+    bio             TEXT        [not null, default: '']
+    username        TEXT        [not null, unique]
+    password_hash   TEXT        [not null]
+    preferences     JSONB       [not null, default: `'{}'::jsonb`]
+    created_at      TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at      TIMESTAMPTZ
+    deleted_at      TIMESTAMPTZ
+    created_by      UUID
+    updated_by      UUID
+    deleted_by      UUID
+
+    Indexes {
+        role_id [name: 'idx_users_role_id']
+        name [type: gin, name: 'idx_users_name_trgm', note: 'gin_trgm_ops']
+        username [type: gin, name: 'idx_users_username_trgm', note: 'gin_trgm_ops']
+        deleted_at [name: 'idx_users_deleted_at']
+    }
+}
+
+Table node_classes {
+    id          UUID        [pk, default: `gen_random_uuid()`]
+    name        TEXT        [not null, unique]
+    description TEXT        [not null, default: '']
+    preferences JSONB       [not null, default: `'{}'::jsonb`]
+    created_at  TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at  TIMESTAMPTZ
+    deleted_at  TIMESTAMPTZ
+    created_by  UUID
+    updated_by  UUID
+    deleted_by  UUID
+
+    Indexes {
+        name [type: gin, name: 'idx_node_classes_name_trgm', note: 'gin_trgm_ops']
+        deleted_at [name: 'idx_node_classes_deleted_at']
+    }
+}
+
+Table firmwares {
+    id              UUID        [pk, default: `gen_random_uuid()`]
+    node_class_id   UUID        [not null]
+    name            TEXT        [not null, unique]
+    size            INT         [not null]
+    checksum        TEXT        [not null]
+    binary_path     TEXT        [not null]
+    preferences     JSONB       [not null, default: `'{}'::jsonb`]
+    created_at      TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at      TIMESTAMPTZ
+    deleted_at      TIMESTAMPTZ
+    created_by      UUID
+    updated_by      UUID
+    deleted_by      UUID
+
+    Indexes {
+        node_class_id [name: 'idx_firmwares_node_class_id']
+        name [type: gin, name: 'idx_firmwares_name_trgm', note: 'gin_trgm_ops']
+        binary_path [type: gin, name: 'idx_firmwares_binary_path_trgm', note: 'gin_trgm_ops']
+        deleted_at [name: 'idx_firmwares_deleted_at']
+    }
+}
+
+Table nodes {
+    id              UUID        [pk, default: `gen_random_uuid()`]
+    node_class_id   UUID        [not null]
+    device_id       TEXT        [not null, unique]
+    name            TEXT        [not null]
+    firmware_name   TEXT        [not null]
+    description     TEXT        [not null, default: '']
+    preferences     JSONB       [not null, default: `'{}'::jsonb`]
+    created_at      TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at      TIMESTAMPTZ
+    deleted_at      TIMESTAMPTZ
+    created_by      UUID
+    updated_by      UUID
+    deleted_by      UUID
+
+    Indexes {
+        node_class_id [name: 'idx_nodes_node_class_id']
+        device_id [type: gin, name: 'idx_nodes_device_id_trgm', note: 'gin_trgm_ops']
+        name [type: gin, name: 'idx_nodes_name_trgm', note: 'gin_trgm_ops']
+        firmware_name [name: 'idx_nodes_firmware_name']
+        deleted_at [name: 'idx_nodes_deleted_at']
+    }
+}
+
+Table payload_schemas {
+    id              UUID        [pk, default: `gen_random_uuid()`]
+    name            TEXT        [not null]
+    version         INT         [not null, default: 1]
+    definition      JSONB       [not null]
+    valid_from      TIMESTAMPTZ [not null, default: `NOW()`]
+    valid_to        TIMESTAMPTZ
+    preferences     JSONB       [not null, default: `'{}'::jsonb`]
+    created_at      TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at      TIMESTAMPTZ
+    deleted_at      TIMESTAMPTZ
+    created_by      UUID
+    updated_by      UUID
+    deleted_by      UUID
+
+    Indexes {
+        (name, version) [unique, name: 'uq_payload_schemas_name_version']
+        definition [type: gin, name: 'idx_payload_schemas_definition_gin']
+        name [type: gin, name: 'idx_payload_schemas_name_trgm', note: 'gin_trgm_ops']
+        (valid_from, valid_to) [name: 'idx_payload_schemas_valid_from_valid_to']
+        deleted_at [name: 'idx_payload_schemas_deleted_at']
+    }
+}
+
+Table telemetry_records {
+    id                  BIGINT      [increment]
+    node_device_id      TEXT        [not null]
+    metric_name         TEXT        [not null]
+    payload_schema_name TEXT        [not null]
+    payload_schema_version INT      [not null, default: 1]
+    payload             JSONB       [not null]
+    recorded_at         TIMESTAMPTZ [not null]
+    created_at          TIMESTAMPTZ [not null, default: `NOW()`]
+
+    Indexes {
+        (id, recorded_at) [pk]
+        node_device_id [name: 'idx_telemetry_records_node_device_id']
+        metric_name [name: 'idx_telemetry_records_metric_name']
+        (payload_schema_name, payload_schema_version) [name: 'idx_telemetry_records_payload_schema_name_version']
+        recorded_at [name: 'idx_telemetry_records_recorded_at_desc', note: 'DESC']
+        (node_device_id, metric_name, recorded_at) [name: 'idx_telemetry_records_node_metric_recorded_at_desc', note: 'recorded_at DESC']
+        (metric_name, recorded_at) [name: 'idx_telemetry_records_metric_recorded_at_desc', note: 'recorded_at DESC']
+        payload [type: gin, name: 'idx_telemetry_records_payload_gin']
+    }
+
+    Note: 'TimescaleDB hypertable on recorded_at with chunk_time_interval = 7 days.'
+}
+
+Table actions {
+    id                  UUID        [pk, default: `gen_random_uuid()`]
+    node_class_id       UUID        [not null]
+    name                TEXT        [not null, unique]
+    description         TEXT        [not null, default: '']
+    payload_schema_name TEXT        [not null]
+    payload_schema_version INT      [not null, default: 1]
+    preferences         JSONB       [not null, default: `'{}'::jsonb`]
+    created_at          TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at          TIMESTAMPTZ
+    deleted_at          TIMESTAMPTZ
+    created_by          UUID
+    updated_by          UUID
+    deleted_by          UUID
+
+    Indexes {
+        node_class_id [name: 'idx_actions_node_class_id']
+        name [type: gin, name: 'idx_actions_name_trgm', note: 'gin_trgm_ops']
+        (payload_schema_name, payload_schema_version) [name: 'idx_actions_payload_schema_name_version']
+        deleted_at [name: 'idx_actions_deleted_at']
+    }
+}
+
+Table action_logs {
+    id          BIGINT      [increment]
+    action_id   UUID        [not null]
+    node_id     UUID        [not null]
+    payload     JSONB       [not null]
+    executed_at TIMESTAMPTZ [not null]
+    created_at  TIMESTAMPTZ [not null, default: `NOW()`]
+
+    Indexes {
+        (id, executed_at) [pk]
+        action_id [name: 'idx_action_logs_action_id']
+        node_id [name: 'idx_action_logs_node_id']
+        payload [type: gin, name: 'idx_action_logs_payload_gin']
+        executed_at [name: 'idx_action_logs_executed_at_desc', note: 'DESC']
+        (node_id, action_id, executed_at) [name: 'idx_action_logs_node_action_executed_at_desc', note: 'executed_at DESC']
+        (action_id, executed_at) [name: 'idx_action_logs_action_executed_at_desc', note: 'executed_at DESC']
+    }
+
+    Note: 'TimescaleDB hypertable on executed_at with chunk_time_interval = 7 days.'
+}
+
+Ref: role_permission.role_id > roles.id [delete: cascade]
+Ref: role_permission.permission_id > permissions.id [delete: cascade]
+Ref: users.role_id > roles.id
+Ref: firmwares.node_class_id > node_classes.id
+Ref: nodes.node_class_id > node_classes.id
+Ref: nodes.firmware_name > firmwares.name
+Ref: telemetry_records.node_device_id > nodes.device_id
+Ref: telemetry_records.(payload_schema_name, payload_schema_version) > payload_schemas.(name, version)
+Ref: actions.node_class_id > node_classes.id
+Ref: actions.(payload_schema_name, payload_schema_version) > payload_schemas.(name, version)
+Ref: action_logs.action_id > actions.id
+Ref: action_logs.node_id > nodes.id

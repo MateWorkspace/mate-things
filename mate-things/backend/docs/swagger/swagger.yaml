@@ -1,0 +1,1691 @@
+basePath: /api
+definitions:
+  presentationhttprequest.ActionDispatchRequest:
+    properties:
+      executed_at:
+        type: string
+      node_id:
+        type: string
+      payload:
+        type: object
+    type: object
+  presentationhttprequest.ActionPatchRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      node_class_id:
+        type: string
+      payload_schema_name:
+        type: string
+      payload_schema_version:
+        type: integer
+    type: object
+  presentationhttprequest.ActionPostRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      node_class_id:
+        type: string
+      payload_schema_name:
+        type: string
+      payload_schema_version:
+        type: integer
+    type: object
+  presentationhttprequest.AuthLoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  presentationhttprequest.AuthRefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  presentationhttprequest.FirmwarePatchRequest:
+    properties:
+      name:
+        type: string
+      node_class_id:
+        type: string
+    type: object
+  presentationhttprequest.NodeClassPatchRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  presentationhttprequest.NodeClassPostRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  presentationhttprequest.NodeFirmwarePatchRequest:
+    properties:
+      firmware_name:
+        type: string
+    type: object
+  presentationhttprequest.NodePatchRequest:
+    properties:
+      description:
+        type: string
+      device_id:
+        type: string
+      firmware_name:
+        type: string
+      name:
+        type: string
+      node_class_id:
+        type: string
+    type: object
+  presentationhttprequest.OtaDispatchRequest:
+    properties:
+      firmware_name:
+        type: string
+      firmware_url:
+        type: string
+    type: object
+  presentationhttprequest.PayloadSchemaPatchRequest:
+    properties:
+      definition:
+        type: object
+      name:
+        type: string
+      valid_from:
+        type: string
+      valid_to:
+        type: string
+      version:
+        type: integer
+    type: object
+  presentationhttprequest.PayloadSchemaPostRequest:
+    properties:
+      definition:
+        type: object
+      name:
+        type: string
+      valid_from:
+        type: string
+      valid_to:
+        type: string
+      version:
+        type: integer
+    type: object
+  presentationhttprequest.PermissionPatchRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  presentationhttprequest.PermissionPostRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  presentationhttprequest.PreferencesPatchRequest:
+    properties:
+      preferences:
+        type: object
+    type: object
+  presentationhttprequest.ProfilePasswordPatchRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        type: string
+    type: object
+  presentationhttprequest.ProfilePatchRequest:
+    properties:
+      bio:
+        type: string
+      name:
+        type: string
+      username:
+        type: string
+    type: object
+  presentationhttprequest.RolePatchRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  presentationhttprequest.RolePostRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  presentationhttprequest.UserPasswordPatchRequest:
+    properties:
+      password:
+        type: string
+    type: object
+  presentationhttprequest.UserPatchRequest:
+    properties:
+      bio:
+        type: string
+      name:
+        type: string
+      role_id:
+        type: string
+      username:
+        type: string
+    type: object
+  presentationhttprequest.UserPostRequest:
+    properties:
+      bio:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      role_id:
+        type: string
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Nusapala Things is the public HTTP and MQTT entrypoint for IoT telemetry,
+    action dispatch, and firmware OTA.
+  title: Nusapala Things
+  version: "1.0"
+paths:
+  /v1/action-logs:
+    delete:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Action Log Delete
+      tags:
+      - Action Logs
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Action Log List
+      tags:
+      - Action Logs
+  /v1/actions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Action List
+      tags:
+      - Actions
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.ActionPostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Action
+      tags:
+      - Actions
+  /v1/actions/{id}:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Action Delete
+      tags:
+      - Actions
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Action Get By ID
+      tags:
+      - Actions
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.ActionPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Action
+      tags:
+      - Actions
+  /v1/actions/{id}/dispatch:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.ActionDispatchRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Action Dispatch
+      tags:
+      - Actions
+  /v1/actions/by-name/{name}:
+    get:
+      parameters:
+      - description: name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Action Get By Name
+      tags:
+      - Actions
+  /v1/admin/payload-schemas:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Payload Schema List
+      tags:
+      - Admin - Payload Schemas
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.PayloadSchemaPostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Payload Schema
+      tags:
+      - Admin - Payload Schemas
+  /v1/admin/payload-schemas/{id}:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Payload Schema Delete
+      tags:
+      - Admin - Payload Schemas
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Payload Schema Get By ID
+      tags:
+      - Admin - Payload Schemas
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.PayloadSchemaPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Payload Schema
+      tags:
+      - Admin - Payload Schemas
+  /v1/admin/payload-schemas/by-name-version:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Payload Schema Get By Name And Version
+      tags:
+      - Admin - Payload Schemas
+  /v1/admin/payload-schemas/latest:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Payload Schema Get Latest
+      tags:
+      - Admin - Payload Schemas
+  /v1/admin/permissions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Permission List
+      tags:
+      - Admin - Permissions
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.PermissionPostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Permission
+      tags:
+      - Admin - Permissions
+  /v1/admin/permissions/{id}:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Permission Delete
+      tags:
+      - Admin - Permissions
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Permission Get By ID
+      tags:
+      - Admin - Permissions
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.PermissionPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Permission
+      tags:
+      - Admin - Permissions
+  /v1/admin/permissions/by-name/{name}:
+    get:
+      parameters:
+      - description: name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Permission Get By Name
+      tags:
+      - Admin - Permissions
+  /v1/admin/role-permissions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Role Permission List
+      tags:
+      - Admin - Role Permissions
+  /v1/admin/role-permissions/{id}:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Role Permission Get By ID
+      tags:
+      - Admin - Role Permissions
+  /v1/admin/role-permissions/by-pair:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Role Permission Get By Pair
+      tags:
+      - Admin - Role Permissions
+  /v1/admin/roles:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Role List
+      tags:
+      - Admin - Roles
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.RolePostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Role
+      tags:
+      - Admin - Roles
+  /v1/admin/roles/{id}:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Role Delete
+      tags:
+      - Admin - Roles
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Role Get By ID
+      tags:
+      - Admin - Roles
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.RolePatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Role
+      tags:
+      - Admin - Roles
+  /v1/admin/roles/{id}/default:
+    patch:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Role Set Default
+      tags:
+      - Admin - Roles
+  /v1/admin/roles/{id}/permissions:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Role Permissions Get
+      tags:
+      - Admin - Roles
+  /v1/admin/roles/{role_id}/permissions/{permission_id}:
+    delete:
+      parameters:
+      - description: role_id
+        in: path
+        name: role_id
+        required: true
+        type: string
+      - description: permission_id
+        in: path
+        name: permission_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Role Permission Delete By Pair
+      tags:
+      - Admin - Roles
+    post:
+      parameters:
+      - description: role_id
+        in: path
+        name: role_id
+        required: true
+        type: string
+      - description: permission_id
+        in: path
+        name: permission_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Role Permission
+      tags:
+      - Admin - Roles
+  /v1/admin/roles/by-name/{name}:
+    get:
+      parameters:
+      - description: name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Role Get By Name
+      tags:
+      - Admin - Roles
+  /v1/admin/roles/default:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Role Get Default
+      tags:
+      - Admin - Roles
+  /v1/admin/users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: User List
+      tags:
+      - Admin - Users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.UserPostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: User
+      tags:
+      - Admin - Users
+  /v1/admin/users/{id}:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: User Delete
+      tags:
+      - Admin - Users
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: User Get By ID
+      tags:
+      - Admin - Users
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.UserPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: User
+      tags:
+      - Admin - Users
+  /v1/admin/users/{id}/password:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.UserPasswordPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: User Password
+      tags:
+      - Admin - Users
+  /v1/admin/users/{id}/permissions:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: User Permissions Get
+      tags:
+      - Admin - Users
+  /v1/admin/users/by-username/{username}:
+    get:
+      parameters:
+      - description: username
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: User Get By Username
+      tags:
+      - Admin - Users
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.AuthLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Auth Login
+      tags:
+      - Auth
+  /v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.AuthRefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Auth Refresh
+      tags:
+      - Auth
+  /v1/firmwares:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Firmware List
+      tags:
+      - Firmwares
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: node_class_id
+        in: formData
+        name: node_class_id
+        required: true
+        type: string
+      - description: name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Firmware
+      tags:
+      - Firmwares
+  /v1/firmwares/{id}:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Firmware Delete
+      tags:
+      - Firmwares
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Firmware Get By ID
+      tags:
+      - Firmwares
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.FirmwarePatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Firmware
+      tags:
+      - Firmwares
+  /v1/firmwares/{id}/binary:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - BearerAuth: []
+      summary: Firmware Binary Get By ID
+      tags:
+      - Firmwares
+    put:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Firmware Binary Put
+      tags:
+      - Firmwares
+  /v1/firmwares/by-name/{name}:
+    get:
+      parameters:
+      - description: name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Firmware Get By Name
+      tags:
+      - Firmwares
+  /v1/firmwares/by-name/{name}/binary:
+    get:
+      parameters:
+      - description: name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - BearerAuth: []
+      summary: Firmware Binary Get By Name
+      tags:
+      - Firmwares
+    head:
+      parameters:
+      - description: name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Firmware Binary Stat By Name Head
+      tags:
+      - Firmwares
+  /v1/firmwares/by-name/{name}/binary/stat:
+    get:
+      parameters:
+      - description: name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Firmware Binary Stat By Name Get
+      tags:
+      - Firmwares
+  /v1/node-classes:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Node Class List
+      tags:
+      - Node Classes
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.NodeClassPostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      security:
+      - BearerAuth: []
+      summary: Node Class
+      tags:
+      - Node Classes
+  /v1/node-classes/{id}:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Node Class Delete
+      tags:
+      - Node Classes
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Node Class Get By ID
+      tags:
+      - Node Classes
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.NodeClassPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Node Class
+      tags:
+      - Node Classes
+  /v1/node-classes/{node_class_id}/firmwares:
+    get:
+      parameters:
+      - description: node_class_id
+        in: path
+        name: node_class_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Firmware Get By Node Class ID
+      tags:
+      - Firmwares
+  /v1/node-classes/by-name/{name}:
+    get:
+      parameters:
+      - description: name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Node Class Get By Name
+      tags:
+      - Node Classes
+  /v1/nodes:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Node List
+      tags:
+      - Nodes
+  /v1/nodes/{id}:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Node Delete
+      tags:
+      - Nodes
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Node Get By ID
+      tags:
+      - Nodes
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.NodePatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Node
+      tags:
+      - Nodes
+  /v1/nodes/{id}/firmware:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.NodeFirmwarePatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Node Firmware
+      tags:
+      - Nodes
+  /v1/nodes/{id}/ota:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.OtaDispatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Ota Dispatch By Node ID
+      tags:
+      - OTA
+  /v1/nodes/{node_id}/firmwares/available:
+    get:
+      parameters:
+      - description: node_id
+        in: path
+        name: node_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Firmware Get Available By Node ID
+      tags:
+      - Firmwares
+  /v1/nodes/by-device/{device_id}:
+    get:
+      parameters:
+      - description: device_id
+        in: path
+        name: device_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Node Get By Device ID
+      tags:
+      - Nodes
+  /v1/nodes/by-device/{device_id}/ota:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: device_id
+        in: path
+        name: device_id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.OtaDispatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Ota Dispatch By Node Device ID
+      tags:
+      - OTA
+  /v1/preferences/{resource}/{id}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: resource
+        in: path
+        name: resource
+        required: true
+        type: string
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.PreferencesPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Preferences
+      tags:
+      - Preferences
+  /v1/profile:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Profile Get
+      tags:
+      - Profile
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.ProfilePatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Profile
+      tags:
+      - Profile
+  /v1/profile/password:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presentationhttprequest.ProfilePasswordPatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Profile Password
+      tags:
+      - Profile
+  /v1/profile/permissions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Profile Permissions Get
+      tags:
+      - Profile
+  /v1/telemetry-records:
+    delete:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Telemetry Record Delete
+      tags:
+      - Telemetry
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Telemetry Record List
+      tags:
+      - Telemetry
+securityDefinitions:
+  BearerAuth:
+    description: Paste the access token. The API accepts "Bearer " followed by the
+      access token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
