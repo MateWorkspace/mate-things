@@ -3,8 +3,8 @@ package infrastructurerepositorynode
 import (
 	"encoding/json"
 
-	infrastructurerepositoryshared "github.com/ABA-Developer/nusapala-things/backend/internal/infrastructure/repository/shared"
 	"github.com/Masterminds/squirrel"
+	infrastructurerepositoryshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/shared"
 	"github.com/google/uuid"
 )
 

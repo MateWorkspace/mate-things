@@ -3,10 +3,10 @@ package presentationhttphandleradmin
 import (
 	"net/http"
 
-	domainusecasesadmin "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/admin"
-	presentationhttprequest "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/request"
-	presentationhttpresponse "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/response"
-	presentationhttputils "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/utils"
+	domainusecasesadmin "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/admin"
+	presentationhttprequest "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/request"
+	presentationhttpresponse "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/response"
+	presentationhttputils "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/utils"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 )

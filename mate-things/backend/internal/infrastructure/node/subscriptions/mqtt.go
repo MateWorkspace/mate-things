@@ -3,9 +3,9 @@ package subscriptions
 import (
 	"context"
 
-	domaincontractsnode "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/node"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	infrastructurenodeshared "github.com/ABA-Developer/nusapala-things/backend/internal/infrastructure/node/shared"
+	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	infrastructurenodeshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/node/shared"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 

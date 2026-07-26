@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	domaincontractsutility "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/utility"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )

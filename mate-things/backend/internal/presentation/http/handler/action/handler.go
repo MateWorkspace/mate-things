@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	domainusecasesaction "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/action"
-	presentationhttprequest "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/request"
-	presentationhttpresponse "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/response"
-	presentationhttputils "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/utils"
+	domainusecasesaction "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/action"
+	presentationhttprequest "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/request"
+	presentationhttpresponse "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/response"
+	presentationhttputils "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/utils"
 	"github.com/labstack/echo/v5"
 )
 

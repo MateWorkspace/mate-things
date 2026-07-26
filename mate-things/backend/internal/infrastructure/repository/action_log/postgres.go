@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"time"
 
-	domaincontractsrepository "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/repository"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	infrastructurerepositoryshared "github.com/ABA-Developer/nusapala-things/backend/internal/infrastructure/repository/shared"
-	"github.com/ABA-Developer/nusapala-things/backend/pkg/pgxdt"
 	"github.com/Masterminds/squirrel"
+	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	infrastructurerepositoryshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/shared"
+	"github.com/MateWorkspace/mate-things/backend/pkg/pgxdt"
 	"github.com/google/uuid"
 )
 

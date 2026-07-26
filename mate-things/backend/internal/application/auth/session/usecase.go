@@ -3,11 +3,11 @@ package applicationauthsession
 import (
 	"context"
 
-	domaincontractslogger "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/logger"
-	domaincontractsutility "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/utility"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	domainusecasesauth "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/auth"
-	domainusecasesrepocache "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/repocache"
+	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	domainusecasesauth "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/auth"
+	domainusecasesrepocache "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/repocache"
 )
 
 type usecase struct {

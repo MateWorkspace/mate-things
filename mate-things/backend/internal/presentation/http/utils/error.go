@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	presentationhttpresponse "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/response"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	presentationhttpresponse "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/response"
 	"github.com/labstack/echo/v5"
 )
 

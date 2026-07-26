@@ -3,12 +3,12 @@ package applicationtelemetryingestion
 import (
 	"context"
 
-	domaincontractslogger "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/logger"
-	domaincontractsrepository "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/repository"
-	domaincontractsutility "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/utility"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	domainusecasesrepocache "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/repocache"
-	domainusecasestelemetry "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/telemetry"
+	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
+	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	domainusecasesrepocache "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/repocache"
+	domainusecasestelemetry "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/telemetry"
 )
 
 type usecase struct {

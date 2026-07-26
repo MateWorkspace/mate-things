@@ -3,11 +3,11 @@ package applicationnodeota
 import (
 	"context"
 
-	domaincontractslogger "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/logger"
-	domaincontractsnode "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/node"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	domainusecasesnode "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/node"
-	domainusecasesrepocache "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/repocache"
+	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
+	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
+	domainusecasesrepocache "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/repocache"
 	"github.com/google/uuid"
 )
 

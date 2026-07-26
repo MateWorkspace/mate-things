@@ -1,4 +1,4 @@
-module github.com/ABA-Developer/nusapala-things/backend
+module github.com/MateWorkspace/mate-things/backend
 
 go 1.26.5
 

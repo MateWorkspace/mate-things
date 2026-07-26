@@ -1,8 +1,8 @@
 package infrastructurerepositoryshared
 
 import (
-	"github.com/ABA-Developer/nusapala-things/backend/pkg/pgxdt"
 	"github.com/Masterminds/squirrel"
+	"github.com/MateWorkspace/mate-things/backend/pkg/pgxdt"
 )
 
 type BasePostgres struct {

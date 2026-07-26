@@ -3,10 +3,10 @@ package applicationactionhistory
 import (
 	"context"
 
-	domaincontractslogger "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/logger"
-	domaincontractsrepository "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/repository"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	domainusecasesaction "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/action"
+	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
+	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	domainusecasesaction "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/action"
 )
 
 type usecase struct {

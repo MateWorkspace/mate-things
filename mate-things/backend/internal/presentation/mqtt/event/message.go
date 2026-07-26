@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	presentationmqtthandler "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/mqtt/handler"
-	presentationmqttutils "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/mqtt/utils"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	presentationmqtthandler "github.com/MateWorkspace/mate-things/backend/internal/presentation/mqtt/handler"
+	presentationmqttutils "github.com/MateWorkspace/mate-things/backend/internal/presentation/mqtt/utils"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 

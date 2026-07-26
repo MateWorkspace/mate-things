@@ -3,10 +3,10 @@ package applicationadminpermissionmanagement
 import (
 	"context"
 
-	domaincontractslogger "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/logger"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	domainusecasesadmin "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/admin"
-	domainusecasesrepocache "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/repocache"
+	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	domainusecasesadmin "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/admin"
+	domainusecasesrepocache "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/repocache"
 	"github.com/google/uuid"
 )
 

@@ -10,9 +10,9 @@ import (
 	"os"
 	"strings"
 
-	domaincontractsstorage "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/storage"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	infrastructurestorageshared "github.com/ABA-Developer/nusapala-things/backend/internal/infrastructure/storage/shared"
+	domaincontractsstorage "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/storage"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	infrastructurestorageshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/storage/shared"
 	"github.com/minio/minio-go/v7"
 )
 

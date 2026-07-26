@@ -3,10 +3,10 @@ package presentationhttphandlerpreferences
 import (
 	"net/http"
 
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	domainusecasespreferences "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/preferences"
-	presentationhttprequest "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/request"
-	presentationhttputils "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/utils"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	domainusecasespreferences "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/preferences"
+	presentationhttprequest "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/request"
+	presentationhttputils "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/utils"
 	"github.com/labstack/echo/v5"
 )
 

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	compositionmain "github.com/ABA-Developer/nusapala-things/backend/internal/composition/main"
+	compositionmain "github.com/MateWorkspace/mate-things/backend/internal/composition/main"
 )
 
 // @title Nusapala Things

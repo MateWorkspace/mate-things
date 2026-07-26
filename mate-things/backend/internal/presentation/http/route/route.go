@@ -3,9 +3,9 @@ package presentationhttproute
 import (
 	"net/http"
 
-	_ "github.com/ABA-Developer/nusapala-things/backend/docs/swagger"
-	domaincontractsutility "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/utility"
-	presentationhttpmiddleware "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/middleware"
+	_ "github.com/MateWorkspace/mate-things/backend/docs/swagger"
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
+	presentationhttpmiddleware "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/middleware"
 	"github.com/labstack/echo/v5"
 	echoSwagger "github.com/swaggo/echo-swagger/v2"
 )

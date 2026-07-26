@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"math"
 
-	domaincontractsutility "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/utility"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 )
 
 type validatorImpl struct{}

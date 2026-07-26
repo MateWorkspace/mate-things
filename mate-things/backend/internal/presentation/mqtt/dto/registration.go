@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	domainusecasesnode "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/node"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
 )
 
 type Registration struct {

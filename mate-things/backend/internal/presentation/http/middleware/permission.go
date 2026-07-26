@@ -1,8 +1,8 @@
 package presentationhttpmiddleware
 
 import (
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	presentationhttputils "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/utils"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	presentationhttputils "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/utils"
 	"github.com/labstack/echo/v5"
 )
 

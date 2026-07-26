@@ -1,6 +1,6 @@
 package domaincontractsutility
 
-import domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
+import domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 
 type Token interface {
 	GenerateAccess(claims *domainmodels.TokenClaimsAccess) (accessToken string, err error)

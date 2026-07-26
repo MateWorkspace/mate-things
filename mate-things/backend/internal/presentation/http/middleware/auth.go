@@ -3,9 +3,9 @@ package presentationhttpmiddleware
 import (
 	"strings"
 
-	domaincontractsutility "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/utility"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	presentationhttputils "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/http/utils"
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	presentationhttputils "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/utils"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 )

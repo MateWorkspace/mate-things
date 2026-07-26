@@ -3,8 +3,8 @@ package infrastructurecacherolepermission
 import (
 	"context"
 
-	domaincontractscache "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/cache"
-	infrastructurecacheshared "github.com/ABA-Developer/nusapala-things/backend/internal/infrastructure/cache/shared"
+	domaincontractscache "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/cache"
+	infrastructurecacheshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/shared"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )

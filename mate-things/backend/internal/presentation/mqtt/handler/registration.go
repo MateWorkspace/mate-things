@@ -3,8 +3,8 @@ package presentationmqtthandler
 import (
 	"context"
 
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
-	presentationmqttdto "github.com/ABA-Developer/nusapala-things/backend/internal/presentation/mqtt/dto"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	presentationmqttdto "github.com/MateWorkspace/mate-things/backend/internal/presentation/mqtt/dto"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 

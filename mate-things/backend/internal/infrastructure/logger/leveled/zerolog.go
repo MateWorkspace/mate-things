@@ -3,8 +3,8 @@ package infrastructureloggerleveled
 import (
 	"context"
 
-	domaincontractslogger "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/logger"
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
+	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	"github.com/rs/zerolog"
 )
 

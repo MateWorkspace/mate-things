@@ -1,8 +1,8 @@
 package presentationmqtthandler
 
 import (
-	domaincontractslogger "github.com/ABA-Developer/nusapala-things/backend/internal/domain/contracts/logger"
-	domainusecasesnode "github.com/ABA-Developer/nusapala-things/backend/internal/domain/usecases/node"
+	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
+	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
 )
 
 type Handler struct {

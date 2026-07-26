@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ABA-Developer/nusapala-things/backend/internal/config"
+	"github.com/MateWorkspace/mate-things/backend/internal/config"
 )
 
 const path = "main"

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	"github.com/minio/minio-go/v7"
 )
 

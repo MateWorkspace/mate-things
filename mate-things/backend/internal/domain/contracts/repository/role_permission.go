@@ -3,7 +3,7 @@ package domaincontractsrepository
 import (
 	"context"
 
-	domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	"github.com/google/uuid"
 )
 

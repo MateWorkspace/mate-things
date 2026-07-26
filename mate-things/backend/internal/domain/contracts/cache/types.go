@@ -1,6 +1,6 @@
 package domaincontractscache
 
-import domainmodels "github.com/ABA-Developer/nusapala-things/backend/internal/domain/models"
+import domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 
 type Pagination[T any] struct {
 	Items []T `json:"items"`
