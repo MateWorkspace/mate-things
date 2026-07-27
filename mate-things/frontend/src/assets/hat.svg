@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 181.62 97.6">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #603f26;
+        stroke: #231f20;
+        stroke-miterlimit: 10;
+        stroke-width: 10px;
+      }
+    </style>
+  </defs>
+  <g id="Mate_Hat" data-name="Mate Hat">
+    <g>
+      <ellipse class="cls-1" cx="90.81" cy="63.43" rx="85.81" ry="29.17"/>
+      <path class="cls-1" d="M149.98,45.23c-5.12,12.55-29.66,22.07-59.18,22.07-29.5,0-54.05-9.52-59.17-22.07,3.12-8.94,8.48-16.91,15.44-23.37,11.24-10.42,26.69-16.85,43.72-16.85,17.04,0,32.49,6.44,43.73,16.85,6.96,6.46,12.32,14.44,15.44,23.37Z"/>
+    </g>
+  </g>
+</svg>

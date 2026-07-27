@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 329.84 63.87">
+  <defs>
+    <style>
+      .cls-1, .cls-2 {
+        fill: #603f26;
+      }
+
+      .cls-2 {
+        stroke: #231f20;
+        stroke-miterlimit: 10;
+        stroke-width: 7px;
+      }
+    </style>
+  </defs>
+  <g id="Mate_Logo_Typeface" data-name="Mate Logo Typeface">
+    <g>
+      <g>
+        <ellipse class="cls-2" cx="58.06" cy="41.83" rx="54.56" ry="18.55"/>
+        <path class="cls-2" d="M95.68,30.25c-3.25,7.98-18.86,14.03-37.62,14.03s-34.37-6.05-37.62-14.03c1.99-5.68,5.39-10.75,9.82-14.86,7.14-6.62,16.97-10.72,27.8-10.72s20.66,4.09,27.81,10.72c4.43,4.11,7.83,9.18,9.82,14.86Z"/>
+      </g>
+      <g>
+        <path class="cls-1" d="M176.98,59.25V18.65l-11.06,40.6h-12.31l-10.98-40.42v40.42h-11.51V0h18.2l10.71,43.46L170.74,0h17.85v59.25h-11.6Z"/>
+        <path class="cls-1" d="M234.27,59.25l-3.75-12.23h-21.86l-4.19,12.23h-13.12L212.5,0h14.37l20.88,59.25h-13.47ZM219.55,13.3h-.09l-7.58,23.56h15.08l-7.41-23.56Z"/>
+        <path class="cls-1" d="M251.58,59.25V10.35h-17.85V0h48.19v10.35h-17.94v48.9h-12.4Z"/>
+        <path class="cls-1" d="M284.86,59.25V0h43.55v10.35h-31.5v12.67h29v10.44h-29v15.26h32.93v10.53h-44.97Z"/>
+      </g>
+    </g>
+  </g>
+</svg>
