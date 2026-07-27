@@ -28,11 +28,16 @@ RUN npm run build
 
 ################################################################################
 # Runtime stage - backend + frontend behind a single nginx port, /api routed
-# to the backend and everything else routed to the frontend.
+# to the backend and everything else routed to the frontend. Postgres
+# migrations run once on container start, before the app starts serving.
 ################################################################################
 FROM node:22-alpine AS runtime
 
-RUN apk add --no-cache nginx bash
+RUN apk add --no-cache nginx bash jq
+
+# Migration runner (static binary) + migration files
+COPY --from=migrate/migrate:v4.18.1 /usr/local/bin/migrate /usr/local/bin/migrate
+COPY backend/database/migrations /app/migrations
 
 # Backend
 COPY --from=backend-builder /out/backend /app/backend/backend
