@@ -25,27 +25,27 @@ type ReadNodeByDeviceIdRequest struct {
 }
 
 type ReadNodesByPaginationRequest struct {
-	Page         int
-	Limit        int
-	Search       *string
-	NodeClassId  *uuid.UUID
-	FirmwareName *string
+	Page        int
+	Limit       int
+	Search      *string
+	NodeClassId *uuid.UUID
+	FirmwareId  *uuid.UUID
 }
 
 type UpdateNodeRequest struct {
-	Id           uuid.UUID
-	NodeClassId  *uuid.UUID
-	DeviceId     *string
-	Name         *string
-	FirmwareName *string
-	Description  *string
-	UpdatedBy    *uuid.UUID
+	Id          uuid.UUID
+	NodeClassId *uuid.UUID
+	DeviceId    *string
+	Name        *string
+	FirmwareId  *uuid.UUID
+	Description *string
+	UpdatedBy   *uuid.UUID
 }
 
 type AssignNodeFirmwareRequest struct {
-	Id           uuid.UUID
-	FirmwareName string
-	UpdatedBy    *uuid.UUID
+	Id         uuid.UUID
+	FirmwareId uuid.UUID
+	UpdatedBy  *uuid.UUID
 }
 
 type DeleteNodeRequest struct {

@@ -14,7 +14,7 @@ var nodeColumns = []string{
 	"device_id",
 	"device_info",
 	"name",
-	"firmware_name",
+	"firmware_id",
 	"description",
 	"is_connected",
 	"preferences",
@@ -31,13 +31,13 @@ func (p *postgresImpl) queryCreate(
 	deviceId string,
 	deviceInfo string,
 	name string,
-	firmwareName string,
+	firmwareId uuid.UUID,
 	description *string,
 	isConnected bool,
 	createdBy *uuid.UUID,
 ) (query string, args []any, err error) {
-	columns := []string{"node_class_id", "device_id", "device_info", "name", "firmware_name", "is_connected", "created_by"}
-	values := []any{nodeClassId, deviceId, deviceInfo, name, firmwareName, isConnected, createdBy}
+	columns := []string{"node_class_id", "device_id", "device_info", "name", "firmware_id", "is_connected", "created_by"}
+	values := []any{nodeClassId, deviceId, deviceInfo, name, firmwareId, isConnected, createdBy}
 
 	if description != nil {
 		columns = append(columns, "description")
@@ -62,7 +62,7 @@ func (p *postgresImpl) queryUpsertRegistration(
 			device_id,
 			device_info,
 			name,
-			firmware_name,
+			firmware_id,
 			is_connected
 		)
 		SELECT
@@ -70,7 +70,7 @@ func (p *postgresImpl) queryUpsertRegistration(
 			$1,
 			$2,
 			$3,
-			f.name,
+			f.id,
 			TRUE
 		FROM firmwares f
 		WHERE f.name = $4
@@ -79,7 +79,7 @@ func (p *postgresImpl) queryUpsertRegistration(
 		ON CONFLICT (device_id) DO UPDATE SET
 			node_class_id = EXCLUDED.node_class_id,
 			device_info = EXCLUDED.device_info,
-			firmware_name = EXCLUDED.firmware_name,
+			firmware_id = EXCLUDED.firmware_id,
 			is_connected = TRUE,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE nodes.deleted_at IS NULL
@@ -110,7 +110,7 @@ func (p *postgresImpl) queryReadByPagination(
 	limit int,
 	search *string,
 	nodeClassId *uuid.UUID,
-	firmwareName *string,
+	firmwareId *uuid.UUID,
 ) (totalQuery string, totalArgs []any, query string, queryArgs []any, err error) {
 	baseQ := p.SqrD.Select(nodeColumns...).
 		From("nodes").
@@ -133,8 +133,8 @@ func (p *postgresImpl) queryReadByPagination(
 		baseQ = baseQ.Where(condition)
 		totalQ = totalQ.Where(condition)
 	}
-	if firmwareName != nil {
-		condition := squirrel.Eq{"firmware_name": *firmwareName}
+	if firmwareId != nil {
+		condition := squirrel.Eq{"firmware_id": *firmwareId}
 		baseQ = baseQ.Where(condition)
 		totalQ = totalQ.Where(condition)
 	}
@@ -158,7 +158,7 @@ func (p *postgresImpl) queryUpdateById(
 	deviceId *string,
 	deviceInfo *string,
 	name *string,
-	firmwareName *string,
+	firmwareId *uuid.UUID,
 	description *string,
 	isConnected *bool,
 	preferences *json.RawMessage,
@@ -180,8 +180,8 @@ func (p *postgresImpl) queryUpdateById(
 	if name != nil {
 		q = q.Set("name", *name)
 	}
-	if firmwareName != nil {
-		q = q.Set("firmware_name", *firmwareName)
+	if firmwareId != nil {
+		q = q.Set("firmware_id", *firmwareId)
 	}
 	if description != nil {
 		q = q.Set("description", *description)

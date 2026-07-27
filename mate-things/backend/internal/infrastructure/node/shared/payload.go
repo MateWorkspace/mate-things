@@ -14,5 +14,6 @@ type OtaPayload struct {
 
 type ActionPayload struct {
 	ExecutionId uuid.UUID       `json:"execution_id"`
+	Action      string          `json:"action"`
 	Payload     json.RawMessage `json:"payload"`
 }

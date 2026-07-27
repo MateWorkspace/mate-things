@@ -12,15 +12,15 @@ type Ota interface {
 }
 
 type DispatchOtaByNodeIdRequest struct {
-	NodeId       uuid.UUID
-	FirmwareName string
-	FirmwareUrl  string
-	ActorId      *uuid.UUID
+	NodeId      uuid.UUID
+	FirmwareId  uuid.UUID
+	FirmwareUrl string
+	ActorId     *uuid.UUID
 }
 
 type DispatchOtaByNodeDeviceIdRequest struct {
 	NodeDeviceId string
-	FirmwareName string
+	FirmwareId   uuid.UUID
 	FirmwareUrl  string
 	ActorId      *uuid.UUID
 }

@@ -48,7 +48,7 @@ func (u *usecase) DispatchByNodeId(
 		return err
 	}
 
-	return u.dispatch(ctx, tag, *node, request.FirmwareName, request.FirmwareUrl, request.ActorId)
+	return u.dispatch(ctx, tag, *node, request.FirmwareId, request.FirmwareUrl, request.ActorId)
 }
 
 func (u *usecase) DispatchByNodeDeviceId(
@@ -67,34 +67,34 @@ func (u *usecase) DispatchByNodeDeviceId(
 		return err
 	}
 
-	return u.dispatch(ctx, tag, *node, request.FirmwareName, request.FirmwareUrl, request.ActorId)
+	return u.dispatch(ctx, tag, *node, request.FirmwareId, request.FirmwareUrl, request.ActorId)
 }
 
 func (u *usecase) dispatch(
 	ctx context.Context,
 	tag string,
 	node domainmodels.Node,
-	firmwareName string,
+	firmwareId uuid.UUID,
 	firmwareUrl string,
 	actorId *uuid.UUID,
 ) error {
-	firmware, err := u.firmware.ReadByName(ctx, firmwareName)
+	firmware, err := u.firmware.ReadById(ctx, firmwareId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to read firmware", domainmodels.LoggerMeta{
-			"err":           err,
-			"node_id":       node.Id,
-			"firmware_name": firmwareName,
-			"actor_id":      actorId,
+			"err":         err,
+			"node_id":     node.Id,
+			"firmware_id": firmwareId,
+			"actor_id":    actorId,
 		})
 		return err
 	}
 
 	if err := u.publisher.Ota(ctx, node.DeviceId, firmwareUrl, firmware.Size, firmware.Checksum); err != nil {
 		u.logger.Error(ctx, tag, "failed to publish ota", domainmodels.LoggerMeta{
-			"err":           err,
-			"node_id":       node.Id,
-			"firmware_name": firmwareName,
-			"actor_id":      actorId,
+			"err":         err,
+			"node_id":     node.Id,
+			"firmware_id": firmwareId,
+			"actor_id":    actorId,
 		})
 		return err
 	}

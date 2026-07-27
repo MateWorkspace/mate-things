@@ -11,15 +11,15 @@ type NodeClassPatchRequest struct {
 }
 
 type NodePatchRequest struct {
-	NodeClassId  *string `json:"node_class_id"`
-	DeviceId     *string `json:"device_id"`
-	Name         *string `json:"name"`
-	FirmwareName *string `json:"firmware_name"`
-	Description  *string `json:"description"`
+	NodeClassId *string `json:"node_class_id"`
+	DeviceId    *string `json:"device_id"`
+	Name        *string `json:"name"`
+	FirmwareId  *string `json:"firmware_id"`
+	Description *string `json:"description"`
 }
 
 type NodeFirmwarePatchRequest struct {
-	FirmwareName string `json:"firmware_name"`
+	FirmwareId string `json:"firmware_id"`
 }
 
 type FirmwarePatchRequest struct {
@@ -28,6 +28,6 @@ type FirmwarePatchRequest struct {
 }
 
 type OtaDispatchRequest struct {
-	FirmwareName string `json:"firmware_name"`
-	FirmwareUrl  string `json:"firmware_url"`
+	FirmwareId  string `json:"firmware_id"`
+	FirmwareUrl string `json:"firmware_url"`
 }

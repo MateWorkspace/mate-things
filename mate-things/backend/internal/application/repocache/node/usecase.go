@@ -32,12 +32,12 @@ func (u *usecase) Create(
 	deviceId string,
 	deviceInfo string,
 	name string,
-	firmwareName string,
+	firmwareId uuid.UUID,
 	description *string,
 	isConnected bool,
 	createdBy *uuid.UUID,
 ) (uuid.UUID, error) {
-	id, err := u.repository.Create(ctx, nodeClassId, deviceId, deviceInfo, name, firmwareName, description, isConnected, createdBy)
+	id, err := u.repository.Create(ctx, nodeClassId, deviceId, deviceInfo, name, firmwareId, description, isConnected, createdBy)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -111,20 +111,20 @@ func (u *usecase) ReadByPagination(
 	limit int,
 	search *string,
 	nodeClassId *uuid.UUID,
-	firmwareName *string,
+	firmwareId *uuid.UUID,
 ) ([]domainmodels.Node, int, error) {
-	if pagination, hit, err := u.cache.GetPagination(ctx, page, limit, search, nodeClassId, firmwareName); err != nil {
+	if pagination, hit, err := u.cache.GetPagination(ctx, page, limit, search, nodeClassId, firmwareId); err != nil {
 		return nil, 0, err
 	} else if hit {
 		return pagination.Items, pagination.Total, nil
 	}
 
-	items, total, err := u.repository.ReadByPagination(ctx, page, limit, search, nodeClassId, firmwareName)
+	items, total, err := u.repository.ReadByPagination(ctx, page, limit, search, nodeClassId, firmwareId)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	if err := u.cache.SetPagination(ctx, page, limit, search, nodeClassId, firmwareName, domaincontractscache.Pagination[domainmodels.Node]{
+	if err := u.cache.SetPagination(ctx, page, limit, search, nodeClassId, firmwareId, domaincontractscache.Pagination[domainmodels.Node]{
 		Items: items,
 		Total: total,
 	}); err != nil {
@@ -141,13 +141,13 @@ func (u *usecase) UpdateById(
 	deviceId *string,
 	deviceInfo *string,
 	name *string,
-	firmwareName *string,
+	firmwareId *uuid.UUID,
 	description *string,
 	isConnected *bool,
 	preferences *json.RawMessage,
 	updatedBy *uuid.UUID,
 ) error {
-	if err := u.repository.UpdateById(ctx, id, nodeClassId, deviceId, deviceInfo, name, firmwareName, description, isConnected, preferences, updatedBy); err != nil {
+	if err := u.repository.UpdateById(ctx, id, nodeClassId, deviceId, deviceInfo, name, firmwareId, description, isConnected, preferences, updatedBy); err != nil {
 		return err
 	}
 

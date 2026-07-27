@@ -15,7 +15,7 @@ type Node interface {
 		deviceId string,
 		deviceInfo string,
 		name string,
-		firmwareName string,
+		firmwareId uuid.UUID,
 		description *string,
 		isConnected bool,
 		createdBy *uuid.UUID,
@@ -44,7 +44,7 @@ type Node interface {
 		limit int,
 		search *string,
 		nodeClassId *uuid.UUID,
-		firmwareName *string,
+		firmwareId *uuid.UUID,
 	) (nodes []domainmodels.Node, total int, err error)
 
 	UpdateById(
@@ -54,7 +54,7 @@ type Node interface {
 		deviceId *string,
 		deviceInfo *string,
 		name *string,
-		firmwareName *string,
+		firmwareId *uuid.UUID,
 		description *string,
 		isConnected *bool,
 		preferences *json.RawMessage,

@@ -14,8 +14,8 @@ type Node interface {
 	GetByDeviceId(ctx context.Context, deviceId string) (node *domainmodels.Node, hit bool, err error)
 	SetByDeviceId(ctx context.Context, deviceId string, node *domainmodels.Node) error
 	DeleteByDeviceId(ctx context.Context, deviceId string) error
-	GetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareName *string) (pagination Pagination[domainmodels.Node], hit bool, err error)
-	SetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareName *string, pagination Pagination[domainmodels.Node]) error
+	GetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareId *uuid.UUID) (pagination Pagination[domainmodels.Node], hit bool, err error)
+	SetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareId *uuid.UUID, pagination Pagination[domainmodels.Node]) error
 	InvalidatePagination(ctx context.Context) error
 	InvalidateAll(ctx context.Context) error
 }

@@ -70,8 +70,8 @@ func (r *redisImpl) DeleteByDeviceId(ctx context.Context, deviceId string) error
 	return r.Delete(ctx, key)
 }
 
-func (r *redisImpl) GetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareName *string) (domaincontractscache.Pagination[domainmodels.Node], bool, error) {
-	key, err := r.paginationKey(ctx, page, limit, search, nodeClassId, firmwareName)
+func (r *redisImpl) GetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareId *uuid.UUID) (domaincontractscache.Pagination[domainmodels.Node], bool, error) {
+	key, err := r.paginationKey(ctx, page, limit, search, nodeClassId, firmwareId)
 	if err != nil {
 		return domaincontractscache.Pagination[domainmodels.Node]{}, false, err
 	}
@@ -80,8 +80,8 @@ func (r *redisImpl) GetPagination(ctx context.Context, page int, limit int, sear
 	return pagination, hit, err
 }
 
-func (r *redisImpl) SetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareName *string, pagination domaincontractscache.Pagination[domainmodels.Node]) error {
-	key, err := r.paginationKey(ctx, page, limit, search, nodeClassId, firmwareName)
+func (r *redisImpl) SetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareId *uuid.UUID, pagination domaincontractscache.Pagination[domainmodels.Node]) error {
+	key, err := r.paginationKey(ctx, page, limit, search, nodeClassId, firmwareId)
 	if err != nil {
 		return err
 	}
@@ -96,8 +96,8 @@ func (r *redisImpl) InvalidateAll(ctx context.Context) error {
 	return r.Invalidate(ctx, "identity", "pagination")
 }
 
-func (r *redisImpl) paginationKey(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareName *string) (string, error) {
-	hash, err := infrastructurecacheshared.HashPart(page, limit, search, nodeClassId, firmwareName)
+func (r *redisImpl) paginationKey(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, firmwareId *uuid.UUID) (string, error) {
+	hash, err := infrastructurecacheshared.HashPart(page, limit, search, nodeClassId, firmwareId)
 	if err != nil {
 		return "", err
 	}

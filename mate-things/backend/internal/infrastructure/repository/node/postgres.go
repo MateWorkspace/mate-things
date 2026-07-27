@@ -38,12 +38,12 @@ func (p *postgresImpl) Create(
 	deviceId string,
 	deviceInfo string,
 	name string,
-	firmwareName string,
+	firmwareId uuid.UUID,
 	description *string,
 	isConnected bool,
 	createdBy *uuid.UUID,
 ) (id uuid.UUID, err error) {
-	query, args, err := p.queryCreate(nodeClassId, deviceId, deviceInfo, name, firmwareName, description, isConnected, createdBy)
+	query, args, err := p.queryCreate(nodeClassId, deviceId, deviceInfo, name, firmwareId, description, isConnected, createdBy)
 	if err != nil {
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create node query", err)
 	}
@@ -75,7 +75,7 @@ func (p *postgresImpl) UpsertRegistration(
 		&item.DeviceId,
 		&item.DeviceInfo,
 		&item.Name,
-		&item.FirmwareName,
+		&item.FirmwareId,
 		&item.Description,
 		&item.IsConnected,
 		&item.Preferences,
@@ -136,9 +136,9 @@ func (p *postgresImpl) ReadByPagination(
 	limit int,
 	search *string,
 	nodeClassId *uuid.UUID,
-	firmwareName *string,
+	firmwareId *uuid.UUID,
 ) (nodes []domainmodels.Node, total int, err error) {
-	totalQuery, totalArgs, query, queryArgs, err := p.queryReadByPagination(page, limit, search, nodeClassId, firmwareName)
+	totalQuery, totalArgs, query, queryArgs, err := p.queryReadByPagination(page, limit, search, nodeClassId, firmwareId)
 	if err != nil {
 		return nil, 0, infrastructurerepositoryshared.QueryBuildError("failed to build read nodes query", err)
 	}
@@ -171,13 +171,13 @@ func (p *postgresImpl) UpdateById(
 	deviceId *string,
 	deviceInfo *string,
 	name *string,
-	firmwareName *string,
+	firmwareId *uuid.UUID,
 	description *string,
 	isConnected *bool,
 	preferences *json.RawMessage,
 	updatedBy *uuid.UUID,
 ) (err error) {
-	query, args, err := p.queryUpdateById(id, nodeClassId, deviceId, deviceInfo, name, firmwareName, description, isConnected, preferences, updatedBy)
+	query, args, err := p.queryUpdateById(id, nodeClassId, deviceId, deviceInfo, name, firmwareId, description, isConnected, preferences, updatedBy)
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build update node query", err)
 	}

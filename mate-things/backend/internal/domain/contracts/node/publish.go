@@ -25,6 +25,7 @@ type Publish interface {
 		ctx context.Context,
 		nodeDeviceId string,
 		executionId uuid.UUID,
+		actionName string,
 		payload json.RawMessage,
 	) (err error)
 }

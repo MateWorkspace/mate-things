@@ -3,7 +3,7 @@ CREATE TABLE nodes (
     node_class_id UUID NOT NULL REFERENCES node_classes (id),
     device_id TEXT NOT NULL UNIQUE,
     device_info TEXT NOT NULL,
-    firmware_name TEXT NOT NULL,
+    firmware_id UUID NOT NULL REFERENCES firmwares (id),
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     is_connected BOOLEAN NOT NULL DEFAULT FALSE,
@@ -13,8 +13,7 @@ CREATE TABLE nodes (
     deleted_at TIMESTAMPTZ,
     created_by UUID,
     updated_by UUID,
-    deleted_by UUID,
-    CONSTRAINT fk_nodes_firmware_name FOREIGN KEY (firmware_name) REFERENCES firmwares (name)
+    deleted_by UUID
 );
 
 CREATE INDEX idx_nodes_node_class_id ON nodes (node_class_id);
@@ -25,6 +24,6 @@ CREATE INDEX idx_nodes_device_info_trgm ON nodes USING GIN (device_info gin_trgm
 
 CREATE INDEX idx_nodes_name_trgm ON nodes USING GIN (name gin_trgm_ops);
 
-CREATE INDEX idx_nodes_firmware_name ON nodes (firmware_name);
+CREATE INDEX idx_nodes_firmware_id ON nodes (firmware_id);
 
 CREATE INDEX idx_nodes_deleted_at ON nodes (deleted_at);

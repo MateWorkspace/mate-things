@@ -57,15 +57,15 @@ type NodeClassResponse struct {
 }
 
 type NodeResponse struct {
-	Id           string          `json:"id"`
-	NodeClassId  string          `json:"node_class_id"`
-	DeviceId     string          `json:"device_id"`
-	DeviceInfo   string          `json:"device_info"`
-	Name         string          `json:"name"`
-	FirmwareName string          `json:"firmware_name"`
-	Description  string          `json:"description"`
-	IsConnected  bool            `json:"is_connected"`
-	Preferences  json.RawMessage `json:"preferences"`
+	Id          string          `json:"id"`
+	NodeClassId string          `json:"node_class_id"`
+	DeviceId    string          `json:"device_id"`
+	DeviceInfo  string          `json:"device_info"`
+	Name        string          `json:"name"`
+	FirmwareId  string          `json:"firmware_id"`
+	Description string          `json:"description"`
+	IsConnected bool            `json:"is_connected"`
+	Preferences json.RawMessage `json:"preferences"`
 	AuditResponse
 }
 
@@ -291,15 +291,15 @@ func NodeClasses(nodeClasses []domainmodels.NodeClass) []NodeClassResponse {
 
 func Node(node domainmodels.Node) NodeResponse {
 	return NodeResponse{
-		Id:           UUIDString(node.Id),
-		NodeClassId:  UUIDString(node.NodeClassId),
-		DeviceId:     node.DeviceId,
-		DeviceInfo:   node.DeviceInfo,
-		Name:         node.Name,
-		FirmwareName: node.FirmwareName,
-		Description:  node.Description,
-		IsConnected:  node.IsConnected,
-		Preferences:  NormalizeJSON(node.Preferences),
+		Id:          UUIDString(node.Id),
+		NodeClassId: UUIDString(node.NodeClassId),
+		DeviceId:    node.DeviceId,
+		DeviceInfo:  node.DeviceInfo,
+		Name:        node.Name,
+		FirmwareId:  UUIDString(node.FirmwareId),
+		Description: node.Description,
+		IsConnected: node.IsConnected,
+		Preferences: NormalizeJSON(node.Preferences),
 		AuditResponse: Audit(
 			node.CreatedAt,
 			node.UpdatedAt,

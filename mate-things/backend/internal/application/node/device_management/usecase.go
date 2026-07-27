@@ -72,7 +72,7 @@ func (u *usecase) ReadByPagination(
 		request.Limit,
 		request.Search,
 		request.NodeClassId,
-		request.FirmwareName,
+		request.FirmwareId,
 	)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to read nodes", domainmodels.LoggerMeta{
@@ -80,7 +80,7 @@ func (u *usecase) ReadByPagination(
 			"page":          request.Page,
 			"limit":         request.Limit,
 			"node_class_id": request.NodeClassId,
-			"firmware_name": request.FirmwareName,
+			"firmware_id":   request.FirmwareId,
 		})
 		return nil, 0, err
 	}
@@ -98,7 +98,7 @@ func (u *usecase) UpdateById(ctx context.Context, request domainusecasesnode.Upd
 		request.DeviceId,
 		nil,
 		request.Name,
-		request.FirmwareName,
+		request.FirmwareId,
 		request.Description,
 		nil,
 		nil,
@@ -125,17 +125,17 @@ func (u *usecase) AssignFirmware(ctx context.Context, request domainusecasesnode
 		nil,
 		nil,
 		nil,
-		&request.FirmwareName,
+		&request.FirmwareId,
 		nil,
 		nil,
 		nil,
 		request.UpdatedBy,
 	); err != nil {
 		u.logger.Error(ctx, tag, "failed to assign node firmware", domainmodels.LoggerMeta{
-			"err":           err,
-			"id":            request.Id,
-			"firmware_name": request.FirmwareName,
-			"updated_by":    request.UpdatedBy,
+			"err":         err,
+			"id":          request.Id,
+			"firmware_id": request.FirmwareId,
+			"updated_by":  request.UpdatedBy,
 		})
 		return err
 	}

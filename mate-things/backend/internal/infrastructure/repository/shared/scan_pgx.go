@@ -177,7 +177,7 @@ func ScanPgxNode(row pgx.Row) (domainmodels.Node, error) {
 		&item.DeviceId,
 		&item.DeviceInfo,
 		&item.Name,
-		&item.FirmwareName,
+		&item.FirmwareId,
 		&item.Description,
 		&item.IsConnected,
 		&item.Preferences,

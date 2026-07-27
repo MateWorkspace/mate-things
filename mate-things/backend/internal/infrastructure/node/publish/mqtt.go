@@ -63,10 +63,12 @@ func (m *mqttImpl) Action(
 	ctx context.Context,
 	nodeDeviceId string,
 	executionId uuid.UUID,
+	actionName string,
 	payload json.RawMessage,
 ) (err error) {
 	actionPayload, err := json.Marshal(infrastructurenodeshared.ActionPayload{
 		ExecutionId: executionId,
+		Action:      actionName,
 		Payload:     payload,
 	})
 	if err != nil {

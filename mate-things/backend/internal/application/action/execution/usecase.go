@@ -134,7 +134,7 @@ func (u *usecase) Dispatch(
 		return nil, err
 	}
 
-	if err := u.publisher.Action(ctx, node.DeviceId, executionId, request.Payload); err != nil {
+	if err := u.publisher.Action(ctx, node.DeviceId, executionId, action.Name, request.Payload); err != nil {
 		u.logger.Error(ctx, tag, "failed to publish action", domainmodels.LoggerMeta{
 			"err":          err,
 			"execution_id": executionId,

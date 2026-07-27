@@ -9,6 +9,7 @@ import (
 	presentationhttprequest "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/request"
 	presentationhttpresponse "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/response"
 	presentationhttputils "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/utils"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 )
 
@@ -222,13 +223,17 @@ func (h *handler) NodeGetList(c *echo.Context) error {
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
+	firmwareId, err := presentationhttputils.QueryUUID(c, "firmware_id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
 
 	nodes, total, err := h.deviceUseCase.ReadByPagination(c.Request().Context(), domainusecasesnode.ReadNodesByPaginationRequest{
-		Page:         page.Page,
-		Limit:        page.Limit,
-		Search:       page.Search,
-		NodeClassId:  nodeClassId,
-		FirmwareName: presentationhttputils.QueryString(c, "firmware_name"),
+		Page:        page.Page,
+		Limit:       page.Limit,
+		Search:      page.Search,
+		NodeClassId: nodeClassId,
+		FirmwareId:  firmwareId,
 	})
 	if err != nil {
 		return presentationhttputils.Error(c, err)
@@ -317,15 +322,19 @@ func (h *handler) NodePatch(c *echo.Context) error {
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
+	firmwareId, err := presentationhttputils.OptionalUUID(req.FirmwareId, "firmware_id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
 
 	if err := h.deviceUseCase.UpdateById(c.Request().Context(), domainusecasesnode.UpdateNodeRequest{
-		Id:           id,
-		NodeClassId:  nodeClassId,
-		DeviceId:     req.DeviceId,
-		Name:         req.Name,
-		FirmwareName: req.FirmwareName,
-		Description:  req.Description,
-		UpdatedBy:    presentationhttputils.ActorId(c),
+		Id:          id,
+		NodeClassId: nodeClassId,
+		DeviceId:    req.DeviceId,
+		Name:        req.Name,
+		FirmwareId:  firmwareId,
+		Description: req.Description,
+		UpdatedBy:   presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err)
 	}
@@ -354,15 +363,15 @@ func (h *handler) NodeFirmwarePatch(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	firmwareName, err := presentationhttputils.RequiredString(req.FirmwareName, "firmware_name")
+	firmwareId, err := presentationhttputils.RequiredUUID(req.FirmwareId, "firmware_id")
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.deviceUseCase.AssignFirmware(c.Request().Context(), domainusecasesnode.AssignNodeFirmwareRequest{
-		Id:           id,
-		FirmwareName: firmwareName,
-		UpdatedBy:    presentationhttputils.ActorId(c),
+		Id:         id,
+		FirmwareId: firmwareId,
+		UpdatedBy:  presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err)
 	}
@@ -829,16 +838,16 @@ func (h *handler) OtaDispatchByNodeIdPost(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	firmwareName, firmwareUrl, err := otaRequest(req)
+	firmwareId, firmwareUrl, err := otaRequest(req)
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.otaUseCase.DispatchByNodeId(c.Request().Context(), domainusecasesnode.DispatchOtaByNodeIdRequest{
-		NodeId:       nodeId,
-		FirmwareName: firmwareName,
-		FirmwareUrl:  firmwareUrl,
-		ActorId:      presentationhttputils.ActorId(c),
+		NodeId:      nodeId,
+		FirmwareId:  firmwareId,
+		FirmwareUrl: firmwareUrl,
+		ActorId:     presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err)
 	}
@@ -867,14 +876,14 @@ func (h *handler) OtaDispatchByNodeDeviceIdPost(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	firmwareName, firmwareUrl, err := otaRequest(req)
+	firmwareId, firmwareUrl, err := otaRequest(req)
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.otaUseCase.DispatchByNodeDeviceId(c.Request().Context(), domainusecasesnode.DispatchOtaByNodeDeviceIdRequest{
 		NodeDeviceId: deviceId,
-		FirmwareName: firmwareName,
+		FirmwareId:   firmwareId,
 		FirmwareUrl:  firmwareUrl,
 		ActorId:      presentationhttputils.ActorId(c),
 	}); err != nil {
@@ -884,17 +893,17 @@ func (h *handler) OtaDispatchByNodeDeviceIdPost(c *echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func otaRequest(req presentationhttprequest.OtaDispatchRequest) (string, string, error) {
-	firmwareName, err := presentationhttputils.RequiredString(req.FirmwareName, "firmware_name")
+func otaRequest(req presentationhttprequest.OtaDispatchRequest) (uuid.UUID, string, error) {
+	firmwareId, err := presentationhttputils.RequiredUUID(req.FirmwareId, "firmware_id")
 	if err != nil {
-		return "", "", err
+		return uuid.Nil, "", err
 	}
 	firmwareUrl, err := presentationhttputils.RequiredString(req.FirmwareUrl, "firmware_url")
 	if err != nil {
-		return "", "", err
+		return uuid.Nil, "", err
 	}
 
-	return firmwareName, firmwareUrl, nil
+	return firmwareId, firmwareUrl, nil
 }
 
 func streamFirmware(c *echo.Context, result domainusecasesnode.OpenFirmwareBinaryResult) error {
