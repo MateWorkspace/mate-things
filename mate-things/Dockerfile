@@ -28,13 +28,14 @@ COPY frontend/ ./
 RUN npm run build
 
 ################################################################################
-# Runtime stage - backend + frontend behind a single nginx port, /api routed
-# to the backend and everything else routed to the frontend. Postgres
-# migrations run once on container start, before the app starts serving.
+# Runtime stage - the Go backend listens on the public port directly and
+# reverse-proxies everything else (frontend, MinIO downloads) itself; no
+# separate proxy process. Postgres migrations run once on container start,
+# before the app starts serving.
 ################################################################################
 FROM node:22-alpine AS runtime
 
-RUN apk add --no-cache nginx bash jq
+RUN apk add --no-cache bash jq
 
 # Migration runner (static binary) + migration files
 COPY --from=migrate/migrate:v4.18.1 /usr/local/bin/migrate /usr/local/bin/migrate
@@ -49,9 +50,7 @@ COPY --from=frontend-builder /src/frontend/.next/standalone /app/frontend
 COPY --from=frontend-builder /src/frontend/.next/static /app/frontend/.next/static
 COPY --from=frontend-builder /src/frontend/public /app/frontend/public
 
-# Proxy
-COPY docker/nginx.conf /etc/nginx/nginx.conf
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80

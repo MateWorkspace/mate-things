@@ -123,7 +123,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	rolePermissionCache := infrastructurecacherolepermission.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 	userCache := infrastructurecacheuser.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 
-	firmwareStorage := infrastructurestoragefirmware.NewMinioImpl(l.drv.minioClient, config.MinioBucket)
+	firmwareStorage := infrastructurestoragefirmware.NewMinioImpl(l.drv.minioClient, config.MinioBucket, config.BaseUrl, config.MinioPresignDuration)
 	nodePublisher := infrastructurenodepublish.NewMqttImpl(l.drv.mqttClient)
 	nodeSubscriptions := infrastructurenodesubscriptions.NewMqttImpl(l.drv.mqttClient)
 	password := infrastructureutilitypassword.NewBcryptImpl(config.PasswordBcryptCost)

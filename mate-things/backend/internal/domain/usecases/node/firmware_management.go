@@ -3,6 +3,7 @@ package domainusecasesnode
 import (
 	"context"
 	"io"
+	"time"
 
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	"github.com/google/uuid"
@@ -17,8 +18,8 @@ type FirmwareManagement interface {
 	ReadByPagination(ctx context.Context, request ReadFirmwaresByPaginationRequest) ([]domainmodels.Firmware, int, error)
 	UpdateById(ctx context.Context, request UpdateFirmwareRequest) error
 	ReplaceBinaryById(ctx context.Context, request ReplaceFirmwareBinaryByIdRequest) (FirmwareBinaryStatResult, error)
-	OpenBinaryById(ctx context.Context, request OpenFirmwareBinaryByIdRequest) (OpenFirmwareBinaryResult, error)
-	OpenBinaryByName(ctx context.Context, request OpenFirmwareBinaryByNameRequest) (OpenFirmwareBinaryResult, error)
+	DownloadUrlById(ctx context.Context, request DownloadFirmwareBinaryByIdRequest) (FirmwareDownloadResult, error)
+	DownloadUrlByName(ctx context.Context, request DownloadFirmwareBinaryByNameRequest) (FirmwareDownloadResult, error)
 	StatBinaryByName(ctx context.Context, request StatFirmwareBinaryByNameRequest) (FirmwareBinaryStatResult, error)
 	DeleteById(ctx context.Context, request DeleteFirmwareRequest) error
 }
@@ -79,17 +80,18 @@ type ReplaceFirmwareBinaryByIdRequest struct {
 	UpdatedBy *uuid.UUID
 }
 
-type OpenFirmwareBinaryByIdRequest struct {
+type DownloadFirmwareBinaryByIdRequest struct {
 	Id uuid.UUID
 }
 
-type OpenFirmwareBinaryByNameRequest struct {
+type DownloadFirmwareBinaryByNameRequest struct {
 	Name string
 }
 
-type OpenFirmwareBinaryResult struct {
-	Firmware domainmodels.Firmware
-	Content  io.ReadCloser
+type FirmwareDownloadResult struct {
+	Firmware    domainmodels.Firmware
+	DownloadUrl string
+	ExpiresAt   time.Time
 }
 
 type StatFirmwareBinaryByNameRequest struct {

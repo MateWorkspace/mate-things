@@ -3,6 +3,7 @@ package domaincontractsstorage
 import (
 	"context"
 	"io"
+	"time"
 )
 
 type Firmware interface {
@@ -12,10 +13,11 @@ type Firmware interface {
 		content io.Reader,
 	) (path string, size int32, checksum string, err error)
 
-	Open(
+	Presign(
 		ctx context.Context,
 		name string,
-	) (Content io.ReadCloser, err error)
+		downloadFilename string,
+	) (url string, expiresAt time.Time, err error)
 
 	Stat(
 		ctx context.Context,

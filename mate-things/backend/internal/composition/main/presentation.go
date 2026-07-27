@@ -13,10 +13,17 @@ import (
 	presentationhttphandlerpreferences "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/preferences"
 	presentationhttphandlerprofile "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/profile"
 	presentationhttphandlertelemetry "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/telemetry"
+	presentationhttpproxy "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/proxy"
 	presentationhttproute "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/route"
 	presentationmqtthandler "github.com/MateWorkspace/mate-things/backend/internal/presentation/mqtt/handler"
 	echomiddleware "github.com/labstack/echo/v5/middleware"
 )
+
+// frontendAddress is where the Next.js standalone server listens (matches
+// PORT=3000 hardcoded in docker/entrypoint.sh) - not exposed via config
+// since it's an internal wiring detail, never configurable even when nginx
+// used to own this proxying.
+const frontendAddress = "127.0.0.1:3000"
 
 type presentation struct {
 }
@@ -82,14 +89,16 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 	}))
 
 	presentationhttproute.Route(l.drv.echo, presentationhttproute.Args{
-		Auth:        authHandler,
-		Profile:     profileHandler,
-		Admin:       adminHandler,
-		Node:        nodeHandler,
-		Action:      actionHandler,
-		Telemetry:   telemetryHandler,
-		Preferences: preferencesHandler,
-		Token:       l.infra.token,
+		Auth:          authHandler,
+		Profile:       profileHandler,
+		Admin:         adminHandler,
+		Node:          nodeHandler,
+		Action:        actionHandler,
+		Telemetry:     telemetryHandler,
+		Preferences:   preferencesHandler,
+		Token:         l.infra.token,
+		MinioProxy:    presentationhttpproxy.NewMinioProxy(config.MinioEndpoint, config.MinioUseSsl),
+		FrontendProxy: presentationhttpproxy.NewFrontendProxy(frontendAddress),
 	})
 
 	l.pres = &presentation{}

@@ -98,7 +98,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.ActionPostRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionPostRequest"
                         }
                     }
                 ],
@@ -226,7 +226,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.ActionPatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionPatchRequest"
                         }
                     }
                 ],
@@ -268,7 +268,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.ActionDispatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionDispatchRequest"
                         }
                     }
                 ],
@@ -322,7 +322,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.PayloadSchemaPostRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PayloadSchemaPostRequest"
                         }
                     }
                 ],
@@ -462,7 +462,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.PayloadSchemaPatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PayloadSchemaPatchRequest"
                         }
                     }
                 ],
@@ -516,7 +516,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.PermissionPostRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PermissionPostRequest"
                         }
                     }
                 ],
@@ -644,7 +644,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.PermissionPatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PermissionPatchRequest"
                         }
                     }
                 ],
@@ -770,7 +770,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.RolePostRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.RolePostRequest"
                         }
                     }
                 ],
@@ -919,7 +919,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.RolePatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.RolePatchRequest"
                         }
                     }
                 ],
@@ -1105,7 +1105,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.UserPostRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPostRequest"
                         }
                     }
                 ],
@@ -1233,7 +1233,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.UserPatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPatchRequest"
                         }
                     }
                 ],
@@ -1275,7 +1275,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.UserPasswordPatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPasswordPatchRequest"
                         }
                     }
                 ],
@@ -1340,7 +1340,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.AuthLoginRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.AuthLoginRequest"
                         }
                     }
                 ],
@@ -1375,7 +1375,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.AuthRefreshRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.AuthRefreshRequest"
                         }
                     }
                 ],
@@ -1490,7 +1490,7 @@ const docTemplate = `{
                     }
                 ],
                 "produces": [
-                    "application/octet-stream"
+                    "application/json"
                 ],
                 "tags": [
                     "Firmwares"
@@ -1506,11 +1506,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "file"
-                        }
+                    "302": {
+                        "description": "redirect to a short-lived presigned download URL"
                     }
                 }
             },
@@ -1660,7 +1657,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.FirmwarePatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.FirmwarePatchRequest"
                         }
                     }
                 ],
@@ -1679,7 +1676,7 @@ const docTemplate = `{
                     }
                 ],
                 "produces": [
-                    "application/octet-stream"
+                    "application/json"
                 ],
                 "tags": [
                     "Firmwares"
@@ -1695,11 +1692,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "file"
-                        }
+                    "302": {
+                        "description": "redirect to a short-lived presigned download URL"
                     }
                 }
             },
@@ -1785,7 +1779,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.NodeClassPostRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodeClassPostRequest"
                         }
                     }
                 ],
@@ -1913,7 +1907,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.NodeClassPatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodeClassPatchRequest"
                         }
                     }
                 ],
@@ -2036,7 +2030,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.OtaDispatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.OtaDispatchRequest"
                         }
                     }
                 ],
@@ -2134,7 +2128,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.NodePatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodePatchRequest"
                         }
                     }
                 ],
@@ -2176,7 +2170,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.NodeFirmwarePatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodeFirmwarePatchRequest"
                         }
                     }
                 ],
@@ -2218,7 +2212,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.OtaDispatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.OtaDispatchRequest"
                         }
                     }
                 ],
@@ -2297,7 +2291,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.PreferencesPatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PreferencesPatchRequest"
                         }
                     }
                 ],
@@ -2351,7 +2345,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.ProfilePatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ProfilePatchRequest"
                         }
                     }
                 ],
@@ -2386,7 +2380,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/presentationhttprequest.ProfilePasswordPatchRequest"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ProfilePasswordPatchRequest"
                         }
                     }
                 ],
@@ -2460,7 +2454,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "presentationhttprequest.ActionDispatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionDispatchRequest": {
             "type": "object",
             "properties": {
                 "executed_at": {
@@ -2474,7 +2468,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.ActionPatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionPatchRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2494,7 +2488,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.ActionPostRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionPostRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2514,7 +2508,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.AuthLoginRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.AuthLoginRequest": {
             "type": "object",
             "properties": {
                 "password": {
@@ -2525,7 +2519,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.AuthRefreshRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.AuthRefreshRequest": {
             "type": "object",
             "properties": {
                 "refresh_token": {
@@ -2533,7 +2527,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.FirmwarePatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.FirmwarePatchRequest": {
             "type": "object",
             "properties": {
                 "name": {
@@ -2544,7 +2538,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.NodeClassPatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodeClassPatchRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2555,7 +2549,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.NodeClassPostRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodeClassPostRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2566,15 +2560,15 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.NodeFirmwarePatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodeFirmwarePatchRequest": {
             "type": "object",
             "properties": {
-                "firmware_name": {
+                "firmware_id": {
                     "type": "string"
                 }
             }
         },
-        "presentationhttprequest.NodePatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodePatchRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2583,7 +2577,7 @@ const docTemplate = `{
                 "device_id": {
                     "type": "string"
                 },
-                "firmware_name": {
+                "firmware_id": {
                     "type": "string"
                 },
                 "name": {
@@ -2594,10 +2588,10 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.OtaDispatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.OtaDispatchRequest": {
             "type": "object",
             "properties": {
-                "firmware_name": {
+                "firmware_id": {
                     "type": "string"
                 },
                 "firmware_url": {
@@ -2605,7 +2599,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.PayloadSchemaPatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PayloadSchemaPatchRequest": {
             "type": "object",
             "properties": {
                 "definition": {
@@ -2625,7 +2619,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.PayloadSchemaPostRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PayloadSchemaPostRequest": {
             "type": "object",
             "properties": {
                 "definition": {
@@ -2645,7 +2639,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.PermissionPatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PermissionPatchRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2656,7 +2650,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.PermissionPostRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PermissionPostRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2667,7 +2661,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.PreferencesPatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PreferencesPatchRequest": {
             "type": "object",
             "properties": {
                 "preferences": {
@@ -2675,7 +2669,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.ProfilePasswordPatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ProfilePasswordPatchRequest": {
             "type": "object",
             "properties": {
                 "current_password": {
@@ -2686,7 +2680,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.ProfilePatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ProfilePatchRequest": {
             "type": "object",
             "properties": {
                 "bio": {
@@ -2700,7 +2694,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.RolePatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.RolePatchRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2711,7 +2705,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.RolePostRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.RolePostRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -2722,7 +2716,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.UserPasswordPatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPasswordPatchRequest": {
             "type": "object",
             "properties": {
                 "password": {
@@ -2730,7 +2724,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.UserPatchRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPatchRequest": {
             "type": "object",
             "properties": {
                 "bio": {
@@ -2747,7 +2741,7 @@ const docTemplate = `{
                 }
             }
         },
-        "presentationhttprequest.UserPostRequest": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPostRequest": {
             "type": "object",
             "properties": {
                 "bio": {

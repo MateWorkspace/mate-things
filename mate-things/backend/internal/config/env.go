@@ -14,6 +14,9 @@ var (
 	LoggerLevel  domainmodels.LoggerLevel  = domainmodels.LoggerLevelInfo
 	LoggerDriver string                    = "zerolog"
 
+	BaseUrl string = "http://127.0.0.1:8080"
+
+	HttpServerAddress         string        = ":8080"
 	HttpServerReadTimeout     time.Duration = 30 * time.Second
 	HttpServerShutdownTimeout time.Duration = 10 * time.Second
 	HttpCorsAllowedOrigins    []string      = []string{"*"}
@@ -36,13 +39,14 @@ var (
 	RedisTtlPagination  time.Duration = 5 * time.Minute
 	RedisTtlRelation    time.Duration = 10 * time.Minute
 
-	MinioEndpoint       string        = "127.0.0.1:8333"
-	MinioAccessKey      string        = "nusapala"
-	MinioSecretKey      string        = "nusapala-secret"
-	MinioBucket         string        = "nusapala-things"
-	MinioUseSsl         bool          = false
-	MinioRegion         string        = ""
-	MinioConnectTimeout time.Duration = 10 * time.Second
+	MinioEndpoint        string        = "127.0.0.1:8333"
+	MinioAccessKey       string        = "nusapala"
+	MinioSecretKey       string        = "nusapala-secret"
+	MinioBucket          string        = "nusapala-things"
+	MinioUseSsl          bool          = false
+	MinioRegion          string        = ""
+	MinioConnectTimeout  time.Duration = 10 * time.Second
+	MinioPresignDuration time.Duration = 5 * time.Minute
 
 	MqttBrokerUrl      string        = "tcp://127.0.0.1:1883"
 	MqttClientId       string        = "nusapala-things-backend"
@@ -65,6 +69,9 @@ func LoadEnv() {
 	LoggerLevel = envGetLoggerLevel("BE_LOGGER_LEVEL", LoggerLevel)
 	LoggerDriver = envGetString("BE_LOGGER_DRIVER", LoggerDriver)
 
+	BaseUrl = envGetString("BE_BASE_URL", BaseUrl)
+
+	HttpServerAddress = envGetString("BE_HTTP_SERVER_ADDRESS", HttpServerAddress)
 	HttpServerReadTimeout = envGetDuration("BE_HTTP_SERVER_READ_TIMEOUT", HttpServerReadTimeout)
 	HttpServerShutdownTimeout = envGetDuration("BE_HTTP_SERVER_SHUTDOWN_TIMEOUT", HttpServerShutdownTimeout)
 	HttpCorsAllowedOrigins = envGetStrings("BE_HTTP_CORS_ALLOWED_ORIGINS", HttpCorsAllowedOrigins)
@@ -94,6 +101,7 @@ func LoadEnv() {
 	MinioUseSsl = envGetBool("BE_MINIO_USE_SSL", MinioUseSsl)
 	MinioRegion = envGetString("BE_MINIO_REGION", MinioRegion)
 	MinioConnectTimeout = envGetDuration("BE_MINIO_CONNECT_TIMEOUT", MinioConnectTimeout)
+	MinioPresignDuration = envGetDuration("BE_MINIO_PRESIGN_DURATION", MinioPresignDuration)
 
 	MqttBrokerUrl = envGetString("BE_MQTT_BROKER_URL", MqttBrokerUrl)
 	MqttClientId = envGetString("BE_MQTT_CLIENT_ID", MqttClientId)

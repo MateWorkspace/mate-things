@@ -4,11 +4,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"hash"
 	"io"
 	"math"
+	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	domaincontractsstorage "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/storage"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -19,14 +22,18 @@ import (
 const contentTypeFirmware = "application/octet-stream"
 
 type minioImpl struct {
-	client *minio.Client
-	bucket string
+	client        *minio.Client
+	bucket        string
+	publicBaseUrl string
+	presignExpiry time.Duration
 }
 
-func NewMinioImpl(client *minio.Client, bucket string) domaincontractsstorage.Firmware {
+func NewMinioImpl(client *minio.Client, bucket string, publicBaseUrl string, presignExpiry time.Duration) domaincontractsstorage.Firmware {
 	return &minioImpl{
-		client: client,
-		bucket: bucket,
+		client:        client,
+		bucket:        bucket,
+		publicBaseUrl: strings.TrimSuffix(publicBaseUrl, "/"),
+		presignExpiry: presignExpiry,
 	}
 }
 
@@ -77,25 +84,28 @@ func (m *minioImpl) Store(
 	return path, size, checksum, nil
 }
 
-func (m *minioImpl) Open(
+func (m *minioImpl) Presign(
 	ctx context.Context,
 	name string,
-) (io.ReadCloser, error) {
+	downloadFilename string,
+) (string, time.Time, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return nil, domainmodels.NewError("firmware name is required", domainmodels.ErrTypeBadArgs, nil)
+		return "", time.Time{}, domainmodels.NewError("firmware name is required", domainmodels.ErrTypeBadArgs, nil)
 	}
 
-	content, err := m.client.GetObject(ctx, m.bucket, name, minio.GetObjectOptions{})
+	reqParams := make(url.Values)
+	reqParams.Set("response-content-disposition", fmt.Sprintf(`attachment; filename="%s"`, downloadFilename))
+
+	presignedUrl, err := m.client.PresignedGetObject(ctx, m.bucket, name, m.presignExpiry, reqParams)
 	if err != nil {
-		return nil, infrastructurestorageshared.MapMinioError("failed to open firmware", err)
-	}
-	if _, err := content.Stat(); err != nil {
-		_ = content.Close()
-		return nil, infrastructurestorageshared.MapMinioError("failed to open firmware", err)
+		return "", time.Time{}, infrastructurestorageshared.MapMinioError("failed to presign firmware download", err)
 	}
 
-	return content, nil
+	expiresAt := time.Now().Add(m.presignExpiry)
+	downloadUrl := m.publicBaseUrl + "/minio-proxy" + presignedUrl.RequestURI()
+
+	return downloadUrl, expiresAt, nil
 }
 
 func (m *minioImpl) Stat(

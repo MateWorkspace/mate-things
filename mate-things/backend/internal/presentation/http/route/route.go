@@ -120,14 +120,16 @@ type PreferencesHandler interface {
 }
 
 type Args struct {
-	Auth        AuthHandler
-	Profile     ProfileHandler
-	Admin       AdminHandler
-	Node        NodeHandler
-	Action      ActionHandler
-	Telemetry   TelemetryHandler
-	Preferences PreferencesHandler
-	Token       domaincontractsutility.Token
+	Auth          AuthHandler
+	Profile       ProfileHandler
+	Admin         AdminHandler
+	Node          NodeHandler
+	Action        ActionHandler
+	Telemetry     TelemetryHandler
+	Preferences   PreferencesHandler
+	Token         domaincontractsutility.Token
+	MinioProxy    http.Handler
+	FrontendProxy http.Handler
 }
 
 func Route(e *echo.Echo, args Args) {
@@ -150,6 +152,16 @@ func Route(e *echo.Echo, args Args) {
 	routeAction(v1, args.Action, permission)
 	routeTelemetry(v1, args.Telemetry, permission)
 	routePreferences(v1, args.Preferences, permission)
+
+	// Presigned S3-style GET/HEAD passthrough to MinIO - no auth middleware,
+	// the signed query string is the auth. Not under /api: this is a raw
+	// asset proxy, not a JSON API.
+	minioProxyHandler := echo.WrapHandler(args.MinioProxy)
+	e.GET("/minio-proxy/*", minioProxyHandler)
+	e.HEAD("/minio-proxy/*", minioProxyHandler)
+
+	// Everything else falls through to the Next.js frontend.
+	e.Any("/*", echo.WrapHandler(args.FrontendProxy))
 }
 
 func routeAuthPublic(v1 *echo.Group, handler AuthHandler) {

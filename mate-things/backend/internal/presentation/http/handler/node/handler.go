@@ -1,7 +1,6 @@
 package presentationhttphandlernode
 
 import (
-	"mime"
 	"net/http"
 	"strconv"
 
@@ -687,10 +686,10 @@ func (h *handler) FirmwareBinaryPut(c *echo.Context) error {
 //
 // @Summary Firmware Binary Get By ID
 // @Tags Firmwares
-// @Produce octet-stream
+// @Produce json
 // @Security BearerAuth
 // @Param id path string true "id"
-// @Success 200 {file} file
+// @Success 302 "redirect to a short-lived presigned download URL"
 // @Router /v1/firmwares/{id}/binary [get]
 func (h *handler) FirmwareBinaryGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -698,22 +697,22 @@ func (h *handler) FirmwareBinaryGetById(c *echo.Context) error {
 		return presentationhttputils.Error(c, err)
 	}
 
-	result, err := h.firmwareUseCase.OpenBinaryById(c.Request().Context(), domainusecasesnode.OpenFirmwareBinaryByIdRequest{Id: id})
+	result, err := h.firmwareUseCase.DownloadUrlById(c.Request().Context(), domainusecasesnode.DownloadFirmwareBinaryByIdRequest{Id: id})
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
-	return streamFirmware(c, result)
+	return c.Redirect(http.StatusFound, result.DownloadUrl)
 }
 
 // FirmwareBinaryGetByName godoc
 //
 // @Summary Firmware Binary Get By Name
 // @Tags Firmwares
-// @Produce octet-stream
+// @Produce json
 // @Security BearerAuth
 // @Param name path string true "name"
-// @Success 200 {file} file
+// @Success 302 "redirect to a short-lived presigned download URL"
 // @Router /v1/firmwares/by-name/{name}/binary [get]
 func (h *handler) FirmwareBinaryGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
@@ -721,12 +720,12 @@ func (h *handler) FirmwareBinaryGetByName(c *echo.Context) error {
 		return presentationhttputils.Error(c, err)
 	}
 
-	result, err := h.firmwareUseCase.OpenBinaryByName(c.Request().Context(), domainusecasesnode.OpenFirmwareBinaryByNameRequest{Name: name})
+	result, err := h.firmwareUseCase.DownloadUrlByName(c.Request().Context(), domainusecasesnode.DownloadFirmwareBinaryByNameRequest{Name: name})
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
-	return streamFirmware(c, result)
+	return c.Redirect(http.StatusFound, result.DownloadUrl)
 }
 
 // FirmwareBinaryStatByNameGet godoc
@@ -892,24 +891,4 @@ func otaRequest(req presentationhttprequest.OtaDispatchRequest) (uuid.UUID, stri
 	}
 
 	return firmwareId, req.FirmwareUrl, nil
-}
-
-func streamFirmware(c *echo.Context, result domainusecasesnode.OpenFirmwareBinaryResult) error {
-	if result.Content == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("firmware content"))
-	}
-	defer result.Content.Close()
-
-	filename := result.Firmware.Name
-	if filename == "" {
-		filename = result.Firmware.Id.String()
-	}
-	contentDisposition := mime.FormatMediaType("attachment", map[string]string{"filename": filename})
-	headers := c.Response().Header()
-	headers.Set("Content-Length", strconv.FormatInt(int64(result.Firmware.Size), 10))
-	headers.Set("Content-Disposition", contentDisposition)
-	headers.Set("X-Firmware-Checksum", result.Firmware.Checksum)
-	headers.Set("X-Firmware-Name", result.Firmware.Name)
-
-	return c.Stream(http.StatusOK, "application/octet-stream", result.Content)
 }

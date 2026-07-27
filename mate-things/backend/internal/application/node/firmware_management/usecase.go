@@ -284,11 +284,11 @@ func (u *usecase) ReplaceBinaryById(
 	}, nil
 }
 
-func (u *usecase) OpenBinaryById(
+func (u *usecase) DownloadUrlById(
 	ctx context.Context,
-	request domainusecasesnode.OpenFirmwareBinaryByIdRequest,
-) (domainusecasesnode.OpenFirmwareBinaryResult, error) {
-	const tag = "node/firmware_management/OpenBinaryById"
+	request domainusecasesnode.DownloadFirmwareBinaryByIdRequest,
+) (domainusecasesnode.FirmwareDownloadResult, error) {
+	const tag = "node/firmware_management/DownloadUrlById"
 
 	firmware, err := u.firmware.ReadById(ctx, request.Id)
 	if err != nil {
@@ -296,30 +296,31 @@ func (u *usecase) OpenBinaryById(
 			"err": err,
 			"id":  request.Id,
 		})
-		return domainusecasesnode.OpenFirmwareBinaryResult{}, err
+		return domainusecasesnode.FirmwareDownloadResult{}, err
 	}
 
-	content, err := u.storage.Open(ctx, firmware.BinaryPath)
+	downloadUrl, expiresAt, err := u.storage.Presign(ctx, firmware.BinaryPath, firmware.Name)
 	if err != nil {
-		u.logger.Error(ctx, tag, "failed to open firmware binary", domainmodels.LoggerMeta{
+		u.logger.Error(ctx, tag, "failed to presign firmware binary", domainmodels.LoggerMeta{
 			"err":         err,
 			"id":          request.Id,
 			"binary_path": firmware.BinaryPath,
 		})
-		return domainusecasesnode.OpenFirmwareBinaryResult{}, err
+		return domainusecasesnode.FirmwareDownloadResult{}, err
 	}
 
-	return domainusecasesnode.OpenFirmwareBinaryResult{
-		Firmware: *firmware,
-		Content:  content,
+	return domainusecasesnode.FirmwareDownloadResult{
+		Firmware:    *firmware,
+		DownloadUrl: downloadUrl,
+		ExpiresAt:   expiresAt,
 	}, nil
 }
 
-func (u *usecase) OpenBinaryByName(
+func (u *usecase) DownloadUrlByName(
 	ctx context.Context,
-	request domainusecasesnode.OpenFirmwareBinaryByNameRequest,
-) (domainusecasesnode.OpenFirmwareBinaryResult, error) {
-	const tag = "node/firmware_management/OpenBinaryByName"
+	request domainusecasesnode.DownloadFirmwareBinaryByNameRequest,
+) (domainusecasesnode.FirmwareDownloadResult, error) {
+	const tag = "node/firmware_management/DownloadUrlByName"
 
 	firmware, err := u.firmware.ReadByName(ctx, request.Name)
 	if err != nil {
@@ -327,22 +328,23 @@ func (u *usecase) OpenBinaryByName(
 			"err":  err,
 			"name": request.Name,
 		})
-		return domainusecasesnode.OpenFirmwareBinaryResult{}, err
+		return domainusecasesnode.FirmwareDownloadResult{}, err
 	}
 
-	content, err := u.storage.Open(ctx, firmware.BinaryPath)
+	downloadUrl, expiresAt, err := u.storage.Presign(ctx, firmware.BinaryPath, firmware.Name)
 	if err != nil {
-		u.logger.Error(ctx, tag, "failed to open firmware binary", domainmodels.LoggerMeta{
+		u.logger.Error(ctx, tag, "failed to presign firmware binary", domainmodels.LoggerMeta{
 			"err":         err,
 			"name":        request.Name,
 			"binary_path": firmware.BinaryPath,
 		})
-		return domainusecasesnode.OpenFirmwareBinaryResult{}, err
+		return domainusecasesnode.FirmwareDownloadResult{}, err
 	}
 
-	return domainusecasesnode.OpenFirmwareBinaryResult{
-		Firmware: *firmware,
-		Content:  content,
+	return domainusecasesnode.FirmwareDownloadResult{
+		Firmware:    *firmware,
+		DownloadUrl: downloadUrl,
+		ExpiresAt:   expiresAt,
 	}, nil
 }
 
