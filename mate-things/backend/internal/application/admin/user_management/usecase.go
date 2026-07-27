@@ -3,6 +3,7 @@ package applicationadminusermanagement
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -32,7 +33,20 @@ func NewUsecaseImpl(
 func (u *usecase) Create(ctx context.Context, request domainusecasesadmin.CreateUserRequest) (uuid.UUID, error) {
 	const tag = "admin/user_management/Create"
 
-	passwordHash, err := u.password.Hash(request.Password)
+	name, err := applicationshared.RequiredPersonName(request.Name, "name")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	username, err := applicationshared.RequiredUsername(request.Username, "username")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	password, err := applicationshared.RequiredPassword(request.Password, "password")
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	passwordHash, err := u.password.Hash(password)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to hash user password", domainmodels.LoggerMeta{
 			"err":        err,
@@ -44,9 +58,9 @@ func (u *usecase) Create(ctx context.Context, request domainusecasesadmin.Create
 	id, err := u.user.Create(
 		ctx,
 		request.RoleId,
-		request.Name,
+		name,
 		request.Bio,
-		request.Username,
+		username,
 		passwordHash,
 		request.CreatedBy,
 	)
@@ -138,13 +152,22 @@ func (u *usecase) ReadByPagination(
 func (u *usecase) UpdateById(ctx context.Context, request domainusecasesadmin.UpdateUserRequest) error {
 	const tag = "admin/user_management/UpdateById"
 
+	name, err := applicationshared.OptionalPersonName(request.Name, "name")
+	if err != nil {
+		return err
+	}
+	username, err := applicationshared.OptionalUsername(request.Username, "username")
+	if err != nil {
+		return err
+	}
+
 	if err := u.user.UpdateById(
 		ctx,
 		request.Id,
 		request.RoleId,
-		request.Name,
+		name,
 		request.Bio,
-		request.Username,
+		username,
 		nil,
 		nil,
 		request.UpdatedBy,
@@ -163,7 +186,12 @@ func (u *usecase) UpdateById(ctx context.Context, request domainusecasesadmin.Up
 func (u *usecase) ResetPassword(ctx context.Context, request domainusecasesadmin.ResetUserPasswordRequest) error {
 	const tag = "admin/user_management/ResetPassword"
 
-	passwordHash, err := u.password.Hash(request.Password)
+	password, err := applicationshared.RequiredPassword(request.Password, "password")
+	if err != nil {
+		return err
+	}
+
+	passwordHash, err := u.password.Hash(password)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to hash user password", domainmodels.LoggerMeta{
 			"err":        err,

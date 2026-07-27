@@ -81,8 +81,9 @@ func (p *postgresImpl) queryUpsertRegistration(
 			device_info = EXCLUDED.device_info,
 			firmware_id = EXCLUDED.firmware_id,
 			is_connected = TRUE,
-			updated_at = CURRENT_TIMESTAMP
-		WHERE nodes.deleted_at IS NULL
+			updated_at = CURRENT_TIMESTAMP,
+			deleted_at = NULL,
+			deleted_by = NULL
 		RETURNING (xmax = 0) AS created, ` + joinNodeColumns("nodes"),
 		[]any{deviceId, deviceInfo, "node_" + deviceId, firmwareName},
 		nil

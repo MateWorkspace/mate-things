@@ -3,6 +3,7 @@ package applicationprofileaccount
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesprofile "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/profile"
@@ -27,13 +28,22 @@ func NewUsecaseImpl(
 func (u *usecase) UpdateProfile(ctx context.Context, request domainusecasesprofile.UpdateProfileRequest) error {
 	const tag = "profile/account/UpdateProfile"
 
+	name, err := applicationshared.OptionalPersonName(request.Name, "name")
+	if err != nil {
+		return err
+	}
+	username, err := applicationshared.OptionalUsername(request.Username, "username")
+	if err != nil {
+		return err
+	}
+
 	if err := u.user.UpdateById(
 		ctx,
 		request.UserId,
 		nil,
-		request.Name,
+		name,
 		request.Bio,
-		request.Username,
+		username,
 		nil,
 		nil,
 		request.UpdatedBy,

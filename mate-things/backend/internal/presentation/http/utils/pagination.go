@@ -12,6 +12,7 @@ import (
 const (
 	defaultPage  = 1
 	defaultLimit = 10
+	maxLimit     = 100
 )
 
 type PaginationArgs struct {
@@ -29,6 +30,9 @@ func PageArgs(c *echo.Context) (PaginationArgs, error) {
 	limit, err := queryPositiveInt(c, "limit", defaultLimit)
 	if err != nil {
 		return PaginationArgs{}, err
+	}
+	if limit > maxLimit {
+		limit = maxLimit
 	}
 
 	return PaginationArgs{

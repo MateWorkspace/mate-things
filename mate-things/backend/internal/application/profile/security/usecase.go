@@ -3,6 +3,7 @@ package applicationprofilesecurity
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -47,7 +48,12 @@ func (u *usecase) ChangePassword(ctx context.Context, request domainusecasesprof
 		return err
 	}
 
-	passwordHash, err := u.password.Hash(request.NewPassword)
+	newPassword, err := applicationshared.RequiredPassword(request.NewPassword, "new_password")
+	if err != nil {
+		return err
+	}
+
+	passwordHash, err := u.password.Hash(newPassword)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to hash new password", domainmodels.LoggerMeta{
 			"err":     err,

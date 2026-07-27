@@ -3,6 +3,7 @@ package applicationnodefirmwaremanagement
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsstorage "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/storage"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -37,18 +38,23 @@ func (u *usecase) Create(
 ) (domainusecasesnode.CreateFirmwareResult, error) {
 	const tag = "node/firmware_management/Create"
 
-	path, size, checksum, err := u.storage.Store(ctx, request.Name, request.Content)
+	name, err := applicationshared.RequiredFirmwareName(request.Name, "name")
+	if err != nil {
+		return domainusecasesnode.CreateFirmwareResult{}, err
+	}
+
+	path, size, checksum, err := u.storage.Store(ctx, name, request.Content)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to store firmware binary", domainmodels.LoggerMeta{
 			"err":           err,
-			"name":          request.Name,
+			"name":          name,
 			"node_class_id": request.NodeClassId,
 			"created_by":    request.CreatedBy,
 		})
 		return domainusecasesnode.CreateFirmwareResult{}, err
 	}
 
-	id, err := u.firmware.Create(ctx, request.NodeClassId, request.Name, size, checksum, path, request.CreatedBy)
+	id, err := u.firmware.Create(ctx, request.NodeClassId, name, size, checksum, path, request.CreatedBy)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to create firmware", domainmodels.LoggerMeta{
 			"err":           err,
@@ -195,11 +201,16 @@ func (u *usecase) ReadByPagination(
 func (u *usecase) UpdateById(ctx context.Context, request domainusecasesnode.UpdateFirmwareRequest) error {
 	const tag = "node/firmware_management/UpdateById"
 
+	name, err := applicationshared.OptionalFirmwareName(request.Name, "name")
+	if err != nil {
+		return err
+	}
+
 	if err := u.firmware.UpdateById(
 		ctx,
 		request.Id,
 		request.NodeClassId,
-		request.Name,
+		name,
 		nil,
 		nil,
 		nil,

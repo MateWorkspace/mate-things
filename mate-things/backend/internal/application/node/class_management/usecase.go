@@ -3,6 +3,7 @@ package applicationnodeclassmanagement
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
@@ -28,7 +29,12 @@ func NewUsecaseImpl(
 func (u *usecase) Create(ctx context.Context, request domainusecasesnode.CreateNodeClassRequest) (uuid.UUID, error) {
 	const tag = "node/class_management/Create"
 
-	id, err := u.nodeClass.Create(ctx, request.Name, request.Description, request.CreatedBy)
+	name, err := applicationshared.RequiredNodeClassName(request.Name, "name")
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	id, err := u.nodeClass.Create(ctx, name, request.Description, request.CreatedBy)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to create node class", domainmodels.LoggerMeta{
 			"err":        err,
@@ -98,7 +104,12 @@ func (u *usecase) ReadByPagination(
 func (u *usecase) UpdateById(ctx context.Context, request domainusecasesnode.UpdateNodeClassRequest) error {
 	const tag = "node/class_management/UpdateById"
 
-	if err := u.nodeClass.UpdateById(ctx, request.Id, request.Name, request.Description, nil, request.UpdatedBy); err != nil {
+	name, err := applicationshared.OptionalNodeClassName(request.Name, "name")
+	if err != nil {
+		return err
+	}
+
+	if err := u.nodeClass.UpdateById(ctx, request.Id, name, request.Description, nil, request.UpdatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to update node class", domainmodels.LoggerMeta{
 			"err":        err,
 			"id":         request.Id,

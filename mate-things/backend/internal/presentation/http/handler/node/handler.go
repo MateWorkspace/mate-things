@@ -49,13 +49,9 @@ func (h *handler) NodeClassPost(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	name, err := presentationhttputils.RequiredString(req.Name, "name")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 
 	id, err := h.classUseCase.Create(c.Request().Context(), domainusecasesnode.CreateNodeClassRequest{
-		Name:        name,
+		Name:        req.Name,
 		Description: req.Description,
 		CreatedBy:   presentationhttputils.ActorId(c),
 	})
@@ -421,10 +417,6 @@ func (h *handler) FirmwarePost(c *echo.Context) error {
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
-	name, err := presentationhttputils.RequiredString(c.FormValue("name"), "name")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 	file, err := presentationhttputils.RequiredFormFile(c, "file")
 	if err != nil {
 		return presentationhttputils.Error(c, err)
@@ -438,7 +430,7 @@ func (h *handler) FirmwarePost(c *echo.Context) error {
 
 	result, err := h.firmwareUseCase.Create(c.Request().Context(), domainusecasesnode.CreateFirmwareRequest{
 		NodeClassId: nodeClassId,
-		Name:        name,
+		Name:        c.FormValue("name"),
 		Content:     content,
 		CreatedBy:   presentationhttputils.ActorId(c),
 	})
@@ -898,12 +890,8 @@ func otaRequest(req presentationhttprequest.OtaDispatchRequest) (uuid.UUID, stri
 	if err != nil {
 		return uuid.Nil, "", err
 	}
-	firmwareUrl, err := presentationhttputils.RequiredString(req.FirmwareUrl, "firmware_url")
-	if err != nil {
-		return uuid.Nil, "", err
-	}
 
-	return firmwareId, firmwareUrl, nil
+	return firmwareId, req.FirmwareUrl, nil
 }
 
 func streamFirmware(c *echo.Context, result domainusecasesnode.OpenFirmwareBinaryResult) error {

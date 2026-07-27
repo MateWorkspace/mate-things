@@ -3,6 +3,7 @@ package applicationnodedevicemanagement
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
@@ -91,13 +92,18 @@ func (u *usecase) ReadByPagination(
 func (u *usecase) UpdateById(ctx context.Context, request domainusecasesnode.UpdateNodeRequest) error {
 	const tag = "node/device_management/UpdateById"
 
+	name, err := applicationshared.OptionalNodeName(request.Name, "name")
+	if err != nil {
+		return err
+	}
+
 	if err := u.node.UpdateById(
 		ctx,
 		request.Id,
 		request.NodeClassId,
 		request.DeviceId,
 		nil,
-		request.Name,
+		name,
 		request.FirmwareId,
 		request.Description,
 		nil,

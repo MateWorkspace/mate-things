@@ -3,6 +3,7 @@ package applicationnodeota
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -78,6 +79,11 @@ func (u *usecase) dispatch(
 	firmwareUrl string,
 	actorId *uuid.UUID,
 ) error {
+	firmwareUrl, err := applicationshared.RequiredURL(firmwareUrl, "firmware_url")
+	if err != nil {
+		return err
+	}
+
 	firmware, err := u.firmware.ReadById(ctx, firmwareId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to read firmware", domainmodels.LoggerMeta{

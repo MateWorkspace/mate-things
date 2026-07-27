@@ -49,20 +49,12 @@ func (h *handler) ActionPost(c *echo.Context) error {
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
-	name, err := presentationhttputils.RequiredString(req.Name, "name")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
-	payloadSchemaName, err := presentationhttputils.RequiredString(req.PayloadSchemaName, "payload_schema_name")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 
 	id, err := h.definitionUseCase.Create(c.Request().Context(), domainusecasesaction.CreateActionRequest{
 		NodeClassId:          nodeClassId,
-		Name:                 name,
+		Name:                 req.Name,
 		Description:          req.Description,
-		PayloadSchemaName:    payloadSchemaName,
+		PayloadSchemaName:    req.PayloadSchemaName,
 		PayloadSchemaVersion: req.PayloadSchemaVersion,
 		CreatedBy:            presentationhttputils.ActorId(c),
 	})

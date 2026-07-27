@@ -47,13 +47,9 @@ func (h *handler) PermissionPost(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	name, err := presentationhttputils.RequiredString(req.Name, "name")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 
 	id, err := h.permissionUseCase.Create(c.Request().Context(), domainusecasesadmin.CreatePermissionRequest{
-		Name:        name,
+		Name:        req.Name,
 		Description: req.Description,
 		CreatedBy:   presentationhttputils.ActorId(c),
 	})
@@ -219,13 +215,9 @@ func (h *handler) RolePost(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	name, err := presentationhttputils.RequiredString(req.Name, "name")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 
 	id, err := h.roleUseCase.Create(c.Request().Context(), domainusecasesadmin.CreateRoleRequest{
-		Name:        name,
+		Name:        req.Name,
 		Description: req.Description,
 		CreatedBy:   presentationhttputils.ActorId(c),
 	})
@@ -622,17 +614,13 @@ func (h *handler) PayloadSchemaPost(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	name, err := presentationhttputils.RequiredString(req.Name, "name")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 	definition, err := presentationhttputils.RequiredRawJSON(req.Definition, "definition")
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
 	id, err := h.schemaUseCase.Create(c.Request().Context(), domainusecasesadmin.CreatePayloadSchemaRequest{
-		Name:       name,
+		Name:       req.Name,
 		Version:    req.Version,
 		Definition: definition,
 		ValidFrom:  req.ValidFrom,
@@ -848,25 +836,13 @@ func (h *handler) UserPost(c *echo.Context) error {
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
-	name, err := presentationhttputils.RequiredString(req.Name, "name")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
-	username, err := presentationhttputils.RequiredString(req.Username, "username")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
-	password, err := presentationhttputils.RequiredString(req.Password, "password")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 
 	id, err := h.userUseCase.Create(c.Request().Context(), domainusecasesadmin.CreateUserRequest{
 		RoleId:    roleId,
-		Name:      name,
+		Name:      req.Name,
 		Bio:       req.Bio,
-		Username:  username,
-		Password:  password,
+		Username:  req.Username,
+		Password:  req.Password,
 		CreatedBy: presentationhttputils.ActorId(c),
 	})
 	if err != nil {
@@ -1046,14 +1022,10 @@ func (h *handler) UserPasswordPatch(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	password, err := presentationhttputils.RequiredString(req.Password, "password")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 
 	if err := h.userUseCase.ResetPassword(c.Request().Context(), domainusecasesadmin.ResetUserPasswordRequest{
 		Id:        id,
-		Password:  password,
+		Password:  req.Password,
 		UpdatedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err)

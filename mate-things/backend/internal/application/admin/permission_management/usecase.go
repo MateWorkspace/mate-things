@@ -3,6 +3,7 @@ package applicationadminpermissionmanagement
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesadmin "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/admin"
@@ -28,7 +29,12 @@ func NewUsecaseImpl(
 func (u *usecase) Create(ctx context.Context, request domainusecasesadmin.CreatePermissionRequest) (uuid.UUID, error) {
 	const tag = "admin/permission_management/Create"
 
-	id, err := u.permission.Create(ctx, request.Name, request.Description, request.CreatedBy)
+	name, err := applicationshared.RequiredPermissionName(request.Name, "name")
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	id, err := u.permission.Create(ctx, name, request.Description, request.CreatedBy)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to create permission", domainmodels.LoggerMeta{
 			"err":        err,
@@ -98,10 +104,15 @@ func (u *usecase) ReadByPagination(
 func (u *usecase) UpdateById(ctx context.Context, request domainusecasesadmin.UpdatePermissionRequest) error {
 	const tag = "admin/permission_management/UpdateById"
 
+	name, err := applicationshared.OptionalPermissionName(request.Name, "name")
+	if err != nil {
+		return err
+	}
+
 	if err := u.permission.UpdateById(
 		ctx,
 		request.Id,
-		request.Name,
+		name,
 		request.Description,
 		nil,
 		request.UpdatedBy,

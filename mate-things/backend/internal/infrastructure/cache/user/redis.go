@@ -23,9 +23,9 @@ func (r *redisImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels.Us
 	if err != nil {
 		return nil, false, err
 	}
-	var item domainmodels.User
+	var item cachedUser
 	hit, err := r.Get(ctx, key, &item)
-	return &item, hit, err
+	return item.toDomain(), hit, err
 }
 
 func (r *redisImpl) SetById(ctx context.Context, id uuid.UUID, user *domainmodels.User) error {
@@ -33,7 +33,7 @@ func (r *redisImpl) SetById(ctx context.Context, id uuid.UUID, user *domainmodel
 	if err != nil {
 		return err
 	}
-	return r.Set(ctx, key, user, r.IdentityTtl())
+	return r.Set(ctx, key, newCachedUser(user), r.IdentityTtl())
 }
 
 func (r *redisImpl) DeleteById(ctx context.Context, id uuid.UUID) error {
@@ -49,9 +49,9 @@ func (r *redisImpl) GetByUsername(ctx context.Context, username string) (*domain
 	if err != nil {
 		return nil, false, err
 	}
-	var item domainmodels.User
+	var item cachedUser
 	hit, err := r.Get(ctx, key, &item)
-	return &item, hit, err
+	return item.toDomain(), hit, err
 }
 
 func (r *redisImpl) SetByUsername(ctx context.Context, username string, user *domainmodels.User) error {
@@ -59,7 +59,7 @@ func (r *redisImpl) SetByUsername(ctx context.Context, username string, user *do
 	if err != nil {
 		return err
 	}
-	return r.Set(ctx, key, user, r.IdentityTtl())
+	return r.Set(ctx, key, newCachedUser(user), r.IdentityTtl())
 }
 
 func (r *redisImpl) DeleteByUsername(ctx context.Context, username string) error {

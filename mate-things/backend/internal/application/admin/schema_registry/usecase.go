@@ -3,6 +3,7 @@ package applicationadminschemaregistry
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesadmin "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/admin"
@@ -28,10 +29,22 @@ func NewUsecaseImpl(
 func (u *usecase) Create(ctx context.Context, request domainusecasesadmin.CreatePayloadSchemaRequest) (uuid.UUID, error) {
 	const tag = "admin/schema_registry/Create"
 
+	name, err := applicationshared.RequiredSnakeCaseName(request.Name, "name")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	version, err := applicationshared.RequiredPositiveVersion(request.Version, "version")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if err := applicationshared.ValidateTimeWindow(request.ValidFrom, request.ValidTo); err != nil {
+		return uuid.Nil, err
+	}
+
 	id, err := u.payloadSchema.Create(
 		ctx,
-		request.Name,
-		request.Version,
+		name,
+		version,
 		request.Definition,
 		request.ValidFrom,
 		request.ValidTo,
@@ -128,11 +141,23 @@ func (u *usecase) ReadByPagination(
 func (u *usecase) UpdateById(ctx context.Context, request domainusecasesadmin.UpdatePayloadSchemaRequest) error {
 	const tag = "admin/schema_registry/UpdateById"
 
+	name, err := applicationshared.OptionalSnakeCaseName(request.Name, "name")
+	if err != nil {
+		return err
+	}
+	version, err := applicationshared.OptionalPositiveVersion(request.Version, "version")
+	if err != nil {
+		return err
+	}
+	if err := applicationshared.ValidateTimeWindow(request.ValidFrom, request.ValidTo); err != nil {
+		return err
+	}
+
 	if err := u.payloadSchema.UpdateById(
 		ctx,
 		request.Id,
-		request.Name,
-		request.Version,
+		name,
+		version,
 		request.Definition,
 		request.ValidFrom,
 		request.ValidTo,

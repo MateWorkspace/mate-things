@@ -3,6 +3,7 @@ package applicationadminrolemanagement
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesadmin "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/admin"
@@ -31,7 +32,12 @@ func NewUsecaseImpl(
 func (u *usecase) Create(ctx context.Context, request domainusecasesadmin.CreateRoleRequest) (uuid.UUID, error) {
 	const tag = "admin/role_management/Create"
 
-	id, err := u.role.Create(ctx, request.Name, request.Description, nil, request.CreatedBy)
+	name, err := applicationshared.RequiredRoleName(request.Name, "name")
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	id, err := u.role.Create(ctx, name, request.Description, nil, request.CreatedBy)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to create role", domainmodels.LoggerMeta{
 			"err":        err,
@@ -136,10 +142,15 @@ func (u *usecase) ReadByPagination(
 func (u *usecase) UpdateById(ctx context.Context, request domainusecasesadmin.UpdateRoleRequest) error {
 	const tag = "admin/role_management/UpdateById"
 
+	name, err := applicationshared.OptionalRoleName(request.Name, "name")
+	if err != nil {
+		return err
+	}
+
 	if err := u.role.UpdateById(
 		ctx,
 		request.Id,
-		request.Name,
+		name,
 		request.Description,
 		nil,
 		nil,

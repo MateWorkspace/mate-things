@@ -3,6 +3,7 @@ package applicationactiondefinition
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesaction "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/action"
@@ -28,13 +29,26 @@ func NewUsecaseImpl(
 func (u *usecase) Create(ctx context.Context, request domainusecasesaction.CreateActionRequest) (uuid.UUID, error) {
 	const tag = "action/definition/Create"
 
+	name, err := applicationshared.RequiredActionName(request.Name, "name")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	payloadSchemaName, err := applicationshared.RequiredSnakeCaseName(request.PayloadSchemaName, "payload_schema_name")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	payloadSchemaVersion, err := applicationshared.RequiredPositiveVersion(request.PayloadSchemaVersion, "payload_schema_version")
+	if err != nil {
+		return uuid.Nil, err
+	}
+
 	id, err := u.action.Create(
 		ctx,
 		request.NodeClassId,
-		request.Name,
+		name,
 		request.Description,
-		request.PayloadSchemaName,
-		request.PayloadSchemaVersion,
+		payloadSchemaName,
+		payloadSchemaVersion,
 		request.CreatedBy,
 	)
 	if err != nil {
@@ -114,14 +128,27 @@ func (u *usecase) ReadByPagination(
 func (u *usecase) UpdateById(ctx context.Context, request domainusecasesaction.UpdateActionRequest) error {
 	const tag = "action/definition/UpdateById"
 
+	name, err := applicationshared.OptionalActionName(request.Name, "name")
+	if err != nil {
+		return err
+	}
+	payloadSchemaName, err := applicationshared.OptionalSnakeCaseName(request.PayloadSchemaName, "payload_schema_name")
+	if err != nil {
+		return err
+	}
+	payloadSchemaVersion, err := applicationshared.OptionalPositiveVersion(request.PayloadSchemaVersion, "payload_schema_version")
+	if err != nil {
+		return err
+	}
+
 	if err := u.action.UpdateById(
 		ctx,
 		request.Id,
 		request.NodeClassId,
-		request.Name,
+		name,
 		request.Description,
-		request.PayloadSchemaName,
-		request.PayloadSchemaVersion,
+		payloadSchemaName,
+		payloadSchemaVersion,
 		nil,
 		request.UpdatedBy,
 	); err != nil {

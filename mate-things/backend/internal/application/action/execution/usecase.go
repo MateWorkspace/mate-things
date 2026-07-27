@@ -92,6 +92,17 @@ func (u *usecase) Dispatch(
 			new("node is not connected"),
 		)
 	}
+	if node.NodeClassId != action.NodeClassId {
+		return u.createActionLog(
+			ctx,
+			tag,
+			executionId,
+			request,
+			&node.Id,
+			domainmodels.ActionStatusUnexecuted,
+			new("node class does not match action's node class"),
+		)
+	}
 
 	payloadSchema, err := u.payloadSchema.ReadByNameAndVersion(
 		ctx,

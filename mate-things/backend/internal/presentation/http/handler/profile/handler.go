@@ -134,15 +134,11 @@ func (h *handler) ProfilePasswordPatch(c *echo.Context) error {
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
-	newPassword, err := presentationhttputils.RequiredString(req.NewPassword, "new_password")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 
 	if err := h.securityUseCase.ChangePassword(c.Request().Context(), domainusecasesprofile.ChangePasswordRequest{
 		UserId:          userId,
 		CurrentPassword: currentPassword,
-		NewPassword:     newPassword,
+		NewPassword:     req.NewPassword,
 		UpdatedBy:       &userId,
 	}); err != nil {
 		return presentationhttputils.Error(c, err)
