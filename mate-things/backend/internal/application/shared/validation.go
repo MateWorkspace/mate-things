@@ -6,6 +6,7 @@
 package applicationshared
 
 import (
+	"encoding/json"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -311,4 +312,77 @@ func RequiredURL(value string, field string) (string, error) {
 	}
 
 	return value, nil
+}
+
+var validPayloadSchemaDefinitionTypes = map[domainmodels.PayloadSchemaDefinitionType]bool{
+	domainmodels.PayloadSchemaDefinitionTypeString:       true,
+	domainmodels.PayloadSchemaDefinitionTypeFloat:        true,
+	domainmodels.PayloadSchemaDefinitionTypeInteger:      true,
+	domainmodels.PayloadSchemaDefinitionTypeBoolean:      true,
+	domainmodels.PayloadSchemaDefinitionTypeEnum:         true,
+	domainmodels.PayloadSchemaDefinitionTypeObject:       true,
+	domainmodels.PayloadSchemaDefinitionTypeStringArray:  true,
+	domainmodels.PayloadSchemaDefinitionTypeFloatArray:   true,
+	domainmodels.PayloadSchemaDefinitionTypeIntegerArray: true,
+	domainmodels.PayloadSchemaDefinitionTypeBooleanArray: true,
+	domainmodels.PayloadSchemaDefinitionTypeEnumArray:    true,
+	domainmodels.PayloadSchemaDefinitionTypeObjectArray:  true,
+}
+
+// RequiredPayloadSchemaDefinition validates that a payload schema's
+// definition is well-formed JSON that also structurally conforms to
+// domainmodels.PayloadSchemaDefinition: every type (including nested
+// object properties and array items) is a recognized schema type, and
+// enum/[]enum nodes declare at least one option. This catches malformed
+// schemas at write time instead of only surfacing at dispatch time when
+// a payload is checked against them.
+func RequiredPayloadSchemaDefinition(value json.RawMessage, field string) (json.RawMessage, error) {
+	if len(value) == 0 {
+		return nil, domainmodels.NewError(field+" is required", domainmodels.ErrTypeValidation, nil)
+	}
+
+	var definition domainmodels.PayloadSchemaDefinition
+	if err := json.Unmarshal(value, &definition); err != nil {
+		return nil, domainmodels.NewError(field+" must be a valid JSON value", domainmodels.ErrTypeValidation, err)
+	}
+	if err := validatePayloadSchemaDefinitionShape(definition, field); err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func OptionalPayloadSchemaDefinition(value *json.RawMessage, field string) (*json.RawMessage, error) {
+	if value == nil || len(*value) == 0 {
+		return nil, nil
+	}
+
+	v, err := RequiredPayloadSchemaDefinition(*value, field)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v, nil
+}
+
+func validatePayloadSchemaDefinitionShape(definition domainmodels.PayloadSchemaDefinition, field string) error {
+	if !validPayloadSchemaDefinitionTypes[definition.Type] {
+		return domainmodels.NewError(field+" has an invalid or missing type", domainmodels.ErrTypeValidation, nil)
+	}
+	if (definition.Type == domainmodels.PayloadSchemaDefinitionTypeEnum || definition.Type == domainmodels.PayloadSchemaDefinitionTypeEnumArray) && len(definition.Options) == 0 {
+		return domainmodels.NewError(field+" enum type requires at least one option", domainmodels.ErrTypeValidation, nil)
+	}
+
+	for name, property := range definition.Properties {
+		if err := validatePayloadSchemaDefinitionShape(property, field+"."+name); err != nil {
+			return err
+		}
+	}
+	if definition.Items != nil {
+		if err := validatePayloadSchemaDefinitionShape(*definition.Items, field+".items"); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

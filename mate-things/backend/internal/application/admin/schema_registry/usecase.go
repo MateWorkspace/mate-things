@@ -37,6 +37,10 @@ func (u *usecase) Create(ctx context.Context, request domainusecasesadmin.Create
 	if err != nil {
 		return uuid.Nil, err
 	}
+	definition, err := applicationshared.RequiredPayloadSchemaDefinition(request.Definition, "definition")
+	if err != nil {
+		return uuid.Nil, err
+	}
 	if err := applicationshared.ValidateTimeWindow(request.ValidFrom, request.ValidTo); err != nil {
 		return uuid.Nil, err
 	}
@@ -45,7 +49,7 @@ func (u *usecase) Create(ctx context.Context, request domainusecasesadmin.Create
 		ctx,
 		name,
 		version,
-		request.Definition,
+		definition,
 		request.ValidFrom,
 		request.ValidTo,
 		request.CreatedBy,
@@ -149,6 +153,10 @@ func (u *usecase) UpdateById(ctx context.Context, request domainusecasesadmin.Up
 	if err != nil {
 		return err
 	}
+	definition, err := applicationshared.OptionalPayloadSchemaDefinition(request.Definition, "definition")
+	if err != nil {
+		return err
+	}
 	if err := applicationshared.ValidateTimeWindow(request.ValidFrom, request.ValidTo); err != nil {
 		return err
 	}
@@ -158,7 +166,7 @@ func (u *usecase) UpdateById(ctx context.Context, request domainusecasesadmin.Up
 		request.Id,
 		name,
 		version,
-		request.Definition,
+		definition,
 		request.ValidFrom,
 		request.ValidTo,
 		nil,
