@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mate-things:latest
+    env_file:
+      - .env
+    ports:
+      - "8080:80"
+    restart: unless-stopped
