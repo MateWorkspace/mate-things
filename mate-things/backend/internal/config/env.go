@@ -19,12 +19,16 @@ var (
 	HttpServerShutdownTimeout time.Duration = 10 * time.Second
 	HttpCorsAllowedOrigins    []string      = []string{"*"}
 
-	PostgresDatabaseUrl    string        = "postgres://postgres:postgres@127.0.0.1:5432/nusapala_things?sslmode=disable"
+	PostgresHost           string        = "127.0.0.1"
+	PostgresPort           int           = 5432
+	PostgresUsername       string        = "postgres"
+	PostgresPassword       string        = "postgres"
+	PostgresDatabase       string        = "nusapala_things"
+	PostgresSslMode        string        = "disable"
 	PostgresMaxConnections int           = 20
 	PostgresConnectTimeout time.Duration = 10 * time.Second
 
 	RedisAddresses      []string      = []string{"127.0.0.1:6379"}
-	RedisUsername       string        = ""
 	RedisPassword       string        = ""
 	RedisDatabase       int           = 0
 	RedisConnectTimeout time.Duration = 10 * time.Second
@@ -58,51 +62,55 @@ var (
 )
 
 func LoadEnv() {
-	LoggerFormat = envGetLoggerFormat("LOGGER_FORMAT", LoggerFormat)
-	LoggerLevel = envGetLoggerLevel("LOGGER_LEVEL", LoggerLevel)
-	LoggerDriver = envGetString("LOGGER_DRIVER", LoggerDriver)
+	LoggerFormat = envGetLoggerFormat("BE_LOGGER_FORMAT", LoggerFormat)
+	LoggerLevel = envGetLoggerLevel("BE_LOGGER_LEVEL", LoggerLevel)
+	LoggerDriver = envGetString("BE_LOGGER_DRIVER", LoggerDriver)
 
-	HttpServerPort = envGetInt("HTTP_SERVER_PORT", HttpServerPort)
-	HttpServerReadTimeout = envGetDuration("HTTP_SERVER_READ_TIMEOUT", HttpServerReadTimeout)
-	HttpServerShutdownTimeout = envGetDuration("HTTP_SERVER_SHUTDOWN_TIMEOUT", HttpServerShutdownTimeout)
-	HttpCorsAllowedOrigins = envGetStrings("HTTP_CORS_ALLOWED_ORIGINS", HttpCorsAllowedOrigins)
+	HttpServerPort = envGetInt("BE_HTTP_SERVER_PORT", HttpServerPort)
+	HttpServerReadTimeout = envGetDuration("BE_HTTP_SERVER_READ_TIMEOUT", HttpServerReadTimeout)
+	HttpServerShutdownTimeout = envGetDuration("BE_HTTP_SERVER_SHUTDOWN_TIMEOUT", HttpServerShutdownTimeout)
+	HttpCorsAllowedOrigins = envGetStrings("BE_HTTP_CORS_ALLOWED_ORIGINS", HttpCorsAllowedOrigins)
 
-	PostgresDatabaseUrl = envGetString("POSTGRES_DATABASE_URL", PostgresDatabaseUrl)
-	PostgresMaxConnections = envGetInt("POSTGRES_MAX_CONNECTIONS", PostgresMaxConnections)
-	PostgresConnectTimeout = envGetDuration("POSTGRES_CONNECT_TIMEOUT", PostgresConnectTimeout)
+	PostgresHost = envGetString("BE_POSTGRES_HOST", PostgresHost)
+	PostgresPort = envGetInt("BE_POSTGRES_PORT", PostgresPort)
+	PostgresUsername = envGetString("BE_POSTGRES_USERNAME", PostgresUsername)
+	PostgresPassword = envGetString("BE_POSTGRES_PASSWORD", PostgresPassword)
+	PostgresDatabase = envGetString("BE_POSTGRES_DATABASE", PostgresDatabase)
+	PostgresSslMode = envGetString("BE_POSTGRES_SSL_MODE", PostgresSslMode)
+	PostgresMaxConnections = envGetInt("BE_POSTGRES_MAX_CONNECTIONS", PostgresMaxConnections)
+	PostgresConnectTimeout = envGetDuration("BE_POSTGRES_CONNECT_TIMEOUT", PostgresConnectTimeout)
 
-	RedisAddresses = envGetStrings("REDIS_ADDRESSES", RedisAddresses)
-	RedisUsername = envGetString("REDIS_USERNAME", RedisUsername)
-	RedisPassword = envGetString("REDIS_PASSWORD", RedisPassword)
-	RedisDatabase = envGetInt("REDIS_DATABASE", RedisDatabase)
-	RedisConnectTimeout = envGetDuration("REDIS_CONNECT_TIMEOUT", RedisConnectTimeout)
-	RedisCacheNamespace = envGetString("REDIS_CACHE_NAMESPACE", RedisCacheNamespace)
-	RedisTtlIdentity = envGetDuration("REDIS_TTL_IDENTITY", RedisTtlIdentity)
-	RedisTtlPagination = envGetDuration("REDIS_TTL_PAGINATION", RedisTtlPagination)
-	RedisTtlRelation = envGetDuration("REDIS_TTL_RELATION", RedisTtlRelation)
+	RedisAddresses = envGetStrings("BE_REDIS_ADDRESSES", RedisAddresses)
+	RedisPassword = envGetString("BE_REDIS_PASSWORD", RedisPassword)
+	RedisDatabase = envGetInt("BE_REDIS_DATABASE", RedisDatabase)
+	RedisConnectTimeout = envGetDuration("BE_REDIS_CONNECT_TIMEOUT", RedisConnectTimeout)
+	RedisCacheNamespace = envGetString("BE_REDIS_CACHE_NAMESPACE", RedisCacheNamespace)
+	RedisTtlIdentity = envGetDuration("BE_REDIS_TTL_IDENTITY", RedisTtlIdentity)
+	RedisTtlPagination = envGetDuration("BE_REDIS_TTL_PAGINATION", RedisTtlPagination)
+	RedisTtlRelation = envGetDuration("BE_REDIS_TTL_RELATION", RedisTtlRelation)
 
-	MinioEndpoint = envGetString("MINIO_ENDPOINT", envGetString("SEAWEEDFS_S3_ENDPOINT", MinioEndpoint))
-	MinioAccessKey = envGetString("MINIO_ACCESS_KEY", envGetString("AWS_ACCESS_KEY_ID", MinioAccessKey))
-	MinioSecretKey = envGetString("MINIO_SECRET_KEY", envGetString("AWS_SECRET_ACCESS_KEY", MinioSecretKey))
-	MinioBucket = envGetString("MINIO_BUCKET", envGetString("SEAWEEDFS_BUCKET", MinioBucket))
-	MinioUseSsl = envGetBool("MINIO_USE_SSL", MinioUseSsl)
-	MinioRegion = envGetString("MINIO_REGION", MinioRegion)
-	MinioConnectTimeout = envGetDuration("MINIO_CONNECT_TIMEOUT", MinioConnectTimeout)
+	MinioEndpoint = envGetString("BE_MINIO_ENDPOINT", envGetString("BE_SEAWEEDFS_S3_ENDPOINT", MinioEndpoint))
+	MinioAccessKey = envGetString("BE_MINIO_ACCESS_KEY", envGetString("BE_AWS_ACCESS_KEY_ID", MinioAccessKey))
+	MinioSecretKey = envGetString("BE_MINIO_SECRET_KEY", envGetString("BE_AWS_SECRET_ACCESS_KEY", MinioSecretKey))
+	MinioBucket = envGetString("BE_MINIO_BUCKET", envGetString("BE_SEAWEEDFS_BUCKET", MinioBucket))
+	MinioUseSsl = envGetBool("BE_MINIO_USE_SSL", MinioUseSsl)
+	MinioRegion = envGetString("BE_MINIO_REGION", MinioRegion)
+	MinioConnectTimeout = envGetDuration("BE_MINIO_CONNECT_TIMEOUT", MinioConnectTimeout)
 
-	MqttBrokerUrl = envGetString("MQTT_BROKER_URL", MqttBrokerUrl)
-	MqttClientId = envGetString("MQTT_CLIENT_ID", MqttClientId)
-	MqttUsername = envGetString("MQTT_USERNAME", MqttUsername)
-	MqttPassword = envGetString("MQTT_PASSWORD", MqttPassword)
-	MqttConnectTimeout = envGetDuration("MQTT_CONNECT_TIMEOUT", MqttConnectTimeout)
-	MqttKeepAlive = envGetDuration("MQTT_KEEP_ALIVE", MqttKeepAlive)
-	MqttPingTimeout = envGetDuration("MQTT_PING_TIMEOUT", MqttPingTimeout)
+	MqttBrokerUrl = envGetString("BE_MQTT_BROKER_URL", MqttBrokerUrl)
+	MqttClientId = envGetString("BE_MQTT_CLIENT_ID", MqttClientId)
+	MqttUsername = envGetString("BE_MQTT_USERNAME", MqttUsername)
+	MqttPassword = envGetString("BE_MQTT_PASSWORD", MqttPassword)
+	MqttConnectTimeout = envGetDuration("BE_MQTT_CONNECT_TIMEOUT", MqttConnectTimeout)
+	MqttKeepAlive = envGetDuration("BE_MQTT_KEEP_ALIVE", MqttKeepAlive)
+	MqttPingTimeout = envGetDuration("BE_MQTT_PING_TIMEOUT", MqttPingTimeout)
 
-	TokenAccessSecret = envGetString("TOKEN_ACCESS_SECRET", TokenAccessSecret)
-	TokenRefreshSecret = envGetString("TOKEN_REFRESH_SECRET", TokenRefreshSecret)
-	TokenAccessDuration = envGetDuration("TOKEN_ACCESS_DURATION", TokenAccessDuration)
-	TokenRefreshDuration = envGetDuration("TOKEN_REFRESH_DURATION", TokenRefreshDuration)
+	TokenAccessSecret = envGetString("BE_TOKEN_ACCESS_SECRET", TokenAccessSecret)
+	TokenRefreshSecret = envGetString("BE_TOKEN_REFRESH_SECRET", TokenRefreshSecret)
+	TokenAccessDuration = envGetDuration("BE_TOKEN_ACCESS_DURATION", TokenAccessDuration)
+	TokenRefreshDuration = envGetDuration("BE_TOKEN_REFRESH_DURATION", TokenRefreshDuration)
 
-	PasswordBcryptCost = envGetInt("PASSWORD_BCRYPT_COST", PasswordBcryptCost)
+	PasswordBcryptCost = envGetInt("BE_PASSWORD_BCRYPT_COST", PasswordBcryptCost)
 }
 
 func envGetString(key string, fallback string) string {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/MateWorkspace/mate-things/backend/internal/config"
@@ -154,7 +155,17 @@ func (d *driver) cleanup() {
 }
 
 func newPostgresPool(ctx context.Context) (*pgxpool.Pool, error) {
-	pgxConfig, err := pgxpool.ParseConfig(config.PostgresDatabaseUrl)
+	databaseUrl := fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		url.QueryEscape(config.PostgresUsername),
+		url.QueryEscape(config.PostgresPassword),
+		config.PostgresHost,
+		config.PostgresPort,
+		config.PostgresDatabase,
+		config.PostgresSslMode,
+	)
+
+	pgxConfig, err := pgxpool.ParseConfig(databaseUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +191,6 @@ func newPostgresPool(ctx context.Context) (*pgxpool.Pool, error) {
 func newRedisClient(ctx context.Context) (redis.UniversalClient, error) {
 	client := redis.NewUniversalClient(&redis.UniversalOptions{
 		Addrs:       config.RedisAddresses,
-		Username:    config.RedisUsername,
 		Password:    config.RedisPassword,
 		DB:          config.RedisDatabase,
 		DialTimeout: config.RedisConnectTimeout,
