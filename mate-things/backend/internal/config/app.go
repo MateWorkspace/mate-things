@@ -1,7 +1,6 @@
 package config
 
 const (
-	AppName    = "nusapala-things"
-	AppSubName = "Nusapala HO"
+	AppName    = "mate-things"
 	AppVersion = "v1.0.0-dev.1"
 )
