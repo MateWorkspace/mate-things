@@ -68,7 +68,7 @@ func (l *launcher) newDriver(ctx context.Context) error {
 
 	echoInstance := echo.New()
 	echoStartConfig := echo.StartConfig{
-		Address:         config.HttpServerAddress,
+		Address:         ":80",
 		GracefulTimeout: config.HttpServerShutdownTimeout,
 		BeforeServeFunc: func(server *http.Server) error {
 			server.ReadTimeout = config.HttpServerReadTimeout

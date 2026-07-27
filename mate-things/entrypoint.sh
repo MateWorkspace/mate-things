@@ -38,11 +38,6 @@ terminate() {
 }
 trap 'terminate 0' TERM INT
 
-# The backend is the container's sole ingress (reverse-proxies the frontend
-# and MinIO itself), so it must own the public port regardless of what's in
-# the operator's .env.
-export BE_HTTP_SERVER_ADDRESS=:80
-
 /app/backend/backend &
 pids+=("$!")
 

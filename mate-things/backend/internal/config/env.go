@@ -16,7 +16,6 @@ var (
 
 	BaseUrl string = "http://127.0.0.1:8080"
 
-	HttpServerAddress         string        = ":8080"
 	HttpServerReadTimeout     time.Duration = 30 * time.Second
 	HttpServerShutdownTimeout time.Duration = 10 * time.Second
 	HttpCorsAllowedOrigins    []string      = []string{"*"}
@@ -71,7 +70,6 @@ func LoadEnv() {
 
 	BaseUrl = envGetString("BE_BASE_URL", BaseUrl)
 
-	HttpServerAddress = envGetString("BE_HTTP_SERVER_ADDRESS", HttpServerAddress)
 	HttpServerReadTimeout = envGetDuration("BE_HTTP_SERVER_READ_TIMEOUT", HttpServerReadTimeout)
 	HttpServerShutdownTimeout = envGetDuration("BE_HTTP_SERVER_SHUTDOWN_TIMEOUT", HttpServerShutdownTimeout)
 	HttpCorsAllowedOrigins = envGetStrings("BE_HTTP_CORS_ALLOWED_ORIGINS", HttpCorsAllowedOrigins)

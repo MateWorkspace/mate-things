@@ -144,9 +144,9 @@ This builds one image (Go backend binary + seeder binary + Next.js
 standalone build) and runs a single container whose `entrypoint.sh`:
 1. runs `migrate ... up` against `BE_POSTGRES_*`,
 2. runs the seeder binary (idempotent — safe on every restart),
-3. starts the backend (binds the container's public port directly —
-   `BE_HTTP_SERVER_ADDRESS` is forced to `:80`) and the Next.js server,
-   under one process group.
+3. starts the backend (binds `:80` directly, hardcoded — it's the
+   container's public ingress) and the Next.js server, under one process
+   group.
 
 The backend is the sole ingress: it serves `/api/*` itself, reverse-proxies
 everything else to Next.js, and reverse-proxies `/minio-proxy/*` to MinIO
@@ -156,8 +156,11 @@ for presigned downloads. There is no separate proxy process.
 
 - Backend: `cd backend && go run ./cmd/main` (reads `.env`-equivalent
   variables from the real environment — export them or use a tool like
-  `direnv`/`dotenv`). Defaults to listening on `:8080` when
-  `BE_HTTP_SERVER_ADDRESS` isn't set.
+  `direnv`/`dotenv`). Always binds `:80` (hardcoded, not configurable) —
+  binding it without root/`CAP_NET_BIND_SERVICE` will fail on most systems,
+  so running the raw binary outside Docker currently needs elevated
+  privileges (e.g. `sudo go run ./cmd/main`, or `sudo setcap
+  'cap_net_bind_service=+ep'` on the built binary).
 - Seeder: `cd backend && go run ./cmd/seeder` (run once against a fresh DB,
   after migrations).
 - Migrations: use the `migrate` CLI directly against
