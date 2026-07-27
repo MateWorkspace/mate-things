@@ -1,0 +1,9 @@
+.git
+**/node_modules
+frontend/.next
+frontend/out
+backend/build
+*.md
+.env
+.env.*
+!.env.example

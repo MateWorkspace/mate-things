@@ -14,7 +14,6 @@ var (
 	LoggerLevel  domainmodels.LoggerLevel  = domainmodels.LoggerLevelInfo
 	LoggerDriver string                    = "zerolog"
 
-	HttpServerPort            int           = 8080
 	HttpServerReadTimeout     time.Duration = 30 * time.Second
 	HttpServerShutdownTimeout time.Duration = 10 * time.Second
 	HttpCorsAllowedOrigins    []string      = []string{"*"}
@@ -66,7 +65,6 @@ func LoadEnv() {
 	LoggerLevel = envGetLoggerLevel("BE_LOGGER_LEVEL", LoggerLevel)
 	LoggerDriver = envGetString("BE_LOGGER_DRIVER", LoggerDriver)
 
-	HttpServerPort = envGetInt("BE_HTTP_SERVER_PORT", HttpServerPort)
 	HttpServerReadTimeout = envGetDuration("BE_HTTP_SERVER_READ_TIMEOUT", HttpServerReadTimeout)
 	HttpServerShutdownTimeout = envGetDuration("BE_HTTP_SERVER_SHUTDOWN_TIMEOUT", HttpServerShutdownTimeout)
 	HttpCorsAllowedOrigins = envGetStrings("BE_HTTP_CORS_ALLOWED_ORIGINS", HttpCorsAllowedOrigins)
