@@ -26,7 +26,7 @@ var (
 	personNamePattern     = regexp.MustCompile(`^[A-Za-z0-9' -]+$`)
 	alphanumericPattern   = regexp.MustCompile(`^[A-Za-z0-9]+$`)
 	snakeCaseNamePattern  = regexp.MustCompile(`^[a-z0-9]+(_[a-z0-9]+)*$`)
-	firmwareNamePattern   = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	firmwareNamePattern   = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 	// A MAC address with the colon separators stripped: 12 hex digits.
 	deviceIdPattern = regexp.MustCompile(`^[0-9A-Fa-f]{12}$`)
 )
@@ -255,11 +255,15 @@ func OptionalActionName(value *string, field string) (*string, error) {
 	return &v, nil
 }
 
-// Firmware name: alphanumeric, underscore, dash, no spaces.
+// Firmware name: alphanumeric, underscore, dash, dot, no spaces. Dots are
+// allowed because firmware names must exactly match the device's own
+// registration payload, which embeds a dotted semver-style version string
+// (e.g. "mate-espidf-base_v1.0.0-dev.1") - see mate-espidf-base's
+// PROJECT_VERSION / registration firmware_name build.
 
 func RequiredFirmwareName(value string, field string) (string, error) {
 	return validateNamePattern(value, field, firmwareNamePattern, firmwareNameMinLength, firmwareNameMaxLength,
-		"alphanumeric characters, underscores, and dashes")
+		"alphanumeric characters, underscores, dashes, and dots")
 }
 
 func OptionalFirmwareName(value *string, field string) (*string, error) {
