@@ -6,7 +6,9 @@
 package applicationshared
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -25,6 +27,8 @@ var (
 	alphanumericPattern   = regexp.MustCompile(`^[A-Za-z0-9]+$`)
 	snakeCaseNamePattern  = regexp.MustCompile(`^[a-z0-9]+(_[a-z0-9]+)*$`)
 	firmwareNamePattern   = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	// A MAC address with the colon separators stripped: 12 hex digits.
+	deviceIdPattern = regexp.MustCompile(`^[0-9A-Fa-f]{12}$`)
 )
 
 const (
@@ -385,4 +389,44 @@ func validatePayloadSchemaDefinitionShape(definition domainmodels.PayloadSchemaD
 	}
 
 	return nil
+}
+
+// RequiredDeviceId validates a node's device_id is a MAC address with the
+// colon separators stripped (12 hex digits) - the format the ESP32 firmware
+// sends at registration.
+func RequiredDeviceId(value string, field string) (string, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", domainmodels.NewError(field+" is required", domainmodels.ErrTypeValidation, nil)
+	}
+	if !deviceIdPattern.MatchString(value) {
+		return "", domainmodels.NewError(field+" must be a 12-character hex MAC address without separators", domainmodels.ErrTypeValidation, nil)
+	}
+
+	return value, nil
+}
+
+// esp32ImageMagicByte is the fixed first byte of every ESP-IDF app/bootloader
+// image (esp_image_header_t.magic). Firmware uploads are checked against it
+// so an admin uploading the wrong file is rejected at upload time instead of
+// only discovered when a device fails to flash it.
+const esp32ImageMagicByte = 0xE9
+
+// RequiredFirmwareContent validates that content begins with the ESP32
+// image magic byte and returns a reader with the peeked byte restored so
+// the full content can still be read/stored afterward.
+func RequiredFirmwareContent(content io.Reader, field string) (io.Reader, error) {
+	if content == nil {
+		return nil, domainmodels.NewError(field+" is required", domainmodels.ErrTypeValidation, nil)
+	}
+
+	header := make([]byte, 1)
+	if _, err := io.ReadFull(content, header); err != nil {
+		return nil, domainmodels.NewError(field+" must be a valid ESP32 firmware image", domainmodels.ErrTypeValidation, err)
+	}
+	if header[0] != esp32ImageMagicByte {
+		return nil, domainmodels.NewError(field+" must be a valid ESP32 firmware image", domainmodels.ErrTypeValidation, nil)
+	}
+
+	return io.MultiReader(bytes.NewReader(header), content), nil
 }

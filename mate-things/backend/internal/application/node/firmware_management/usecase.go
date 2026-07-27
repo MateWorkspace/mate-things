@@ -42,8 +42,12 @@ func (u *usecase) Create(
 	if err != nil {
 		return domainusecasesnode.CreateFirmwareResult{}, err
 	}
+	content, err := applicationshared.RequiredFirmwareContent(request.Content, "file")
+	if err != nil {
+		return domainusecasesnode.CreateFirmwareResult{}, err
+	}
 
-	path, size, checksum, err := u.storage.Store(ctx, name, request.Content)
+	path, size, checksum, err := u.storage.Store(ctx, name, content)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to store firmware binary", domainmodels.LoggerMeta{
 			"err":           err,
@@ -243,7 +247,12 @@ func (u *usecase) ReplaceBinaryById(
 		return domainusecasesnode.FirmwareBinaryStatResult{}, err
 	}
 
-	path, size, checksum, err := u.storage.Store(ctx, firmware.Name, request.Content)
+	content, err := applicationshared.RequiredFirmwareContent(request.Content, "file")
+	if err != nil {
+		return domainusecasesnode.FirmwareBinaryStatResult{}, err
+	}
+
+	path, size, checksum, err := u.storage.Store(ctx, firmware.Name, content)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to store firmware binary", domainmodels.LoggerMeta{
 			"err": err,

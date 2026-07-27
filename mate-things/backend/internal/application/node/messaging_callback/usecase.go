@@ -3,6 +3,7 @@ package applicationnodemessagingcallback
 import (
 	"context"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
 	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
@@ -40,7 +41,16 @@ func NewUsecaseImpl(
 func (u *usecase) Register(ctx context.Context, request domainusecasesnode.RegisterNodeMessageRequest) error {
 	const tag = "node/messaging_callback/Register"
 
-	node, created, err := u.node.UpsertRegistration(ctx, request.DeviceId, request.DeviceInfo, request.FirmwareName)
+	deviceId, err := applicationshared.RequiredDeviceId(request.DeviceId, "device_id")
+	if err != nil {
+		u.logger.Warn(ctx, tag, "invalid device_id in registration", domainmodels.LoggerMeta{
+			"err":       err,
+			"device_id": request.DeviceId,
+		})
+		return err
+	}
+
+	node, created, err := u.node.UpsertRegistration(ctx, deviceId, request.DeviceInfo, request.FirmwareName)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to upsert node registration", domainmodels.LoggerMeta{
 			"err":           err,
