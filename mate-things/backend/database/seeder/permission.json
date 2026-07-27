@@ -1,0 +1,60 @@
+[
+  { "name": "profile:get", "description": "View own profile." },
+  { "name": "profile:set", "description": "Update own profile." },
+  { "name": "profile_security:set", "description": "Change own password." },
+
+  { "name": "permission:get", "description": "View permissions." },
+  { "name": "permission:add", "description": "Create permissions." },
+  { "name": "permission:set", "description": "Update permissions." },
+  { "name": "permission:remove", "description": "Delete permissions." },
+
+  { "name": "role:get", "description": "View roles." },
+  { "name": "role:add", "description": "Create roles." },
+  { "name": "role:set", "description": "Update roles, including setting the default role." },
+  { "name": "role:remove", "description": "Delete roles." },
+
+  { "name": "role_permission:get", "description": "View role-permission assignments." },
+  { "name": "role_permission:add", "description": "Assign a permission to a role." },
+  { "name": "role_permission:remove", "description": "Remove a permission from a role." },
+
+  { "name": "payload_schema:get", "description": "View payload schemas." },
+  { "name": "payload_schema:add", "description": "Create payload schemas." },
+  { "name": "payload_schema:set", "description": "Update payload schemas." },
+  { "name": "payload_schema:remove", "description": "Delete payload schemas." },
+
+  { "name": "user:get", "description": "View users." },
+  { "name": "user:add", "description": "Create users." },
+  { "name": "user_permission:get", "description": "View a user's effective permissions." },
+  { "name": "user_password:set", "description": "Reset a user's password." },
+  { "name": "user:set", "description": "Update users." },
+  { "name": "user:remove", "description": "Delete users." },
+
+  { "name": "node_class:get", "description": "View node classes." },
+  { "name": "node_class:add", "description": "Create node classes." },
+  { "name": "node_class:set", "description": "Update node classes." },
+  { "name": "node_class:remove", "description": "Delete node classes." },
+
+  { "name": "firmware:get", "description": "View firmwares." },
+  { "name": "firmware:add", "description": "Create firmwares." },
+  { "name": "firmware:set", "description": "Update firmwares, including uploading firmware binaries." },
+  { "name": "firmware:remove", "description": "Delete firmwares." },
+
+  { "name": "node:get", "description": "View nodes." },
+  { "name": "node:set", "description": "Update nodes." },
+  { "name": "node:remove", "description": "Delete nodes." },
+  { "name": "ota:dispatch", "description": "Dispatch an OTA firmware update to a node." },
+
+  { "name": "action:get", "description": "View actions." },
+  { "name": "action:add", "description": "Create actions." },
+  { "name": "action:dispatch", "description": "Dispatch an action to a node." },
+  { "name": "action:set", "description": "Update actions." },
+  { "name": "action:remove", "description": "Delete actions." },
+
+  { "name": "action_log:get", "description": "View action logs." },
+  { "name": "action_log:remove", "description": "Delete action logs." },
+
+  { "name": "telemetry_record:get", "description": "View telemetry records." },
+  { "name": "telemetry_record:remove", "description": "Delete telemetry records." },
+
+  { "name": "preferences:set", "description": "Update preferences on a resource." }
+]

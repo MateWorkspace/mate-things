@@ -1,0 +1,48 @@
+[
+  {
+    "name": "super",
+    "description": "Full system access, including managing permissions, roles, and role-permission assignments.",
+    "is_default": false,
+    "permissions": [
+      "profile:get", "profile:set", "profile_security:set",
+      "permission:get", "permission:add", "permission:set", "permission:remove",
+      "role:get", "role:add", "role:set", "role:remove",
+      "role_permission:get", "role_permission:add", "role_permission:remove",
+      "payload_schema:get", "payload_schema:add", "payload_schema:set", "payload_schema:remove",
+      "user:get", "user:add", "user_permission:get", "user_password:set", "user:set", "user:remove",
+      "node_class:get", "node_class:add", "node_class:set", "node_class:remove",
+      "firmware:get", "firmware:add", "firmware:set", "firmware:remove",
+      "node:get", "node:set", "node:remove", "ota:dispatch",
+      "action:get", "action:add", "action:dispatch", "action:set", "action:remove",
+      "action_log:get", "action_log:remove",
+      "telemetry_record:get", "telemetry_record:remove",
+      "preferences:set"
+    ]
+  },
+  {
+    "name": "admin",
+    "description": "Manages devices, actions, and users, but cannot edit the permission/role system itself.",
+    "is_default": false,
+    "permissions": [
+      "profile:get", "profile:set", "profile_security:set",
+      "payload_schema:get", "payload_schema:add", "payload_schema:set", "payload_schema:remove",
+      "user:get", "user:add", "user_permission:get", "user_password:set", "user:set", "user:remove",
+      "node_class:get", "node_class:add", "node_class:set", "node_class:remove",
+      "firmware:get", "firmware:add", "firmware:set", "firmware:remove",
+      "node:get", "node:set", "node:remove", "ota:dispatch",
+      "action:get", "action:add", "action:dispatch", "action:set", "action:remove",
+      "action_log:get", "action_log:remove",
+      "telemetry_record:get", "telemetry_record:remove",
+      "preferences:set"
+    ]
+  },
+  {
+    "name": "user",
+    "description": "Default role for regular accounts: read-mostly visibility plus self-service profile management.",
+    "is_default": true,
+    "permissions": [
+      "profile:get", "profile:set", "profile_security:set",
+      "node:get", "firmware:get", "action_log:get", "telemetry_record:get"
+    ]
+  }
+]

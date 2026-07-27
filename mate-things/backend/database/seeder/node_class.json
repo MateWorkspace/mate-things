@@ -1,0 +1,6 @@
+[
+  {
+    "name": "base_node",
+    "description": "Generic base node class used as the default example node class."
+  }
+]

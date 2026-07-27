@@ -12,6 +12,7 @@ RUN go mod download
 
 COPY backend/ ./
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -o /out/backend ./cmd/main
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -o /out/seeder ./cmd/seeder
 
 ################################################################################
 # Frontend build stage
@@ -41,6 +42,7 @@ COPY backend/database/migrations /app/migrations
 
 # Backend
 COPY --from=backend-builder /out/backend /app/backend/backend
+COPY --from=backend-builder /out/seeder /app/backend/seeder
 
 # Frontend (Next.js standalone output)
 COPY --from=frontend-builder /src/frontend/.next/standalone /app/frontend

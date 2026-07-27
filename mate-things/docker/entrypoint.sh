@@ -19,6 +19,12 @@ if ! migrate -path /app/migrations -database "$db_url" up; then
     exit 1
 fi
 
+echo "[entrypoint] running database seeder"
+if ! /app/backend/seeder; then
+    echo "[entrypoint] seeding failed" >&2
+    exit 1
+fi
+
 pids=()
 
 terminate() {

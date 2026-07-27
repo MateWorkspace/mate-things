@@ -1,0 +1,13 @@
+[
+  {
+    "name": "restart",
+    "version": 1,
+    "definition": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "delay_ms": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+]
