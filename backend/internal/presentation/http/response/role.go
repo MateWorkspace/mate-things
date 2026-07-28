@@ -8,20 +8,20 @@ import (
 )
 
 type RoleResponse struct {
-	Id          string          `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	IsDefault   bool            `json:"is_default"`
-	Preferences json.RawMessage `json:"preferences"`
+	Id          string          `json:"id" example:"7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"`
+	Name        string          `json:"name" example:"barista"`
+	Description string          `json:"description" example:"Can dispatch brew actions on the shop floor, but can't manage the fleet."`
+	IsDefault   bool            `json:"is_default" example:"false"`
+	Preferences json.RawMessage `json:"preferences" swaggertype:"object"`
 	AuditResponse
 }
 
 type RolePermissionResponse struct {
-	Id           string    `json:"id"`
-	RoleId       string    `json:"role_id"`
-	PermissionId string    `json:"permission_id"`
-	CreatedAt    time.Time `json:"created_at"`
-	CreatedBy    *string   `json:"created_by,omitempty"`
+	Id           string    `json:"id" example:"c8a1d4e7-3f6b-4c9e-8a2d-5b7e0f3c6a09"`
+	RoleId       string    `json:"role_id" example:"7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"`
+	PermissionId string    `json:"permission_id" example:"1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a"`
+	CreatedAt    time.Time `json:"created_at" example:"2026-06-15T09:30:00Z"`
+	CreatedBy    *string   `json:"created_by,omitempty" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 }
 
 type RolePermissionDetailResponse struct {

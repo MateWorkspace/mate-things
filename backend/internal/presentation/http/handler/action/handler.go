@@ -37,7 +37,7 @@ func NewHandler(
 // @Produce json
 // @Security BearerAuth
 // @Param request body presentationhttprequest.ActionPostRequest true "request"
-// @Success 201
+// @Success 201 {object} presentationhttpresponse.IdResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -77,7 +77,7 @@ func (h *handler) ActionPost(c *echo.Context) error {
 // @Tags Actions
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.ActionResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -122,7 +122,7 @@ func (h *handler) ActionGetList(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param name path string true "name"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.ActionResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -153,7 +153,7 @@ func (h *handler) ActionGetByName(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "id"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.ActionResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -263,7 +263,7 @@ func (h *handler) ActionDelete(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.ActionDispatchRequest true "request"
-// @Success 201
+// @Success 201 {object} presentationhttpresponse.ActionLogResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -318,7 +318,7 @@ func (h *handler) ActionDispatchPost(c *echo.Context) error {
 // @Tags Action Logs
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.CountDataResponse[presentationhttpresponse.ActionLogResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -347,7 +347,7 @@ func (h *handler) ActionLogGetList(c *echo.Context) error {
 // @Tags Action Logs
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.CountResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"

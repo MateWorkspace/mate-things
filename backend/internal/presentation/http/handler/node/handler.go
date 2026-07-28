@@ -41,7 +41,7 @@ func NewHandler(
 // @Produce json
 // @Security BearerAuth
 // @Param request body presentationhttprequest.NodeClassPostRequest true "request"
-// @Success 201
+// @Success 201 {object} presentationhttpresponse.IdResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -72,7 +72,7 @@ func (h *handler) NodeClassPost(c *echo.Context) error {
 // @Tags Node Classes
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.NodeClassResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -106,7 +106,7 @@ func (h *handler) NodeClassGetList(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param name path string true "name"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.NodeClassResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -137,7 +137,7 @@ func (h *handler) NodeClassGetByName(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "id"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.NodeClassResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -237,7 +237,7 @@ func (h *handler) NodeClassDelete(c *echo.Context) error {
 // @Tags Nodes
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.NodeResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -281,7 +281,7 @@ func (h *handler) NodeGetList(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param device_id path string true "device_id"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.NodeResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -312,7 +312,7 @@ func (h *handler) NodeGetByDeviceId(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "id"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.NodeResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -469,7 +469,7 @@ func (h *handler) NodeDelete(c *echo.Context) error {
 // @Param node_class_id formData string true "node_class_id"
 // @Param name formData string true "name"
 // @Param file formData file true "file"
-// @Success 201
+// @Success 201 {object} presentationhttpresponse.FirmwareCreateResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -517,7 +517,7 @@ func (h *handler) FirmwarePost(c *echo.Context) error {
 // @Tags Firmwares
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.FirmwareResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -556,7 +556,7 @@ func (h *handler) FirmwareGetList(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param node_class_id path string true "node_class_id"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.FirmwareResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -596,7 +596,7 @@ func (h *handler) FirmwareGetByNodeClassId(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param node_id path string true "node_id"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.FirmwareResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -636,7 +636,7 @@ func (h *handler) FirmwareGetAvailableByNodeId(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param name path string true "name"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.FirmwareResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -667,7 +667,7 @@ func (h *handler) FirmwareGetByName(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "id"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.FirmwareResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -744,7 +744,7 @@ func (h *handler) FirmwarePatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Param file formData file true "file"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.FirmwareBinaryStatResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -846,7 +846,7 @@ func (h *handler) FirmwareBinaryGetByName(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param name path string true "name"
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.FirmwareBinaryStatResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"

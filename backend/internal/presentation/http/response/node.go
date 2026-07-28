@@ -7,15 +7,15 @@ import (
 )
 
 type NodeResponse struct {
-	Id          string          `json:"id"`
-	NodeClassId string          `json:"node_class_id"`
-	DeviceId    string          `json:"device_id"`
-	DeviceInfo  string          `json:"device_info"`
-	Name        string          `json:"name"`
-	FirmwareId  string          `json:"firmware_id"`
-	Description string          `json:"description"`
-	IsConnected bool            `json:"is_connected"`
-	Preferences json.RawMessage `json:"preferences"`
+	Id          string          `json:"id" example:"5e8a1c3f-2b7d-4f6a-9c1e-3a8b6d2f4e09"`
+	NodeClassId string          `json:"node_class_id" example:"3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"`
+	DeviceId    string          `json:"device_id" example:"ESP32-BARISTA-07"`
+	DeviceInfo  string          `json:"device_info" example:"ESP32-WROOM-32E, rev 3, 240MHz dual-core"`
+	Name        string          `json:"name" example:"Kitchen Espresso Machine"`
+	FirmwareId  string          `json:"firmware_id" example:"9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"`
+	Description string          `json:"description" example:"The espresso machine behind the office kitchen counter."`
+	IsConnected bool            `json:"is_connected" example:"true"`
+	Preferences json.RawMessage `json:"preferences" swaggertype:"object"`
 	AuditResponse
 }
 

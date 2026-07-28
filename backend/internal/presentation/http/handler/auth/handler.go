@@ -26,7 +26,7 @@ func NewHandler(sessionUseCase domainusecasesauth.Session) *handler {
 // @Produce json
 // @Security BearerAuth
 // @Param request body presentationhttprequest.AuthLoginRequest true "request"
-// @Success 201
+// @Success 201 {object} presentationhttpresponse.LoginResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
@@ -72,7 +72,7 @@ func (h *handler) AuthLoginPost(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param request body presentationhttprequest.AuthRefreshRequest true "request"
-// @Success 201
+// @Success 201 {object} presentationhttpresponse.LoginResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Session Expired / Invalid Token"
 // @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"

@@ -23,7 +23,7 @@ func NewHandler(queryUseCase domainusecasestelemetry.Query) *handler {
 // @Tags Telemetry
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.CountDataResponse[presentationhttpresponse.TelemetryRecordResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -52,7 +52,7 @@ func (h *handler) TelemetryRecordGetList(c *echo.Context) error {
 // @Tags Telemetry
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.CountResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"

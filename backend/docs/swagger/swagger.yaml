@@ -1,10 +1,24 @@
 basePath: /api
 definitions:
+  github_com_MateWorkspace_mate-things_backend_internal_domain_models.ActionStatus:
+    enum:
+    - UNEXECUTED
+    - UNRESPONDED
+    - FAILED
+    - SUCCESS
+    type: string
+    x-enum-varnames:
+    - ActionStatusUnexecuted
+    - ActionStatusUnresponded
+    - ActionStatusFailed
+    - ActionStatusSuccess
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionDispatchRequest:
     properties:
       executed_at:
+        example: "2026-07-28T08:15:00Z"
         type: string
       node_id:
+        example: 5e8a1c3f-2b7d-4f6a-9c1e-3a8b6d2f4e09
         type: string
       payload:
         type: object
@@ -12,85 +26,112 @@ definitions:
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionPatchRequest:
     properties:
       description:
+        example: Pulls a double shot at the requested temperature and duration.
         type: string
       name:
+        example: brew_espresso
         type: string
       node_class_id:
+        example: 3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01
         type: string
       payload_schema_name:
+        example: brew_command
         type: string
       payload_schema_version:
+        example: 1
         type: integer
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionPostRequest:
     properties:
       description:
+        example: Pulls a double shot at the requested temperature and duration.
         type: string
       name:
+        example: brew_espresso
         type: string
       node_class_id:
+        example: 3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01
         type: string
       payload_schema_name:
+        example: brew_command
         type: string
       payload_schema_version:
+        example: 1
         type: integer
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.AuthLoginRequest:
     properties:
       password:
+        example: BrewMeUp!42
         type: string
       username:
+        example: grace.hopper
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.AuthRefreshRequest:
     properties:
       refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJncmFjZS5ob3BwZXIifQ.brewbrewbrew
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.FirmwarePatchRequest:
     properties:
       name:
+        example: espresso-fw
         type: string
       node_class_id:
+        example: 3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodeClassPatchRequest:
     properties:
       description:
+        example: Dual-boiler espresso machines with ESP32-controlled brew heads.
         type: string
       name:
+        example: Espresso Machine
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodeClassPostRequest:
     properties:
       description:
+        example: Dual-boiler espresso machines with ESP32-controlled brew heads.
         type: string
       name:
+        example: Espresso Machine
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodeFirmwarePatchRequest:
     properties:
       firmware_id:
+        example: 9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.NodePatchRequest:
     properties:
       description:
+        example: The espresso machine behind the office kitchen counter.
         type: string
       device_id:
+        example: ESP32-BARISTA-07
         type: string
       firmware_id:
+        example: 9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08
         type: string
       name:
+        example: Kitchen Espresso Machine
         type: string
       node_class_id:
+        example: 3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.OtaDispatchRequest:
     properties:
       firmware_id:
+        example: 9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08
         type: string
       firmware_url:
+        example: https://cdn.mate-things.internal/firmwares/espresso-fw/v3/firmware.bin
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PayloadSchemaPatchRequest:
@@ -98,12 +139,16 @@ definitions:
       definition:
         type: object
       name:
+        example: brew_command
         type: string
       valid_from:
+        example: "2026-07-01T00:00:00Z"
         type: string
       valid_to:
+        example: "2027-07-01T00:00:00Z"
         type: string
       version:
+        example: 2
         type: integer
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PayloadSchemaPostRequest:
@@ -111,26 +156,34 @@ definitions:
       definition:
         type: object
       name:
+        example: brew_command
         type: string
       valid_from:
+        example: "2026-07-01T00:00:00Z"
         type: string
       valid_to:
+        example: "2027-07-01T00:00:00Z"
         type: string
       version:
+        example: 1
         type: integer
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PermissionPatchRequest:
     properties:
       description:
+        example: View registered nodes and their status.
         type: string
       name:
+        example: node:get
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PermissionPostRequest:
     properties:
       description:
+        example: View registered nodes and their status.
         type: string
       name:
+        example: node:get
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PreferencesPatchRequest:
@@ -141,67 +194,650 @@ definitions:
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ProfilePasswordPatchRequest:
     properties:
       current_password:
+        example: BrewMeUp!42
         type: string
       new_password:
+        example: EvenMoreEspresso!7
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ProfilePatchRequest:
     properties:
       bio:
+        example: Keeps the espresso machines humming and the firmware fresh.
         type: string
       name:
+        example: Grace Hopper
         type: string
       username:
+        example: grace.hopper
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.RolePatchRequest:
     properties:
       description:
+        example: Can dispatch brew actions on the shop floor, but can't manage the
+          fleet.
         type: string
       name:
+        example: barista
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.RolePostRequest:
     properties:
       description:
+        example: Can dispatch brew actions on the shop floor, but can't manage the
+          fleet.
         type: string
       name:
+        example: barista
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPasswordPatchRequest:
     properties:
       password:
+        example: EvenMoreEspresso!7
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPatchRequest:
     properties:
       bio:
+        example: Keeps the espresso machines humming and the firmware fresh.
         type: string
       name:
+        example: Grace Hopper
         type: string
       role_id:
+        example: 7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04
         type: string
       username:
+        example: grace.hopper
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPostRequest:
     properties:
       bio:
+        example: Keeps the espresso machines humming and the firmware fresh.
         type: string
       name:
+        example: Grace Hopper
         type: string
       password:
+        example: BrewMeUp!42
         type: string
       role_id:
+        example: 7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04
         type: string
       username:
+        example: grace.hopper
         type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionLogResponse:
+    properties:
+      action_id:
+        example: 6d9e2f5a-8b1c-4d3e-9f6a-2c5d8e1f4b07
+        type: string
+      action_message:
+        example: 'Shot pulled: 93.5C for 28s. Crema looked great.'
+        type: string
+      action_status:
+        allOf:
+        - $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_domain_models.ActionStatus'
+        example: SUCCESS
+      created_at:
+        example: "2026-07-28T08:15:02Z"
+        type: string
+      executed_at:
+        example: "2026-07-28T08:15:00Z"
+        type: string
+      execution_id:
+        example: a4d7f1c9-3e6b-4a8d-9c2f-5b1e7d4a6c02
+        type: string
+      id:
+        example: 4821
+        type: integer
+      node_id:
+        example: 5e8a1c3f-2b7d-4f6a-9c1e-3a8b6d2f4e09
+        type: string
+      payload:
+        type: object
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse:
+    properties:
+      created_at:
+        example: "2026-06-15T09:30:00Z"
+        type: string
+      created_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      deleted_at:
+        example: "2026-07-20T11:00:00Z"
+        type: string
+      deleted_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      description:
+        example: Pulls a double shot at the requested temperature and duration.
+        type: string
+      id:
+        example: 6d9e2f5a-8b1c-4d3e-9f6a-2c5d8e1f4b07
+        type: string
+      name:
+        example: brew_espresso
+        type: string
+      node_class_id:
+        example: 3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01
+        type: string
+      payload_schema_name:
+        example: brew_command
+        type: string
+      payload_schema_version:
+        example: 1
+        type: integer
+      preferences:
+        type: object
+      updated_at:
+        example: "2026-07-01T14:05:00Z"
+        type: string
+      updated_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionLogResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionLogResponse'
+        type: array
+      total_items:
+        type: integer
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_TelemetryRecordResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.TelemetryRecordResponse'
+        type: array
+      total_items:
+        type: integer
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountResponse:
+    properties:
+      count:
+        example: 12
+        type: integer
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse:
     properties:
+      details:
+        example: node_class_id is required
+        type: string
       error:
+        example: Invalid Format
         type: string
       message:
+        example: Please select a valid node class.
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareBinaryStatResponse:
+    properties:
+      binary_path:
+        example: firmwares/espresso-fw/v3/firmware.bin
+        type: string
+      checksum:
+        example: 3b1e7c9a2f5d8b4e6c1a9f3d7e2b5c8a1d4e6f9b2c5a8d1e4f7b0c3a6d9e2f5
+        type: string
+      size:
+        example: 482112
+        type: integer
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareCreateResponse:
+    properties:
+      binary_path:
+        example: firmwares/espresso-fw/v3/firmware.bin
+        type: string
+      checksum:
+        example: 3b1e7c9a2f5d8b4e6c1a9f3d7e2b5c8a1d4e6f9b2c5a8d1e4f7b0c3a6d9e2f5
+        type: string
+      id:
+        example: 9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08
+        type: string
+      size:
+        example: 482112
+        type: integer
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareResponse:
+    properties:
+      binary_path:
+        example: firmwares/espresso-fw/v3/firmware.bin
+        type: string
+      checksum:
+        example: 3b1e7c9a2f5d8b4e6c1a9f3d7e2b5c8a1d4e6f9b2c5a8d1e4f7b0c3a6d9e2f5
+        type: string
+      created_at:
+        example: "2026-06-15T09:30:00Z"
+        type: string
+      created_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      deleted_at:
+        example: "2026-07-20T11:00:00Z"
+        type: string
+      deleted_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      id:
+        example: 9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08
+        type: string
+      name:
+        example: espresso-fw
+        type: string
+      node_class_id:
+        example: 3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01
+        type: string
+      preferences:
+        type: object
+      size:
+        example: 482112
+        type: integer
+      updated_at:
+        example: "2026-07-01T14:05:00Z"
+        type: string
+      updated_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse:
+    properties:
+      id:
+        example: 6d9e2f5a-8b1c-4d3e-9f6a-2c5d8e1f4b07
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.LoginResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJncmFjZS5ob3BwZXIifQ.espresso-shot-pulled
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse'
+        type: array
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJncmFjZS5ob3BwZXIifQ.decaf-is-not-an-option
+        type: string
+      role:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse'
+      user:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse'
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassResponse:
+    properties:
+      created_at:
+        example: "2026-06-15T09:30:00Z"
+        type: string
+      created_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      deleted_at:
+        example: "2026-07-20T11:00:00Z"
+        type: string
+      deleted_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      description:
+        example: Dual-boiler espresso machines with ESP32-controlled brew heads.
+        type: string
+      id:
+        example: 3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01
+        type: string
+      name:
+        example: Espresso Machine
+        type: string
+      preferences:
+        type: object
+      updated_at:
+        example: "2026-07-01T14:05:00Z"
+        type: string
+      updated_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse:
+    properties:
+      created_at:
+        example: "2026-06-15T09:30:00Z"
+        type: string
+      created_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      deleted_at:
+        example: "2026-07-20T11:00:00Z"
+        type: string
+      deleted_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      description:
+        example: The espresso machine behind the office kitchen counter.
+        type: string
+      device_id:
+        example: ESP32-BARISTA-07
+        type: string
+      device_info:
+        example: ESP32-WROOM-32E, rev 3, 240MHz dual-core
+        type: string
+      firmware_id:
+        example: 9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08
+        type: string
+      id:
+        example: 5e8a1c3f-2b7d-4f6a-9c1e-3a8b6d2f4e09
+        type: string
+      is_connected:
+        example: true
+        type: boolean
+      name:
+        example: Kitchen Espresso Machine
+        type: string
+      node_class_id:
+        example: 3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01
+        type: string
+      preferences:
+        type: object
+      updated_at:
+        example: "2026-07-01T14:05:00Z"
+        type: string
+      updated_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse'
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_FirmwareResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareResponse'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse'
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeClassResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassResponse'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse'
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse'
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_PayloadSchemaResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse'
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_PermissionResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse'
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_RolePermissionDetailResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionDetailResponse'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse'
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_RoleResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse'
+    type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_UserResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse'
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse:
+    properties:
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total_items:
+        example: 87
+        type: integer
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse:
+    properties:
+      created_at:
+        example: "2026-06-15T09:30:00Z"
+        type: string
+      created_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      definition:
+        type: object
+      deleted_at:
+        example: "2026-07-20T11:00:00Z"
+        type: string
+      deleted_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      id:
+        example: b2f5d8a1-3c6e-4f9b-8d2a-7e1f4b6c9d03
+        type: string
+      name:
+        example: brew_command
+        type: string
+      preferences:
+        type: object
+      updated_at:
+        example: "2026-07-01T14:05:00Z"
+        type: string
+      updated_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      valid_from:
+        example: "2026-07-01T00:00:00Z"
+        type: string
+      valid_to:
+        example: "2027-07-01T00:00:00Z"
+        type: string
+      version:
+        example: 1
+        type: integer
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse:
+    properties:
+      created_at:
+        example: "2026-06-15T09:30:00Z"
+        type: string
+      created_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      deleted_at:
+        example: "2026-07-20T11:00:00Z"
+        type: string
+      deleted_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      description:
+        example: View registered nodes and their status.
+        type: string
+      id:
+        example: 1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+        type: string
+      name:
+        example: node:get
+        type: string
+      preferences:
+        type: object
+      updated_at:
+        example: "2026-07-01T14:05:00Z"
+        type: string
+      updated_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionDetailResponse:
+    properties:
+      permission:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse'
+      role:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse'
+      role_permission:
+        $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionResponse'
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionResponse:
+    properties:
+      created_at:
+        example: "2026-06-15T09:30:00Z"
+        type: string
+      created_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      id:
+        example: c8a1d4e7-3f6b-4c9e-8a2d-5b7e0f3c6a09
+        type: string
+      permission_id:
+        example: 1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+        type: string
+      role_id:
+        example: 7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse:
+    properties:
+      created_at:
+        example: "2026-06-15T09:30:00Z"
+        type: string
+      created_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      deleted_at:
+        example: "2026-07-20T11:00:00Z"
+        type: string
+      deleted_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      description:
+        example: Can dispatch brew actions on the shop floor, but can't manage the
+          fleet.
+        type: string
+      id:
+        example: 7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04
+        type: string
+      is_default:
+        example: false
+        type: boolean
+      name:
+        example: barista
+        type: string
+      preferences:
+        type: object
+      updated_at:
+        example: "2026-07-01T14:05:00Z"
+        type: string
+      updated_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.TelemetryRecordResponse:
+    properties:
+      created_at:
+        example: "2026-07-28T08:15:00Z"
+        type: string
+      id:
+        example: 918273
+        type: integer
+      metric_name:
+        example: water_temperature_celsius
+        type: string
+      node_device_id:
+        example: ESP32-BARISTA-07
+        type: string
+      payload:
+        type: object
+      payload_schema_name:
+        example: brew_command
+        type: string
+      payload_schema_version:
+        example: 1
+        type: integer
+      recorded_at:
+        example: "2026-07-28T08:14:58Z"
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse:
+    properties:
+      bio:
+        example: Keeps the espresso machines humming and the firmware fresh.
+        type: string
+      created_at:
+        example: "2026-06-15T09:30:00Z"
+        type: string
+      created_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      deleted_at:
+        example: "2026-07-20T11:00:00Z"
+        type: string
+      deleted_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      id:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      name:
+        example: Grace Hopper
+        type: string
+      preferences:
+        type: object
+      role_id:
+        example: 7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04
+        type: string
+      updated_at:
+        example: "2026-07-01T14:05:00Z"
+        type: string
+      updated_by:
+        example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+      username:
+        example: grace.hopper
         type: string
     type: object
 info:
@@ -218,6 +854,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountResponse'
         "400":
           description: Invalid Format
           schema:
@@ -245,6 +883,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionLogResponse'
         "400":
           description: Invalid Format
           schema:
@@ -273,6 +913,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionResponse'
         "400":
           description: Invalid Format
           schema:
@@ -309,6 +951,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse'
         "400":
           description: Invalid Format
           schema:
@@ -388,6 +1032,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse'
         "400":
           description: Invalid Format
           schema:
@@ -483,6 +1129,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionLogResponse'
         "400":
           description: Invalid Format
           schema:
@@ -525,6 +1173,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse'
         "400":
           description: Invalid Format
           schema:
@@ -557,6 +1207,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_PayloadSchemaResponse'
         "400":
           description: Invalid Format
           schema:
@@ -593,6 +1245,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse'
         "400":
           description: Invalid Format
           schema:
@@ -668,6 +1322,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse'
         "400":
           description: Invalid Format
           schema:
@@ -749,6 +1405,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse'
         "400":
           description: Invalid Format
           schema:
@@ -781,6 +1439,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse'
         "400":
           description: Invalid Format
           schema:
@@ -813,6 +1473,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_PermissionResponse'
         "400":
           description: Invalid Format
           schema:
@@ -849,6 +1511,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse'
         "400":
           description: Invalid Format
           schema:
@@ -924,6 +1588,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1011,6 +1677,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1043,6 +1711,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_RolePermissionDetailResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1077,6 +1747,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionDetailResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1109,6 +1781,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionDetailResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1141,6 +1815,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_RoleResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1177,6 +1853,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1252,6 +1930,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1377,6 +2057,10 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse'
+            type: array
         "400":
           description: Invalid Format
           schema:
@@ -1458,6 +2142,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1500,6 +2186,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1532,6 +2220,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1556,6 +2246,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_UserResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1592,6 +2284,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1667,6 +2361,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1800,6 +2496,10 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse'
+            type: array
         "400":
           description: Invalid Format
           schema:
@@ -1834,6 +2534,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1875,6 +2577,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.LoginResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1912,6 +2616,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.LoginResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1936,6 +2642,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_FirmwareResponse'
         "400":
           description: Invalid Format
           schema:
@@ -1981,6 +2689,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareCreateResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2060,6 +2770,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2191,6 +2903,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareBinaryStatResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2229,6 +2943,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2342,6 +3058,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareBinaryStatResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2374,6 +3092,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeClassResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2410,6 +3130,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2485,6 +3207,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2572,6 +3296,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_FirmwareResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2610,6 +3336,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2642,6 +3370,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2713,6 +3443,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2896,6 +3628,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_FirmwareResponse'
         "400":
           description: Invalid Format
           schema:
@@ -2934,6 +3668,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse'
         "400":
           description: Invalid Format
           schema:
@@ -3067,6 +3803,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse'
         "401":
           description: Unauthorized
           schema:
@@ -3168,6 +3906,10 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse'
+            type: array
         "401":
           description: Unauthorized
           schema:
@@ -3192,6 +3934,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountResponse'
         "400":
           description: Invalid Format
           schema:
@@ -3219,6 +3963,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_TelemetryRecordResponse'
         "400":
           description: Invalid Format
           schema:

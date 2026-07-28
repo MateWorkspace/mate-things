@@ -7,10 +7,10 @@ import (
 )
 
 type NodeClassResponse struct {
-	Id          string          `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Preferences json.RawMessage `json:"preferences"`
+	Id          string          `json:"id" example:"3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"`
+	Name        string          `json:"name" example:"Espresso Machine"`
+	Description string          `json:"description" example:"Dual-boiler espresso machines with ESP32-controlled brew heads."`
+	Preferences json.RawMessage `json:"preferences" swaggertype:"object"`
 	AuditResponse
 }
 

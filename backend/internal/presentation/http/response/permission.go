@@ -7,10 +7,10 @@ import (
 )
 
 type PermissionResponse struct {
-	Id          string          `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Preferences json.RawMessage `json:"preferences"`
+	Id          string          `json:"id" example:"1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a"`
+	Name        string          `json:"name" example:"node:get"`
+	Description string          `json:"description" example:"View registered nodes and their status."`
+	Preferences json.RawMessage `json:"preferences" swaggertype:"object"`
 	AuditResponse
 }
 

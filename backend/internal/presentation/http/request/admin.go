@@ -6,56 +6,56 @@ import (
 )
 
 type PermissionPostRequest struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
+	Name        string  `json:"name" example:"node:get"`
+	Description *string `json:"description" example:"View registered nodes and their status."`
 }
 
 type PermissionPatchRequest struct {
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
+	Name        *string `json:"name" example:"node:get"`
+	Description *string `json:"description" example:"View registered nodes and their status."`
 }
 
 type RolePostRequest struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
+	Name        string  `json:"name" example:"barista"`
+	Description *string `json:"description" example:"Can dispatch brew actions on the shop floor, but can't manage the fleet."`
 }
 
 type RolePatchRequest struct {
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
+	Name        *string `json:"name" example:"barista"`
+	Description *string `json:"description" example:"Can dispatch brew actions on the shop floor, but can't manage the fleet."`
 }
 
 type PayloadSchemaPostRequest struct {
-	Name       string          `json:"name"`
-	Version    int32           `json:"version"`
-	Definition json.RawMessage `json:"definition"`
-	ValidFrom  *time.Time      `json:"valid_from"`
-	ValidTo    *time.Time      `json:"valid_to"`
+	Name       string          `json:"name" example:"brew_command"`
+	Version    int32           `json:"version" example:"1"`
+	Definition json.RawMessage `json:"definition" swaggertype:"object"`
+	ValidFrom  *time.Time      `json:"valid_from" example:"2026-07-01T00:00:00Z"`
+	ValidTo    *time.Time      `json:"valid_to" example:"2027-07-01T00:00:00Z"`
 }
 
 type PayloadSchemaPatchRequest struct {
-	Name       *string          `json:"name"`
-	Version    *int32           `json:"version"`
-	Definition *json.RawMessage `json:"definition"`
-	ValidFrom  *time.Time       `json:"valid_from"`
-	ValidTo    *time.Time       `json:"valid_to"`
+	Name       *string          `json:"name" example:"brew_command"`
+	Version    *int32           `json:"version" example:"2"`
+	Definition *json.RawMessage `json:"definition" swaggertype:"object"`
+	ValidFrom  *time.Time       `json:"valid_from" example:"2026-07-01T00:00:00Z"`
+	ValidTo    *time.Time       `json:"valid_to" example:"2027-07-01T00:00:00Z"`
 }
 
 type UserPostRequest struct {
-	RoleId   string  `json:"role_id"`
-	Name     string  `json:"name"`
-	Bio      *string `json:"bio"`
-	Username string  `json:"username"`
-	Password string  `json:"password"`
+	RoleId   string  `json:"role_id" example:"7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"`
+	Name     string  `json:"name" example:"Grace Hopper"`
+	Bio      *string `json:"bio" example:"Keeps the espresso machines humming and the firmware fresh."`
+	Username string  `json:"username" example:"grace.hopper"`
+	Password string  `json:"password" example:"BrewMeUp!42"`
 }
 
 type UserPatchRequest struct {
-	RoleId   *string `json:"role_id"`
-	Name     *string `json:"name"`
-	Bio      *string `json:"bio"`
-	Username *string `json:"username"`
+	RoleId   *string `json:"role_id" example:"7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"`
+	Name     *string `json:"name" example:"Grace Hopper"`
+	Bio      *string `json:"bio" example:"Keeps the espresso machines humming and the firmware fresh."`
+	Username *string `json:"username" example:"grace.hopper"`
 }
 
 type UserPasswordPatchRequest struct {
-	Password string `json:"password"`
+	Password string `json:"password" example:"EvenMoreEspresso!7"`
 }

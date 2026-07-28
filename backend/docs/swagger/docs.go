@@ -31,7 +31,10 @@ const docTemplate = `{
                 "summary": "Action Log List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionLogResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -74,7 +77,10 @@ const docTemplate = `{
                 "summary": "Action Log Delete",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -119,7 +125,10 @@ const docTemplate = `{
                 "summary": "Action List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -176,7 +185,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -242,7 +254,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -302,7 +317,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -508,7 +526,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionLogResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -565,7 +586,10 @@ const docTemplate = `{
                 "summary": "Payload Schema List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_PayloadSchemaResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -622,7 +646,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -673,7 +700,10 @@ const docTemplate = `{
                 "summary": "Payload Schema Get By Name And Version",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -724,7 +754,10 @@ const docTemplate = `{
                 "summary": "Payload Schema Get Latest",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -784,7 +817,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -969,7 +1005,10 @@ const docTemplate = `{
                 "summary": "Permission List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_PermissionResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1026,7 +1065,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1086,7 +1128,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1146,7 +1191,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1331,7 +1379,10 @@ const docTemplate = `{
                 "summary": "Role Permission List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_RolePermissionDetailResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1376,7 +1427,10 @@ const docTemplate = `{
                 "summary": "Role Permission Get By Pair",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionDetailResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1436,7 +1490,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionDetailResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1487,7 +1544,10 @@ const docTemplate = `{
                 "summary": "Role List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_RoleResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1544,7 +1604,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1604,7 +1667,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1655,7 +1721,10 @@ const docTemplate = `{
                 "summary": "Role Get Default",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse"
+                        }
                     },
                     "401": {
                         "description": "Unauthorized",
@@ -1703,7 +1772,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -1957,7 +2029,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse"
+                            }
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2018,7 +2096,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2140,7 +2221,10 @@ const docTemplate = `{
                 "summary": "User List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_UserResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2197,7 +2281,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2257,7 +2344,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2317,7 +2407,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2583,7 +2676,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse"
+                            }
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2642,7 +2741,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.LoginResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2701,7 +2803,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.LoginResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2740,7 +2845,10 @@ const docTemplate = `{
                 "summary": "Firmware List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_FirmwareResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2809,7 +2917,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareCreateResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -2875,7 +2986,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3053,7 +3167,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareBinaryStatResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3113,7 +3230,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3375,7 +3495,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareBinaryStatResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3426,7 +3549,10 @@ const docTemplate = `{
                 "summary": "Node Class List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeClassResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3483,7 +3609,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3543,7 +3672,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3603,7 +3735,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3797,7 +3932,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_FirmwareResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3848,7 +3986,10 @@ const docTemplate = `{
                 "summary": "Node List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -3902,7 +4043,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -4040,7 +4184,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -4384,7 +4531,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_FirmwareResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -4514,7 +4664,10 @@ const docTemplate = `{
                 "summary": "Profile Get",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse"
+                        }
                     },
                     "401": {
                         "description": "Unauthorized",
@@ -4675,7 +4828,13 @@ const docTemplate = `{
                 "summary": "Profile Permissions Get",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse"
+                            }
+                        }
                     },
                     "401": {
                         "description": "Unauthorized",
@@ -4714,7 +4873,10 @@ const docTemplate = `{
                 "summary": "Telemetry Record List",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_TelemetryRecordResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -4757,7 +4919,10 @@ const docTemplate = `{
                 "summary": "Telemetry Record Delete",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountResponse"
+                        }
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -4788,14 +4953,31 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "github_com_MateWorkspace_mate-things_backend_internal_domain_models.ActionStatus": {
+            "type": "string",
+            "enum": [
+                "UNEXECUTED",
+                "UNRESPONDED",
+                "FAILED",
+                "SUCCESS"
+            ],
+            "x-enum-varnames": [
+                "ActionStatusUnexecuted",
+                "ActionStatusUnresponded",
+                "ActionStatusFailed",
+                "ActionStatusSuccess"
+            ]
+        },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionDispatchRequest": {
             "type": "object",
             "properties": {
                 "executed_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2026-07-28T08:15:00Z"
                 },
                 "node_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "5e8a1c3f-2b7d-4f6a-9c1e-3a8b6d2f4e09"
                 },
                 "payload": {
                     "type": "object"
@@ -4806,19 +4988,24 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Pulls a double shot at the requested temperature and duration."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "brew_espresso"
                 },
                 "node_class_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
                 },
                 "payload_schema_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "brew_command"
                 },
                 "payload_schema_version": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -4826,19 +5013,24 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Pulls a double shot at the requested temperature and duration."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "brew_espresso"
                 },
                 "node_class_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
                 },
                 "payload_schema_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "brew_command"
                 },
                 "payload_schema_version": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -4846,10 +5038,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "BrewMeUp!42"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "grace.hopper"
                 }
             }
         },
@@ -4857,7 +5051,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "refresh_token": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJncmFjZS5ob3BwZXIifQ.brewbrewbrew"
                 }
             }
         },
@@ -4865,10 +5060,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "espresso-fw"
                 },
                 "node_class_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
                 }
             }
         },
@@ -4876,10 +5073,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Dual-boiler espresso machines with ESP32-controlled brew heads."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Espresso Machine"
                 }
             }
         },
@@ -4887,10 +5086,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Dual-boiler espresso machines with ESP32-controlled brew heads."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Espresso Machine"
                 }
             }
         },
@@ -4898,7 +5099,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "firmware_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"
                 }
             }
         },
@@ -4906,19 +5108,24 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "The espresso machine behind the office kitchen counter."
                 },
                 "device_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ESP32-BARISTA-07"
                 },
                 "firmware_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Kitchen Espresso Machine"
                 },
                 "node_class_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
                 }
             }
         },
@@ -4926,10 +5133,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "firmware_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"
                 },
                 "firmware_url": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "https://cdn.mate-things.internal/firmwares/espresso-fw/v3/firmware.bin"
                 }
             }
         },
@@ -4940,16 +5149,20 @@ const docTemplate = `{
                     "type": "object"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "brew_command"
                 },
                 "valid_from": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2026-07-01T00:00:00Z"
                 },
                 "valid_to": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2027-07-01T00:00:00Z"
                 },
                 "version": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 2
                 }
             }
         },
@@ -4960,16 +5173,20 @@ const docTemplate = `{
                     "type": "object"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "brew_command"
                 },
                 "valid_from": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2026-07-01T00:00:00Z"
                 },
                 "valid_to": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2027-07-01T00:00:00Z"
                 },
                 "version": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -4977,10 +5194,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "View registered nodes and their status."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "node:get"
                 }
             }
         },
@@ -4988,10 +5207,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "View registered nodes and their status."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "node:get"
                 }
             }
         },
@@ -5007,10 +5228,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "current_password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "BrewMeUp!42"
                 },
                 "new_password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "EvenMoreEspresso!7"
                 }
             }
         },
@@ -5018,13 +5241,16 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bio": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Keeps the espresso machines humming and the firmware fresh."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Grace Hopper"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "grace.hopper"
                 }
             }
         },
@@ -5032,10 +5258,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Can dispatch brew actions on the shop floor, but can't manage the fleet."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "barista"
                 }
             }
         },
@@ -5043,10 +5271,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Can dispatch brew actions on the shop floor, but can't manage the fleet."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "barista"
                 }
             }
         },
@@ -5054,7 +5284,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "EvenMoreEspresso!7"
                 }
             }
         },
@@ -5062,16 +5293,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bio": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Keeps the espresso machines humming and the firmware fresh."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Grace Hopper"
                 },
                 "role_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "grace.hopper"
                 }
             }
         },
@@ -5079,30 +5314,831 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bio": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Keeps the espresso machines humming and the firmware fresh."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Grace Hopper"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "BrewMeUp!42"
                 },
                 "role_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "grace.hopper"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionLogResponse": {
+            "type": "object",
+            "properties": {
+                "action_id": {
+                    "type": "string",
+                    "example": "6d9e2f5a-8b1c-4d3e-9f6a-2c5d8e1f4b07"
+                },
+                "action_message": {
+                    "type": "string",
+                    "example": "Shot pulled: 93.5C for 28s. Crema looked great."
+                },
+                "action_status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_domain_models.ActionStatus"
+                        }
+                    ],
+                    "example": "SUCCESS"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-07-28T08:15:02Z"
+                },
+                "executed_at": {
+                    "type": "string",
+                    "example": "2026-07-28T08:15:00Z"
+                },
+                "execution_id": {
+                    "type": "string",
+                    "example": "a4d7f1c9-3e6b-4a8d-9c2f-5b1e7d4a6c02"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 4821
+                },
+                "node_id": {
+                    "type": "string",
+                    "example": "5e8a1c3f-2b7d-4f6a-9c1e-3a8b6d2f4e09"
+                },
+                "payload": {
+                    "type": "object"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2026-07-20T11:00:00Z"
+                },
+                "deleted_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Pulls a double shot at the requested temperature and duration."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "6d9e2f5a-8b1c-4d3e-9f6a-2c5d8e1f4b07"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "brew_espresso"
+                },
+                "node_class_id": {
+                    "type": "string",
+                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
+                },
+                "payload_schema_name": {
+                    "type": "string",
+                    "example": "brew_command"
+                },
+                "payload_schema_version": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "preferences": {
+                    "type": "object"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-07-01T14:05:00Z"
+                },
+                "updated_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionLogResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionLogResponse"
+                    }
+                },
+                "total_items": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_TelemetryRecordResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.TelemetryRecordResponse"
+                    }
+                },
+                "total_items": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 12
                 }
             }
         },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse": {
             "type": "object",
             "properties": {
+                "details": {
+                    "type": "string",
+                    "example": "node_class_id is required"
+                },
                 "error": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Invalid Format"
                 },
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Please select a valid node class."
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareBinaryStatResponse": {
+            "type": "object",
+            "properties": {
+                "binary_path": {
+                    "type": "string",
+                    "example": "firmwares/espresso-fw/v3/firmware.bin"
+                },
+                "checksum": {
+                    "type": "string",
+                    "example": "3b1e7c9a2f5d8b4e6c1a9f3d7e2b5c8a1d4e6f9b2c5a8d1e4f7b0c3a6d9e2f5"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 482112
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareCreateResponse": {
+            "type": "object",
+            "properties": {
+                "binary_path": {
+                    "type": "string",
+                    "example": "firmwares/espresso-fw/v3/firmware.bin"
+                },
+                "checksum": {
+                    "type": "string",
+                    "example": "3b1e7c9a2f5d8b4e6c1a9f3d7e2b5c8a1d4e6f9b2c5a8d1e4f7b0c3a6d9e2f5"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 482112
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareResponse": {
+            "type": "object",
+            "properties": {
+                "binary_path": {
+                    "type": "string",
+                    "example": "firmwares/espresso-fw/v3/firmware.bin"
+                },
+                "checksum": {
+                    "type": "string",
+                    "example": "3b1e7c9a2f5d8b4e6c1a9f3d7e2b5c8a1d4e6f9b2c5a8d1e4f7b0c3a6d9e2f5"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2026-07-20T11:00:00Z"
+                },
+                "deleted_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "espresso-fw"
+                },
+                "node_class_id": {
+                    "type": "string",
+                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
+                },
+                "preferences": {
+                    "type": "object"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 482112
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-07-01T14:05:00Z"
+                },
+                "updated_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "6d9e2f5a-8b1c-4d3e-9f6a-2c5d8e1f4b07"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJncmFjZS5ob3BwZXIifQ.espresso-shot-pulled"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse"
+                    }
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJncmFjZS5ob3BwZXIifQ.decaf-is-not-an-option"
+                },
+                "role": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2026-07-20T11:00:00Z"
+                },
+                "deleted_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Dual-boiler espresso machines with ESP32-controlled brew heads."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Espresso Machine"
+                },
+                "preferences": {
+                    "type": "object"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-07-01T14:05:00Z"
+                },
+                "updated_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2026-07-20T11:00:00Z"
+                },
+                "deleted_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "The espresso machine behind the office kitchen counter."
+                },
+                "device_id": {
+                    "type": "string",
+                    "example": "ESP32-BARISTA-07"
+                },
+                "device_info": {
+                    "type": "string",
+                    "example": "ESP32-WROOM-32E, rev 3, 240MHz dual-core"
+                },
+                "firmware_id": {
+                    "type": "string",
+                    "example": "9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "5e8a1c3f-2b7d-4f6a-9c1e-3a8b6d2f4e09"
+                },
+                "is_connected": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Kitchen Espresso Machine"
+                },
+                "node_class_id": {
+                    "type": "string",
+                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
+                },
+                "preferences": {
+                    "type": "object"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-07-01T14:05:00Z"
+                },
+                "updated_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_FirmwareResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeClassResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_PayloadSchemaResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_PermissionResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_RolePermissionDetailResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionDetailResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_RoleResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_UserResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total_items": {
+                    "type": "integer",
+                    "example": 87
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PayloadSchemaResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "definition": {
+                    "type": "object"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2026-07-20T11:00:00Z"
+                },
+                "deleted_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "b2f5d8a1-3c6e-4f9b-8d2a-7e1f4b6c9d03"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "brew_command"
+                },
+                "preferences": {
+                    "type": "object"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-07-01T14:05:00Z"
+                },
+                "updated_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "valid_from": {
+                    "type": "string",
+                    "example": "2026-07-01T00:00:00Z"
+                },
+                "valid_to": {
+                    "type": "string",
+                    "example": "2027-07-01T00:00:00Z"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2026-07-20T11:00:00Z"
+                },
+                "deleted_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "View registered nodes and their status."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "node:get"
+                },
+                "preferences": {
+                    "type": "object"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-07-01T14:05:00Z"
+                },
+                "updated_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionDetailResponse": {
+            "type": "object",
+            "properties": {
+                "permission": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PermissionResponse"
+                },
+                "role": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse"
+                },
+                "role_permission": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RolePermissionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "c8a1d4e7-3f6b-4c9e-8a2d-5b7e0f3c6a09"
+                },
+                "permission_id": {
+                    "type": "string",
+                    "example": "1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a"
+                },
+                "role_id": {
+                    "type": "string",
+                    "example": "7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.RoleResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2026-07-20T11:00:00Z"
+                },
+                "deleted_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Can dispatch brew actions on the shop floor, but can't manage the fleet."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"
+                },
+                "is_default": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "name": {
+                    "type": "string",
+                    "example": "barista"
+                },
+                "preferences": {
+                    "type": "object"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-07-01T14:05:00Z"
+                },
+                "updated_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.TelemetryRecordResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-07-28T08:15:00Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 918273
+                },
+                "metric_name": {
+                    "type": "string",
+                    "example": "water_temperature_celsius"
+                },
+                "node_device_id": {
+                    "type": "string",
+                    "example": "ESP32-BARISTA-07"
+                },
+                "payload": {
+                    "type": "object"
+                },
+                "payload_schema_name": {
+                    "type": "string",
+                    "example": "brew_command"
+                },
+                "payload_schema_version": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "recorded_at": {
+                    "type": "string",
+                    "example": "2026-07-28T08:14:58Z"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string",
+                    "example": "Keeps the espresso machines humming and the firmware fresh."
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2026-07-20T11:00:00Z"
+                },
+                "deleted_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Grace Hopper"
+                },
+                "preferences": {
+                    "type": "object"
+                },
+                "role_id": {
+                    "type": "string",
+                    "example": "7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-07-01T14:05:00Z"
+                },
+                "updated_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "grace.hopper"
                 }
             }
         }

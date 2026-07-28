@@ -34,7 +34,7 @@ func NewHandler(
 // @Tags Profile
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {object} presentationhttpresponse.UserResponse
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
 // @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
@@ -62,7 +62,7 @@ func (h *handler) ProfileGet(c *echo.Context) error {
 // @Tags Profile
 // @Produce json
 // @Security BearerAuth
-// @Success 200
+// @Success 200 {array} presentationhttpresponse.PermissionResponse
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
 // @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"

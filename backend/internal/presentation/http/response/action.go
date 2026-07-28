@@ -7,13 +7,13 @@ import (
 )
 
 type ActionResponse struct {
-	Id                   string          `json:"id"`
-	NodeClassId          string          `json:"node_class_id"`
-	Name                 string          `json:"name"`
-	Description          string          `json:"description"`
-	PayloadSchemaName    string          `json:"payload_schema_name"`
-	PayloadSchemaVersion int32           `json:"payload_schema_version"`
-	Preferences          json.RawMessage `json:"preferences"`
+	Id                   string          `json:"id" example:"6d9e2f5a-8b1c-4d3e-9f6a-2c5d8e1f4b07"`
+	NodeClassId          string          `json:"node_class_id" example:"3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"`
+	Name                 string          `json:"name" example:"brew_espresso"`
+	Description          string          `json:"description" example:"Pulls a double shot at the requested temperature and duration."`
+	PayloadSchemaName    string          `json:"payload_schema_name" example:"brew_command"`
+	PayloadSchemaVersion int32           `json:"payload_schema_version" example:"1"`
+	Preferences          json.RawMessage `json:"preferences" swaggertype:"object"`
 	AuditResponse
 }
 
