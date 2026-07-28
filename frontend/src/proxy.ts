@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { API_BASE_URL, IS_PRODUCTION } from "@/config/env";
-import { decodeJwtExpiry } from "@/lib/jwt";
+import { decodeJwtExpiry } from "@/lib/session/jwt";
 
 const ACCESS_TOKEN_COOKIE = "mate_access_token";
 const REFRESH_TOKEN_COOKIE = "mate_refresh_token";

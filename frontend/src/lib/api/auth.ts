@@ -11,7 +11,7 @@ import {
 import type { PermissionResponse } from "@/lib/api/permissions";
 import type { RoleResponse } from "@/lib/api/roles";
 import type { UserResponse } from "@/lib/api/users";
-import { decodeJwtExpiry } from "@/lib/jwt";
+import { decodeJwtExpiry } from "@/lib/session/jwt";
 
 export interface LoginRequest {
   username: string;
