@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 146.13 153.34">
+  <defs>
+    <style>
+      .cls-1, .cls-2 {
+        fill: #603f26;
+      }
+
+      .cls-2 {
+        stroke: #231f20;
+        stroke-width: 7px;
+      }
+
+      .cls-2, .cls-3 {
+        stroke-miterlimit: 10;
+      }
+
+      .cls-3 {
+        fill: #c49a6c;
+        stroke: #603f26;
+        stroke-width: 8px;
+      }
+    </style>
+  </defs>
+  <g id="Mate_Things" data-name="Mate Things">
+    <g>
+      <g>
+        <rect class="cls-3" x="17.13" y="24.34" width="125" height="125" rx="22.8" ry="22.8"/>
+        <g>
+          <g>
+            <rect class="cls-1" x="49.63" y="58.61" width="16.32" height="25.15" rx="8.16" ry="8.16"/>
+            <rect class="cls-1" x="93.3" y="58.61" width="16.32" height="25.15" rx="8.16" ry="8.16"/>
+          </g>
+          <path class="cls-1" d="M118.63,105.07h0c0,9.94-8.06,18-18,18h-42c-9.94,0-18-8.06-18-18h0c0-3.31,2.69-6,6-6h0c3.31,0,6,2.69,6,6h0c0,3.31,2.69,6,6,6h42c3.31,0,6-2.69,6-6h0c0-3.31,2.69-6,6-6h0c3.31,0,6,2.69,6,6Z"/>
+        </g>
+      </g>
+      <g>
+        <ellipse class="cls-2" cx="45.1" cy="36.65" rx="45.87" ry="16.53" transform="translate(-11.7 24.35) rotate(-26.88)"/>
+        <path class="cls-2" d="M68.65,13.15c.78,7.58-8.49,18.33-22.56,25.46s-28.21,8.25-33.87,3.14c-.8-5.27-.29-10.6,1.37-15.55,2.69-7.98,8.41-14.97,16.53-19.09,8.12-4.12,17.14-4.6,25.17-2.05,4.98,1.59,9.57,4.32,13.35,8.08Z"/>
+      </g>
+    </g>
+  </g>
+</svg>

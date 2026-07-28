@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
 
-import mark from "@/assets/vertical.svg";
+import mark from "@/assets/matethings-horizontal.svg";
 
 import LoginForm from "./_components/LoginForm";
 import SignedOutNotice from "./_components/SignedOutNotice";
@@ -14,31 +14,33 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <div className="relative isolate flex min-h-[240px] items-start overflow-hidden bg-surface px-6 py-8 sm:min-h-[320px] sm:px-10 lg:min-h-screen lg:w-[46%] lg:items-center lg:px-16">
+      <div
+        className="bg-background flex min-h-[240px] flex-col justify-center gap-6 px-6 py-10 sm:min-h-[320px] sm:px-10 sm:py-12 lg:min-h-screen lg:w-[46%] lg:px-16"
+        style={{
+          backgroundImage:
+            "linear-gradient(color-mix(in srgb, var(--color-primary) 12%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 12%, transparent) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      >
         <Image
           src={mark}
-          alt=""
+          alt="Mate Things"
           priority
-          className="pointer-events-none absolute -bottom-10 -left-10 h-[160px] w-[160px] select-none sm:h-[200px] sm:w-[200px] lg:-bottom-20 lg:-left-20 lg:h-[520px] lg:w-[520px]"
+          className="h-auto w-48 sm:w-56 lg:w-72"
         />
-        <div className="relative z-10 max-w-xs sm:max-w-sm">
-          <p className="text-base text-primary/80 sm:text-lg lg:text-xl">
-            Fleet control for every Mate device.
-          </p>
-        </div>
+        <p className="text-primary/80 max-w-xs text-base sm:max-w-sm sm:text-lg lg:text-xl">
+          Fleet control for every Mate device
+        </p>
       </div>
 
-      <div className="flex flex-1 items-center justify-center bg-background px-6 py-12 sm:px-10">
+      <div className="bg-background flex flex-1 items-center justify-center px-6 py-12 sm:px-10">
         <div className="w-full max-w-sm">
-          <p className="font-display text-sm tracking-[0.2em] text-accent uppercase">
+          <p className="font-display text-accent text-sm tracking-[0.2em] uppercase">
             Mate Things
           </p>
-          <h1 className="mt-2 font-display text-4xl tracking-wide text-primary sm:text-5xl">
+          <h1 className="font-display text-primary mt-2 text-4xl tracking-wide sm:text-5xl">
             Sign in
           </h1>
-          <p className="mt-3 text-sm text-foreground/70">
-            Enter your operator credentials to access the fleet console.
-          </p>
 
           <div className="mt-8">
             <LoginForm />

@@ -1,7 +1,12 @@
 "use server";
 
 import { apiFetch, buildQuery } from "@/lib/api/client";
-import type { AuditFields, IdResponse, PageDataResponse, PageQuery } from "@/lib/api/types";
+import type {
+  AuditFields,
+  IdResponse,
+  PageDataResponse,
+  PageQuery,
+} from "@/lib/api/types";
 
 export interface NodeClassResponse extends AuditFields {
   id: string;
@@ -32,9 +37,7 @@ export async function getNodeClassByName(
   return apiFetch(`/node-classes/by-name/${encodeURIComponent(name)}`);
 }
 
-export async function getNodeClassById(
-  id: string,
-): Promise<NodeClassResponse> {
+export async function getNodeClassById(id: string): Promise<NodeClassResponse> {
   return apiFetch(`/node-classes/${id}`);
 }
 

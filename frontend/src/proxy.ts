@@ -23,7 +23,9 @@ function isExpiredOrNear(expiry: Date | null): boolean {
   return expiry.getTime() - Date.now() <= REFRESH_BUFFER_MS;
 }
 
-async function tryRefresh(refreshToken: string): Promise<RefreshedTokens | null> {
+async function tryRefresh(
+  refreshToken: string,
+): Promise<RefreshedTokens | null> {
   try {
     const response = await fetch(
       `${API_BASE_URL.replace(/\/$/, "")}${API_VERSION_PATH}/auth/refresh`,
@@ -44,7 +46,10 @@ async function tryRefresh(refreshToken: string): Promise<RefreshedTokens | null>
   }
 }
 
-function setSessionCookies(response: NextResponse, tokens: RefreshedTokens): void {
+function setSessionCookies(
+  response: NextResponse,
+  tokens: RefreshedTokens,
+): void {
   response.cookies.set(ACCESS_TOKEN_COOKIE, tokens.access_token, {
     httpOnly: true,
     secure: IS_PRODUCTION,

@@ -18,7 +18,12 @@ export class ApiError extends Error {
   readonly title: string;
   readonly details?: string;
 
-  constructor(status: number, title: string, message: string, details?: string) {
+  constructor(
+    status: number,
+    title: string,
+    message: string,
+    details?: string,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -61,9 +66,7 @@ export interface ApiFetchOptions {
   cache?: RequestCache;
 }
 
-async function authHeader(
-  skipAuth: boolean | undefined,
-): Promise<HeadersInit> {
+async function authHeader(skipAuth: boolean | undefined): Promise<HeadersInit> {
   if (skipAuth) {
     return {};
   }

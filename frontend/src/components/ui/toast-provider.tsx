@@ -19,9 +19,7 @@ export interface ToastContextValue {
 
 export const ToastContext = createContext<ToastContextValue | null>(null);
 
-const AUTO_DISMISS_MS = 5000;
-// Must match toast.tsx's exit transition duration (duration-300) so the
-// item is removed from the list only after its slide-up animation finishes.
+const AUTO_DISMISS_MS = 3000;
 const EXIT_ANIMATION_MS = 300;
 
 export default function ToastProvider({
@@ -63,7 +61,7 @@ export default function ToastProvider({
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-4 z-50 flex w-full max-w-sm flex-col gap-2">
+      <div className="pointer-events-none fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
         {toasts.map((toast) => (
           <Toast
             key={toast.id}

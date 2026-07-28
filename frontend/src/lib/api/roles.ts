@@ -2,7 +2,12 @@
 
 import { apiFetch, buildQuery } from "@/lib/api/client";
 import type { PermissionResponse } from "@/lib/api/permissions";
-import type { AuditFields, IdResponse, PageDataResponse, PageQuery } from "@/lib/api/types";
+import type {
+  AuditFields,
+  IdResponse,
+  PageDataResponse,
+  PageQuery,
+} from "@/lib/api/types";
 
 export interface RoleResponse extends AuditFields {
   id: string;

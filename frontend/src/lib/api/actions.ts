@@ -2,7 +2,12 @@
 
 import type { ActionLogResponse } from "@/lib/api/action-logs";
 import { apiFetch, buildQuery } from "@/lib/api/client";
-import type { AuditFields, IdResponse, PageDataResponse, PageQuery } from "@/lib/api/types";
+import type {
+  AuditFields,
+  IdResponse,
+  PageDataResponse,
+  PageQuery,
+} from "@/lib/api/types";
 
 export interface ActionResponse extends AuditFields {
   id: string;

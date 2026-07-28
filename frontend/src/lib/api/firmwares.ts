@@ -45,18 +45,14 @@ export async function listFirmwaresByNodeClassId(
   nodeClassId: string,
   query: PageQuery = {},
 ): Promise<PageDataResponse<FirmwareResponse>> {
-  return apiFetch(
-    `/node-classes/${nodeClassId}/firmwares${buildQuery(query)}`,
-  );
+  return apiFetch(`/node-classes/${nodeClassId}/firmwares${buildQuery(query)}`);
 }
 
 export async function listAvailableFirmwaresByNodeId(
   nodeId: string,
   query: PageQuery = {},
 ): Promise<PageDataResponse<FirmwareResponse>> {
-  return apiFetch(
-    `/nodes/${nodeId}/firmwares/available${buildQuery(query)}`,
-  );
+  return apiFetch(`/nodes/${nodeId}/firmwares/available${buildQuery(query)}`);
 }
 
 export async function getFirmwareByName(

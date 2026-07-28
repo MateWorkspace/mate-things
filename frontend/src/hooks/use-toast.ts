@@ -2,7 +2,10 @@
 
 import { useContext } from "react";
 
-import { ToastContext, type ToastContextValue } from "@/components/ui/toast-provider";
+import {
+  ToastContext,
+  type ToastContextValue,
+} from "@/components/ui/toast-provider";
 
 export function useToast(): ToastContextValue {
   const context = useContext(ToastContext);
