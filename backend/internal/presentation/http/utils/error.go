@@ -11,9 +11,11 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
+const genericServerErrorMessage = "Something went wrong on our end. Please try again later."
+
 func BadRequest(c *echo.Context, message string) error {
 	return c.JSON(http.StatusBadRequest, presentationhttpresponse.ErrorResponse{
-		Code:    "bad_request",
+		Error:   "Bad Request",
 		Message: message,
 	})
 }
@@ -24,42 +26,58 @@ func Error(c *echo.Context, err error) error {
 	}
 
 	statusCode := http.StatusInternalServerError
-	code := "unknown"
+	title := "Internal Server Error"
+	message := genericServerErrorMessage
 
 	switch {
 	case errors.Is(err, domainmodels.ErrTypeNotFound):
 		statusCode = http.StatusNotFound
-		code = "not_found"
+		title = "Not Found"
+		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeConflict):
 		statusCode = http.StatusConflict
-		code = "conflict"
+		title = "Already Exists"
+		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeBadArgs),
 		errors.Is(err, domainmodels.ErrTypeValidation):
 		statusCode = http.StatusBadRequest
-		code = "validation"
+		title = "Invalid Format"
+		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeBadState):
 		statusCode = http.StatusPreconditionFailed
-		code = "bad_state"
-	case errors.Is(err, domainmodels.ErrTypeUnauthorized),
-		errors.Is(err, domainmodels.ErrTypeTokenExpired),
-		errors.Is(err, domainmodels.ErrTypeTokenInvalid):
+		title = "Invalid State"
+		message = errorMessage(err)
+	case errors.Is(err, domainmodels.ErrTypeForbidden):
+		statusCode = http.StatusForbidden
+		title = "Access Denied"
+		message = errorMessage(err)
+	case errors.Is(err, domainmodels.ErrTypeTokenExpired):
 		statusCode = http.StatusUnauthorized
-		code = "unauthorized"
+		title = "Session Expired"
+		message = "Your session has expired. Please sign in again."
+	case errors.Is(err, domainmodels.ErrTypeTokenInvalid):
+		statusCode = http.StatusUnauthorized
+		title = "Invalid Token"
+		message = "Your session is no longer valid. Please sign in again."
+	case errors.Is(err, domainmodels.ErrTypeUnauthorized):
+		statusCode = http.StatusUnauthorized
+		title = "Unauthorized"
+		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeTimeout):
 		statusCode = http.StatusGatewayTimeout
-		code = "timeout"
+		title = "Request Timeout"
 	case errors.Is(err, domainmodels.ErrTypeUnimplemented):
 		statusCode = http.StatusNotImplemented
-		code = "unimplemented"
+		title = "Not Implemented"
 	case errors.Is(err, domainmodels.ErrTypeFailure),
 		errors.Is(err, domainmodels.ErrTypeUnknown):
 		statusCode = http.StatusInternalServerError
-		code = "unknown"
+		title = "Internal Server Error"
 	}
 
 	return c.JSON(statusCode, presentationhttpresponse.ErrorResponse{
-		Code:    code,
-		Message: errorMessage(err),
+		Error:   title,
+		Message: message,
 	})
 }
 

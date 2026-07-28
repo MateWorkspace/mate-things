@@ -42,6 +42,11 @@ func NewHandler(
 // @Security BearerAuth
 // @Param request body presentationhttprequest.NodeClassPostRequest true "request"
 // @Success 201
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/node-classes [post]
 func (h *handler) NodeClassPost(c *echo.Context) error {
 	var req presentationhttprequest.NodeClassPostRequest
@@ -68,6 +73,10 @@ func (h *handler) NodeClassPost(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/node-classes [get]
 func (h *handler) NodeClassGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
@@ -98,6 +107,11 @@ func (h *handler) NodeClassGetList(c *echo.Context) error {
 // @Security BearerAuth
 // @Param name path string true "name"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/node-classes/by-name/{name} [get]
 func (h *handler) NodeClassGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
@@ -124,6 +138,11 @@ func (h *handler) NodeClassGetByName(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/node-classes/{id} [get]
 func (h *handler) NodeClassGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -152,6 +171,12 @@ func (h *handler) NodeClassGetById(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.NodeClassPatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/node-classes/{id} [patch]
 func (h *handler) NodeClassPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -184,6 +209,11 @@ func (h *handler) NodeClassPatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/node-classes/{id} [delete]
 func (h *handler) NodeClassDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -208,6 +238,10 @@ func (h *handler) NodeClassDelete(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/nodes [get]
 func (h *handler) NodeGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
@@ -248,6 +282,11 @@ func (h *handler) NodeGetList(c *echo.Context) error {
 // @Security BearerAuth
 // @Param device_id path string true "device_id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/nodes/by-device/{device_id} [get]
 func (h *handler) NodeGetByDeviceId(c *echo.Context) error {
 	deviceId, err := presentationhttputils.RequiredString(c.Param("device_id"), "device_id")
@@ -274,6 +313,11 @@ func (h *handler) NodeGetByDeviceId(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/nodes/{id} [get]
 func (h *handler) NodeGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -302,6 +346,12 @@ func (h *handler) NodeGetById(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.NodePatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/nodes/{id} [patch]
 func (h *handler) NodePatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -347,6 +397,11 @@ func (h *handler) NodePatch(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.NodeFirmwarePatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/nodes/{id}/firmware [patch]
 func (h *handler) NodeFirmwarePatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -382,6 +437,11 @@ func (h *handler) NodeFirmwarePatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/nodes/{id} [delete]
 func (h *handler) NodeDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -410,6 +470,12 @@ func (h *handler) NodeDelete(c *echo.Context) error {
 // @Param name formData string true "name"
 // @Param file formData file true "file"
 // @Success 201
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares [post]
 func (h *handler) FirmwarePost(c *echo.Context) error {
 	nodeClassId, err := presentationhttputils.RequiredUUID(c.FormValue("node_class_id"), "node_class_id")
@@ -452,6 +518,10 @@ func (h *handler) FirmwarePost(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares [get]
 func (h *handler) FirmwareGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
@@ -487,6 +557,11 @@ func (h *handler) FirmwareGetList(c *echo.Context) error {
 // @Security BearerAuth
 // @Param node_class_id path string true "node_class_id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/node-classes/{node_class_id}/firmwares [get]
 func (h *handler) FirmwareGetByNodeClassId(c *echo.Context) error {
 	nodeClassId, err := presentationhttputils.RequiredUUID(c.Param("node_class_id"), "node_class_id")
@@ -522,6 +597,11 @@ func (h *handler) FirmwareGetByNodeClassId(c *echo.Context) error {
 // @Security BearerAuth
 // @Param node_id path string true "node_id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/nodes/{node_id}/firmwares/available [get]
 func (h *handler) FirmwareGetAvailableByNodeId(c *echo.Context) error {
 	nodeId, err := presentationhttputils.RequiredUUID(c.Param("node_id"), "node_id")
@@ -557,6 +637,11 @@ func (h *handler) FirmwareGetAvailableByNodeId(c *echo.Context) error {
 // @Security BearerAuth
 // @Param name path string true "name"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares/by-name/{name} [get]
 func (h *handler) FirmwareGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
@@ -583,6 +668,11 @@ func (h *handler) FirmwareGetByName(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares/{id} [get]
 func (h *handler) FirmwareGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -611,6 +701,12 @@ func (h *handler) FirmwareGetById(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.FirmwarePatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares/{id} [patch]
 func (h *handler) FirmwarePatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -649,6 +745,11 @@ func (h *handler) FirmwarePatch(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param file formData file true "file"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares/{id}/binary [put]
 func (h *handler) FirmwareBinaryPut(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -690,6 +791,11 @@ func (h *handler) FirmwareBinaryPut(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 302 "redirect to a short-lived presigned download URL"
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares/{id}/binary [get]
 func (h *handler) FirmwareBinaryGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -713,6 +819,11 @@ func (h *handler) FirmwareBinaryGetById(c *echo.Context) error {
 // @Security BearerAuth
 // @Param name path string true "name"
 // @Success 302 "redirect to a short-lived presigned download URL"
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares/by-name/{name}/binary [get]
 func (h *handler) FirmwareBinaryGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
@@ -736,6 +847,11 @@ func (h *handler) FirmwareBinaryGetByName(c *echo.Context) error {
 // @Security BearerAuth
 // @Param name path string true "name"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares/by-name/{name}/binary/stat [get]
 func (h *handler) FirmwareBinaryStatByNameGet(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
@@ -763,6 +879,11 @@ func (h *handler) FirmwareBinaryStatByNameGet(c *echo.Context) error {
 // @Security BearerAuth
 // @Param name path string true "name"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares/by-name/{name}/binary [head]
 func (h *handler) FirmwareBinaryStatByNameHead(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
@@ -791,6 +912,11 @@ func (h *handler) FirmwareBinaryStatByNameHead(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/firmwares/{id} [delete]
 func (h *handler) FirmwareDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -818,6 +944,12 @@ func (h *handler) FirmwareDelete(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.OtaDispatchRequest true "request"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Failure 504 {object} presentationhttpresponse.ErrorResponse "Request Timeout"
 // @Router /v1/nodes/{id}/ota [post]
 func (h *handler) OtaDispatchByNodeIdPost(c *echo.Context) error {
 	nodeId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -856,6 +988,12 @@ func (h *handler) OtaDispatchByNodeIdPost(c *echo.Context) error {
 // @Param device_id path string true "device_id"
 // @Param request body presentationhttprequest.OtaDispatchRequest true "request"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Failure 504 {object} presentationhttpresponse.ErrorResponse "Request Timeout"
 // @Router /v1/nodes/by-device/{device_id}/ota [post]
 func (h *handler) OtaDispatchByNodeDeviceIdPost(c *echo.Context) error {
 	deviceId, err := presentationhttputils.RequiredString(c.Param("device_id"), "device_id")

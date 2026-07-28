@@ -41,6 +41,11 @@ func NewHandler(
 // @Security BearerAuth
 // @Param request body presentationhttprequest.PermissionPostRequest true "request"
 // @Success 201
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/permissions [post]
 func (h *handler) PermissionPost(c *echo.Context) error {
 	var req presentationhttprequest.PermissionPostRequest
@@ -67,6 +72,10 @@ func (h *handler) PermissionPost(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/permissions [get]
 func (h *handler) PermissionGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
@@ -97,6 +106,11 @@ func (h *handler) PermissionGetList(c *echo.Context) error {
 // @Security BearerAuth
 // @Param name path string true "name"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/permissions/by-name/{name} [get]
 func (h *handler) PermissionGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
@@ -123,6 +137,11 @@ func (h *handler) PermissionGetByName(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/permissions/{id} [get]
 func (h *handler) PermissionGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -151,6 +170,12 @@ func (h *handler) PermissionGetById(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.PermissionPatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/permissions/{id} [patch]
 func (h *handler) PermissionPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -183,6 +208,11 @@ func (h *handler) PermissionPatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/permissions/{id} [delete]
 func (h *handler) PermissionDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -209,6 +239,11 @@ func (h *handler) PermissionDelete(c *echo.Context) error {
 // @Security BearerAuth
 // @Param request body presentationhttprequest.RolePostRequest true "request"
 // @Success 201
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles [post]
 func (h *handler) RolePost(c *echo.Context) error {
 	var req presentationhttprequest.RolePostRequest
@@ -235,6 +270,10 @@ func (h *handler) RolePost(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles [get]
 func (h *handler) RoleGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
@@ -264,6 +303,9 @@ func (h *handler) RoleGetList(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles/default [get]
 func (h *handler) RoleGetDefault(c *echo.Context) error {
 	role, err := h.roleUseCase.ReadDefault(c.Request().Context(), domainusecasesadmin.ReadDefaultRoleRequest{})
@@ -285,6 +327,11 @@ func (h *handler) RoleGetDefault(c *echo.Context) error {
 // @Security BearerAuth
 // @Param name path string true "name"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles/by-name/{name} [get]
 func (h *handler) RoleGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
@@ -311,6 +358,11 @@ func (h *handler) RoleGetByName(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles/{id} [get]
 func (h *handler) RoleGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -337,6 +389,10 @@ func (h *handler) RoleGetById(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles/{id}/permissions [get]
 func (h *handler) RolePermissionsGet(c *echo.Context) error {
 	roleId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -362,6 +418,12 @@ func (h *handler) RolePermissionsGet(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.RolePatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles/{id} [patch]
 func (h *handler) RolePatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -394,6 +456,11 @@ func (h *handler) RolePatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles/{id}/default [patch]
 func (h *handler) RoleSetDefaultPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -419,6 +486,11 @@ func (h *handler) RoleSetDefaultPatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles/{id} [delete]
 func (h *handler) RoleDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -445,6 +517,12 @@ func (h *handler) RoleDelete(c *echo.Context) error {
 // @Param role_id path string true "role_id"
 // @Param permission_id path string true "permission_id"
 // @Success 201
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles/{role_id}/permissions/{permission_id} [post]
 func (h *handler) RolePermissionPost(c *echo.Context) error {
 	roleId, permissionId, err := h.rolePermissionPath(c)
@@ -473,6 +551,11 @@ func (h *handler) RolePermissionPost(c *echo.Context) error {
 // @Param role_id path string true "role_id"
 // @Param permission_id path string true "permission_id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/roles/{role_id}/permissions/{permission_id} [delete]
 func (h *handler) RolePermissionDeleteByPair(c *echo.Context) error {
 	roleId, permissionId, err := h.rolePermissionPath(c)
@@ -497,6 +580,10 @@ func (h *handler) RolePermissionDeleteByPair(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/role-permissions [get]
 func (h *handler) RolePermissionGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
@@ -539,6 +626,11 @@ func (h *handler) RolePermissionGetList(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/role-permissions/{id} [get]
 func (h *handler) RolePermissionGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -561,6 +653,11 @@ func (h *handler) RolePermissionGetById(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/role-permissions/by-pair [get]
 func (h *handler) RolePermissionGetByPair(c *echo.Context) error {
 	roleId, err := presentationhttputils.QueryUUID(c, "role_id")
@@ -608,6 +705,11 @@ func (h *handler) rolePermissionPath(c *echo.Context) (uuid.UUID, uuid.UUID, err
 // @Security BearerAuth
 // @Param request body presentationhttprequest.PayloadSchemaPostRequest true "request"
 // @Success 201
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/payload-schemas [post]
 func (h *handler) PayloadSchemaPost(c *echo.Context) error {
 	var req presentationhttprequest.PayloadSchemaPostRequest
@@ -641,6 +743,10 @@ func (h *handler) PayloadSchemaPost(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/payload-schemas [get]
 func (h *handler) PayloadSchemaGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
@@ -675,6 +781,11 @@ func (h *handler) PayloadSchemaGetList(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/payload-schemas/latest [get]
 func (h *handler) PayloadSchemaGetLatest(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.QueryParam("name"), "name")
@@ -700,6 +811,11 @@ func (h *handler) PayloadSchemaGetLatest(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/payload-schemas/by-name-version [get]
 func (h *handler) PayloadSchemaGetByNameAndVersion(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.QueryParam("name"), "name")
@@ -733,6 +849,11 @@ func (h *handler) PayloadSchemaGetByNameAndVersion(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/payload-schemas/{id} [get]
 func (h *handler) PayloadSchemaGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -761,6 +882,12 @@ func (h *handler) PayloadSchemaGetById(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.PayloadSchemaPatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/payload-schemas/{id} [patch]
 func (h *handler) PayloadSchemaPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -800,6 +927,11 @@ func (h *handler) PayloadSchemaPatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/payload-schemas/{id} [delete]
 func (h *handler) PayloadSchemaDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -826,6 +958,11 @@ func (h *handler) PayloadSchemaDelete(c *echo.Context) error {
 // @Security BearerAuth
 // @Param request body presentationhttprequest.UserPostRequest true "request"
 // @Success 201
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/users [post]
 func (h *handler) UserPost(c *echo.Context) error {
 	var req presentationhttprequest.UserPostRequest
@@ -859,6 +996,10 @@ func (h *handler) UserPost(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/users [get]
 func (h *handler) UserGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
@@ -894,6 +1035,11 @@ func (h *handler) UserGetList(c *echo.Context) error {
 // @Security BearerAuth
 // @Param username path string true "username"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/users/by-username/{username} [get]
 func (h *handler) UserGetByUsername(c *echo.Context) error {
 	username, err := presentationhttputils.RequiredString(c.Param("username"), "username")
@@ -920,6 +1066,11 @@ func (h *handler) UserGetByUsername(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/users/{id} [get]
 func (h *handler) UserGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -946,6 +1097,10 @@ func (h *handler) UserGetById(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/users/{id}/permissions [get]
 func (h *handler) UserPermissionsGet(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -971,6 +1126,12 @@ func (h *handler) UserPermissionsGet(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.UserPatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/users/{id} [patch]
 func (h *handler) UserPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -1011,6 +1172,11 @@ func (h *handler) UserPatch(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.UserPasswordPatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/users/{id}/password [patch]
 func (h *handler) UserPasswordPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -1042,6 +1208,11 @@ func (h *handler) UserPasswordPatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/admin/users/{id} [delete]
 func (h *handler) UserDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")

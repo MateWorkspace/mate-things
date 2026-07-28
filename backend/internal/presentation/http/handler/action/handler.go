@@ -38,6 +38,12 @@ func NewHandler(
 // @Security BearerAuth
 // @Param request body presentationhttprequest.ActionPostRequest true "request"
 // @Success 201
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/actions [post]
 func (h *handler) ActionPost(c *echo.Context) error {
 	var req presentationhttprequest.ActionPostRequest
@@ -72,6 +78,10 @@ func (h *handler) ActionPost(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/actions [get]
 func (h *handler) ActionGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
@@ -113,6 +123,11 @@ func (h *handler) ActionGetList(c *echo.Context) error {
 // @Security BearerAuth
 // @Param name path string true "name"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/actions/by-name/{name} [get]
 func (h *handler) ActionGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
@@ -139,6 +154,11 @@ func (h *handler) ActionGetByName(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/actions/{id} [get]
 func (h *handler) ActionGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -167,6 +187,12 @@ func (h *handler) ActionGetById(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.ActionPatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/actions/{id} [patch]
 func (h *handler) ActionPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -206,6 +232,11 @@ func (h *handler) ActionPatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/actions/{id} [delete]
 func (h *handler) ActionDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -233,6 +264,12 @@ func (h *handler) ActionDelete(c *echo.Context) error {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.ActionDispatchRequest true "request"
 // @Success 201
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Failure 504 {object} presentationhttpresponse.ErrorResponse "Request Timeout"
 // @Router /v1/actions/{id}/dispatch [post]
 func (h *handler) ActionDispatchPost(c *echo.Context) error {
 	actionId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
@@ -282,6 +319,10 @@ func (h *handler) ActionDispatchPost(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/action-logs [get]
 func (h *handler) ActionLogGetList(c *echo.Context) error {
 	filter, err := h.actionLogFilter(c)
@@ -307,6 +348,10 @@ func (h *handler) ActionLogGetList(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/action-logs [delete]
 func (h *handler) ActionLogDelete(c *echo.Context) error {
 	filter, err := h.actionLogDeleteFilter(c)

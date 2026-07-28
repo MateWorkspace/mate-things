@@ -35,6 +35,9 @@ func NewHandler(
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/profile [get]
 func (h *handler) ProfileGet(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredActorId(c)
@@ -60,6 +63,9 @@ func (h *handler) ProfileGet(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/profile/permissions [get]
 func (h *handler) ProfilePermissionsGet(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredActorId(c)
@@ -84,6 +90,11 @@ func (h *handler) ProfilePermissionsGet(c *echo.Context) error {
 // @Security BearerAuth
 // @Param request body presentationhttprequest.ProfilePatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/profile [patch]
 func (h *handler) ProfilePatch(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredActorId(c)
@@ -118,6 +129,10 @@ func (h *handler) ProfilePatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param request body presentationhttprequest.ProfilePasswordPatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/profile/password [patch]
 func (h *handler) ProfilePasswordPatch(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredActorId(c)

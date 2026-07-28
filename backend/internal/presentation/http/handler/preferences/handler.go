@@ -6,9 +6,14 @@ import (
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasespreferences "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/preferences"
 	presentationhttprequest "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/request"
+	presentationhttpresponse "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/response"
 	presentationhttputils "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/utils"
 	"github.com/labstack/echo/v5"
 )
+
+// This handler only ever returns 204/error, but @Failure annotations below
+// need the type in scope for swag to resolve it.
+var _ = presentationhttpresponse.ErrorResponse{}
 
 type handler struct {
 	updateUseCase domainusecasespreferences.Update
@@ -29,6 +34,11 @@ func NewHandler(updateUseCase domainusecasespreferences.Update) *handler {
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.PreferencesPatchRequest true "request"
 // @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/preferences/{resource}/{id} [patch]
 func (h *handler) PreferencesPatch(c *echo.Context) error {
 	resource, err := presentationhttputils.RequiredString(c.Param("resource"), "resource")

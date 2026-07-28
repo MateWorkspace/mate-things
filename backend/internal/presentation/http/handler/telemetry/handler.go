@@ -24,6 +24,10 @@ func NewHandler(queryUseCase domainusecasestelemetry.Query) *handler {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/telemetry-records [get]
 func (h *handler) TelemetryRecordGetList(c *echo.Context) error {
 	filter, err := h.filter(c)
@@ -49,6 +53,10 @@ func (h *handler) TelemetryRecordGetList(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/telemetry-records [delete]
 func (h *handler) TelemetryRecordDelete(c *echo.Context) error {
 	filter, err := h.deleteFilter(c)

@@ -25,7 +25,7 @@ USER_TOKEN=$(curl -s -X POST http://127.0.0.1:18080/api/v1/auth/login \
 ```bash
 curl -s -i http://127.0.0.1:18080/api/v1/profile
 ```
-**Expect:** `401`, `{"code":"unauthorized","message":"authorization is required"}`.
+**Expect:** `401`, `{"error":"Unauthorized","message":"authorization is required"}`.
 
 ### RBAC-02 — Malformed Authorization header (negative)
 ```bash
@@ -34,17 +34,13 @@ curl -s -i http://127.0.0.1:18080/api/v1/profile -H "Authorization: garbage"
 **Expect:** `401` (token parse failure — note code treats a bare non-JWT
 string as the token itself after stripping an optional `Bearer ` prefix).
 
-### RBAC-03 — Valid token, missing permission → 401 not 403 (behavior note)
+### RBAC-03 — Valid token, missing permission (negative)
 Using `USER_TOKEN` (role `user`, which does not have `permission:get`):
 ```bash
 curl -s -i http://127.0.0.1:18080/api/v1/admin/permissions \
   -H "Authorization: Bearer $USER_TOKEN"
 ```
-**Expect:** `401`, `{"code":"unauthorized","message":"permission is denied"}`.
-⚠ Document only, not a bug: this codebase has no distinct 403 Forbidden
-anywhere — missing-auth and missing-permission both return 401. Confirm
-this is intentional with the team before ever "fixing" it, since fixing it
-would be an API-contract change for every client.
+**Expect:** `403`, `{"error":"Access Denied","message":"you do not have permission to perform this action"}`.
 
 ### RBAC-04 — Valid token, has permission (positive)
 ```bash

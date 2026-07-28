@@ -13,6 +13,7 @@ var (
 	ErrTypeConflict      = errors.New("CONFLICT")
 	ErrTypeBadState      = errors.New("BAD_STATE")
 	ErrTypeValidation    = errors.New("VALIDATION")
+	ErrTypeForbidden     = errors.New("FORBIDDEN")
 	ErrTypeUnauthorized  = errors.New("UNAUTHORIZED")
 	ErrTypeTokenExpired  = errors.New("TOKEN_EXPIRED")
 	ErrTypeTokenInvalid  = errors.New("TOKEN_INVALID")

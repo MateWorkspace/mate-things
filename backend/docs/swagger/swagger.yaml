@@ -197,6 +197,13 @@ definitions:
       username:
         type: string
     type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
 info:
   contact: {}
   description: Nusapala Things is the public HTTP and MQTT entrypoint for IoT telemetry,
@@ -211,6 +218,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Action Log Delete
@@ -222,6 +245,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Action Log List
@@ -234,6 +273,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Action List
@@ -254,6 +309,30 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Action
@@ -272,6 +351,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Action Delete
@@ -289,6 +388,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Action Get By ID
@@ -314,6 +433,30 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Action
@@ -340,6 +483,30 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "504":
+          description: Request Timeout
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Action Dispatch
@@ -358,6 +525,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Action Get By Name
@@ -370,6 +557,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Payload Schema List
@@ -390,6 +593,26 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Payload Schema
@@ -408,6 +631,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Payload Schema Delete
@@ -425,6 +668,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Payload Schema Get By ID
@@ -450,6 +713,30 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Payload Schema
@@ -462,6 +749,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Payload Schema Get By Name And Version
@@ -474,6 +781,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Payload Schema Get Latest
@@ -486,6 +813,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Permission List
@@ -506,6 +849,26 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Permission
@@ -524,6 +887,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Permission Delete
@@ -541,6 +924,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Permission Get By ID
@@ -566,6 +969,30 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Permission
@@ -584,6 +1011,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Permission Get By Name
@@ -596,6 +1043,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Permission List
@@ -614,6 +1077,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Permission Get By ID
@@ -626,6 +1109,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Permission Get By Pair
@@ -638,6 +1141,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role List
@@ -658,6 +1177,26 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role
@@ -676,6 +1215,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Delete
@@ -693,6 +1252,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Get By ID
@@ -718,6 +1297,30 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role
@@ -736,6 +1339,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Set Default
@@ -754,6 +1377,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Permissions Get
@@ -777,6 +1416,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Permission Delete By Pair
@@ -799,6 +1458,30 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Permission
@@ -817,6 +1500,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Get By Name
@@ -829,6 +1532,18 @@ paths:
       responses:
         "200":
           description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Role Get Default
@@ -841,6 +1556,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: User List
@@ -861,6 +1592,26 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: User
@@ -879,6 +1630,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: User Delete
@@ -896,6 +1667,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: User Get By ID
@@ -921,6 +1712,30 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: User
@@ -947,6 +1762,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: User Password
@@ -965,6 +1800,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: User Permissions Get
@@ -983,6 +1834,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: User Get By Username
@@ -1004,6 +1875,22 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Auth Login
@@ -1025,6 +1912,18 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Session Expired / Invalid Token
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Auth Refresh
@@ -1037,6 +1936,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware List
@@ -1066,6 +1981,30 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware
@@ -1084,6 +2023,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Delete
@@ -1101,6 +2060,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Get By ID
@@ -1126,6 +2105,30 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware
@@ -1144,6 +2147,26 @@ paths:
       responses:
         "302":
           description: redirect to a short-lived presigned download URL
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Binary Get By ID
@@ -1168,6 +2191,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Binary Put
@@ -1186,6 +2229,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Get By Name
@@ -1204,6 +2267,26 @@ paths:
       responses:
         "302":
           description: redirect to a short-lived presigned download URL
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Binary Get By Name
@@ -1221,6 +2304,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Binary Stat By Name Head
@@ -1239,6 +2342,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Binary Stat By Name Get
@@ -1251,6 +2374,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Class List
@@ -1271,6 +2410,26 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Class
@@ -1289,6 +2448,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Class Delete
@@ -1306,6 +2485,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Class Get By ID
@@ -1331,6 +2530,30 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Class
@@ -1349,6 +2572,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Get By Node Class ID
@@ -1367,6 +2610,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Class Get By Name
@@ -1379,6 +2642,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node List
@@ -1397,6 +2676,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Delete
@@ -1414,6 +2713,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Get By ID
@@ -1439,6 +2758,30 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node
@@ -1465,6 +2808,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Firmware
@@ -1491,6 +2854,30 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "504":
+          description: Request Timeout
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Ota Dispatch By Node ID
@@ -1509,6 +2896,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Firmware Get Available By Node ID
@@ -1527,6 +2934,26 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Node Get By Device ID
@@ -1553,6 +2980,30 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "504":
+          description: Request Timeout
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Ota Dispatch By Node Device ID
@@ -1584,6 +3035,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Preferences
@@ -1596,6 +3067,18 @@ paths:
       responses:
         "200":
           description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Profile Get
@@ -1616,6 +3099,26 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "409":
+          description: Already Exists
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Profile
@@ -1637,6 +3140,22 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Profile Password
@@ -1649,6 +3168,18 @@ paths:
       responses:
         "200":
           description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Profile Permissions Get
@@ -1661,6 +3192,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Telemetry Record Delete
@@ -1672,6 +3219,22 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Telemetry Record List

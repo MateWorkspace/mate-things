@@ -16,7 +16,7 @@ type CountResponse struct {
 }
 
 type ErrorResponse struct {
-	Code    string `json:"code"`
+	Error   string `json:"error"`
 	Message string `json:"message"`
 }
 

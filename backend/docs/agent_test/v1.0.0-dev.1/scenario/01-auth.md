@@ -17,11 +17,11 @@ curl -s -i -X POST http://127.0.0.1:18080/api/v1/auth/login \
 
 ### AUTH-02 — Login with wrong password (negative)
 Same as above with `"password":"wrong"`.
-**Expect:** `401`, body `{"code":"unauthorized", ...}`.
+**Expect:** `401`, body `{"error":"Unauthorized", ...}`.
 
 ### AUTH-03 — Login with nonexistent username (negative)
 `{"username":"nobody","password":"x"}`.
-**Expect:** `404`, body `{"code":"not_found", ...}`. ⚠ Note: this leaks
+**Expect:** `404`, body `{"error":"Not Found", ...}`. ⚠ Note: this leaks
 whether a username exists (404 vs 401 distinguishes "no such user" from
 "wrong password") — worth flagging as a minor information-disclosure gap,
 not fixing now.
@@ -55,22 +55,24 @@ curl -s -i -X POST http://127.0.0.1:18080/api/v1/auth/refresh \
   -H "Content-Type: application/json" \
   -d "{\"refresh_token\":\"$ACCESS_TOKEN\"}"
 ```
-**Expect:** `401` — access and refresh tokens are signed with different
-secrets (`BE_TOKEN_ACCESS_SECRET` vs `BE_TOKEN_REFRESH_SECRET`), so an
-access token should fail refresh-token signature validation.
+**Expect:** `401`, `{"error":"Invalid Token","message":"Your session is no longer valid. Please sign in again."}`
+— access and refresh tokens are signed with different secrets
+(`BE_TOKEN_ACCESS_SECRET` vs `BE_TOKEN_REFRESH_SECRET`), so an access token
+should fail refresh-token signature validation.
 
 ### AUTH-09 — Refresh with garbage/malformed token (negative)
 `{"refresh_token":"not-a-jwt"}`.
-**Expect:** `401`.
+**Expect:** `401`, `{"error":"Invalid Token", ...}`.
 
 ### AUTH-10 — Access token expiry (positive/timing)
 1. Log in fresh, capture `access_token`.
 2. Immediately call any authenticated endpoint (e.g. `GET /v1/profile`) — expect `200`.
 3. Wait **>2 minutes** (`BE_TOKEN_ACCESS_DURATION=2m`).
 4. Call `GET /v1/profile` again with the same (now-expired) `access_token`.
-**Expect:** step 2 → `200`; step 4 → `401`, `{"code":"unauthorized", ...}`
-(expired and malformed tokens both collapse to the same response shape —
-confirmed in code, not a bug to fix, just document the behavior).
+**Expect:** step 2 → `200`; step 4 → `401`,
+`{"error":"Session Expired","message":"Your session has expired. Please sign in again."}`
+(distinct from an invalid/malformed token's `"Invalid Token"` title — see
+AUTH-08/AUTH-09).
 
 ### AUTH-11 — Refresh token still works after access token expires (positive)
 Immediately after AUTH-10 step 4, call `/v1/auth/refresh` with the

@@ -25,7 +25,7 @@ func Permission(requiredPermissions ...string) echo.MiddlewareFunc {
 
 			for _, permission := range requiredPermissions {
 				if _, ok := granted[permission]; !ok {
-					return presentationhttputils.Error(c, domainmodels.NewError("permission is denied", domainmodels.ErrTypeUnauthorized, nil))
+					return presentationhttputils.Error(c, domainmodels.NewError("you do not have permission to perform this action", domainmodels.ErrTypeForbidden, nil))
 				}
 			}
 
