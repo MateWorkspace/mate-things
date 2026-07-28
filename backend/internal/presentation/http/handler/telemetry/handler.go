@@ -32,12 +32,12 @@ func NewHandler(queryUseCase domainusecasestelemetry.Query) *handler {
 func (h *handler) TelemetryRecordGetList(c *echo.Context) error {
 	filter, err := h.filter(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "One or more of the filters provided is invalid.")
 	}
 
 	records, total, err := h.queryUseCase.ReadByFilter(c.Request().Context(), filter)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to load telemetry records right now. Please try again.")
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.CountDataResponse[presentationhttpresponse.TelemetryRecordResponse]{
@@ -61,12 +61,12 @@ func (h *handler) TelemetryRecordGetList(c *echo.Context) error {
 func (h *handler) TelemetryRecordDelete(c *echo.Context) error {
 	filter, err := h.deleteFilter(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "One or more of the filters provided is invalid.")
 	}
 
 	count, err := h.queryUseCase.DeleteByFilter(c.Request().Context(), filter)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to delete telemetry records right now. Please try again.")
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.CountResponse{Count: count})

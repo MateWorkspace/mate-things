@@ -11,8 +11,6 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-const genericServerErrorMessage = "Something went wrong on our end. Please try again later."
-
 func BadRequest(c *echo.Context, message string) error {
 	return c.JSON(http.StatusBadRequest, presentationhttpresponse.ErrorResponse{
 		Error:   "Bad Request",
@@ -20,49 +18,40 @@ func BadRequest(c *echo.Context, message string) error {
 	})
 }
 
-func Error(c *echo.Context, err error) error {
+func Error(c *echo.Context, err error, message string) error {
 	if err == nil {
 		return nil
 	}
 
 	statusCode := http.StatusInternalServerError
 	title := "Internal Server Error"
-	message := genericServerErrorMessage
 
 	switch {
 	case errors.Is(err, domainmodels.ErrTypeNotFound):
 		statusCode = http.StatusNotFound
 		title = "Not Found"
-		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeConflict):
 		statusCode = http.StatusConflict
 		title = "Already Exists"
-		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeBadArgs),
 		errors.Is(err, domainmodels.ErrTypeValidation):
 		statusCode = http.StatusBadRequest
 		title = "Invalid Format"
-		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeBadState):
 		statusCode = http.StatusPreconditionFailed
 		title = "Invalid State"
-		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeForbidden):
 		statusCode = http.StatusForbidden
 		title = "Access Denied"
-		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeTokenExpired):
 		statusCode = http.StatusUnauthorized
 		title = "Session Expired"
-		message = "Your session has expired. Please sign in again."
 	case errors.Is(err, domainmodels.ErrTypeTokenInvalid):
 		statusCode = http.StatusUnauthorized
 		title = "Invalid Token"
-		message = "Your session is no longer valid. Please sign in again."
 	case errors.Is(err, domainmodels.ErrTypeUnauthorized):
 		statusCode = http.StatusUnauthorized
 		title = "Unauthorized"
-		message = errorMessage(err)
 	case errors.Is(err, domainmodels.ErrTypeTimeout):
 		statusCode = http.StatusGatewayTimeout
 		title = "Request Timeout"
@@ -78,10 +67,11 @@ func Error(c *echo.Context, err error) error {
 	return c.JSON(statusCode, presentationhttpresponse.ErrorResponse{
 		Error:   title,
 		Message: message,
+		Details: errorDetails(err),
 	})
 }
 
-func errorMessage(err error) string {
+func errorDetails(err error) string {
 	var domainErr *domainmodels.Error
 	if errors.As(err, &domainErr) && strings.TrimSpace(domainErr.Message) != "" {
 		return domainErr.Message

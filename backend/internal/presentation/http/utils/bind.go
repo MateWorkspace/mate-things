@@ -11,7 +11,7 @@ func Bind(c *echo.Context, value any) error {
 			"request body is invalid",
 			domainmodels.ErrTypeValidation,
 			err,
-		))
+		), "The request body could not be processed. Please check your input.")
 	}
 
 	return nil

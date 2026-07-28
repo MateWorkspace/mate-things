@@ -42,15 +42,15 @@ func NewHandler(
 func (h *handler) ProfileGet(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredActorId(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Please sign in to continue.")
 	}
 
 	user, err := h.meUseCase.GetProfile(c.Request().Context(), domainusecasesprofile.GetProfileRequest{UserId: userId})
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to load your profile right now. Please try again.")
 	}
 	if user == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("user"))
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("user"), "Unable to load your profile right now. Please try again.")
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.User(*user))
@@ -70,12 +70,12 @@ func (h *handler) ProfileGet(c *echo.Context) error {
 func (h *handler) ProfilePermissionsGet(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredActorId(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Please sign in to continue.")
 	}
 
 	permissions, err := h.meUseCase.GetPermissions(c.Request().Context(), domainusecasesprofile.GetProfilePermissionsRequest{UserId: userId})
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to load your permissions right now. Please try again.")
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Permissions(permissions))
@@ -99,7 +99,7 @@ func (h *handler) ProfilePermissionsGet(c *echo.Context) error {
 func (h *handler) ProfilePatch(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredActorId(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Please sign in to continue.")
 	}
 
 	var req presentationhttprequest.ProfilePatchRequest
@@ -114,7 +114,7 @@ func (h *handler) ProfilePatch(c *echo.Context) error {
 		Username:  req.Username,
 		UpdatedBy: &userId,
 	}); err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to update your profile. Please check your input and try again.")
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -137,7 +137,7 @@ func (h *handler) ProfilePatch(c *echo.Context) error {
 func (h *handler) ProfilePasswordPatch(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredActorId(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Please sign in to continue.")
 	}
 
 	var req presentationhttprequest.ProfilePasswordPatchRequest
@@ -147,7 +147,7 @@ func (h *handler) ProfilePasswordPatch(c *echo.Context) error {
 
 	currentPassword, err := presentationhttputils.RequiredString(req.CurrentPassword, "current_password")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Please enter your current password.")
 	}
 
 	if err := h.securityUseCase.ChangePassword(c.Request().Context(), domainusecasesprofile.ChangePasswordRequest{
@@ -156,7 +156,7 @@ func (h *handler) ProfilePasswordPatch(c *echo.Context) error {
 		NewPassword:     req.NewPassword,
 		UpdatedBy:       &userId,
 	}); err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to change your password. Please check your current password and try again.")
 	}
 
 	return c.NoContent(http.StatusNoContent)

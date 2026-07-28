@@ -15,7 +15,7 @@ func Permission(requiredPermissions ...string) echo.MiddlewareFunc {
 
 			claims := presentationhttputils.AccessClaims(c.Request().Context())
 			if claims == nil {
-				return presentationhttputils.Error(c, domainmodels.NewError("authenticated user is required", domainmodels.ErrTypeUnauthorized, nil))
+				return presentationhttputils.Error(c, domainmodels.NewError("authenticated user is required", domainmodels.ErrTypeUnauthorized, nil), "Please sign in to continue.")
 			}
 
 			granted := make(map[string]struct{}, len(claims.Permissions))
@@ -25,7 +25,7 @@ func Permission(requiredPermissions ...string) echo.MiddlewareFunc {
 
 			for _, permission := range requiredPermissions {
 				if _, ok := granted[permission]; !ok {
-					return presentationhttputils.Error(c, domainmodels.NewError("you do not have permission to perform this action", domainmodels.ErrTypeForbidden, nil))
+					return presentationhttputils.Error(c, domainmodels.NewError("you do not have permission to perform this action", domainmodels.ErrTypeForbidden, nil), "You don't have permission to perform this action.")
 				}
 			}
 

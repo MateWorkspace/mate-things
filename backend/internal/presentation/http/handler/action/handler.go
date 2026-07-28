@@ -53,7 +53,7 @@ func (h *handler) ActionPost(c *echo.Context) error {
 
 	nodeClassId, err := presentationhttputils.RequiredUUID(req.NodeClassId, "node_class_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Please select a valid node class.")
 	}
 
 	id, err := h.definitionUseCase.Create(c.Request().Context(), domainusecasesaction.CreateActionRequest{
@@ -65,7 +65,7 @@ func (h *handler) ActionPost(c *echo.Context) error {
 		CreatedBy:            presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to create the action. Please check your input and try again.")
 	}
 
 	return c.JSON(http.StatusCreated, presentationhttpresponse.IdResponse{Id: id.String()})
@@ -86,15 +86,15 @@ func (h *handler) ActionPost(c *echo.Context) error {
 func (h *handler) ActionGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
 	}
 	nodeClassId, err := presentationhttputils.QueryUUID(c, "node_class_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
 	}
 	payloadSchemaVersion, err := presentationhttputils.QueryInt32(c, "payload_schema_version")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "The payload schema version provided is invalid.")
 	}
 
 	actions, total, err := h.definitionUseCase.ReadByPagination(c.Request().Context(), domainusecasesaction.ReadActionsByPaginationRequest{
@@ -106,7 +106,7 @@ func (h *handler) ActionGetList(c *echo.Context) error {
 		PayloadSchemaVersion: payloadSchemaVersion,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to load actions right now. Please try again.")
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.ActionResponse]{
@@ -132,15 +132,15 @@ func (h *handler) ActionGetList(c *echo.Context) error {
 func (h *handler) ActionGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Please provide a valid action name.")
 	}
 
 	action, err := h.definitionUseCase.ReadByName(c.Request().Context(), domainusecasesaction.ReadActionByNameRequest{Name: name})
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to look up the action. Please try again.")
 	}
 	if action == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("action"))
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("action"), "The requested action could not be found.")
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Action(*action))
@@ -163,15 +163,15 @@ func (h *handler) ActionGetByName(c *echo.Context) error {
 func (h *handler) ActionGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "The action ID provided is invalid.")
 	}
 
 	action, err := h.definitionUseCase.ReadById(c.Request().Context(), domainusecasesaction.ReadActionByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to look up the action. Please try again.")
 	}
 	if action == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("action"))
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("action"), "The requested action could not be found.")
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Action(*action))
@@ -197,7 +197,7 @@ func (h *handler) ActionGetById(c *echo.Context) error {
 func (h *handler) ActionPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "The action ID provided is invalid.")
 	}
 
 	var req presentationhttprequest.ActionPatchRequest
@@ -206,7 +206,7 @@ func (h *handler) ActionPatch(c *echo.Context) error {
 	}
 	nodeClassId, err := presentationhttputils.OptionalUUID(req.NodeClassId, "node_class_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
 	}
 
 	if err := h.definitionUseCase.UpdateById(c.Request().Context(), domainusecasesaction.UpdateActionRequest{
@@ -218,7 +218,7 @@ func (h *handler) ActionPatch(c *echo.Context) error {
 		PayloadSchemaVersion: req.PayloadSchemaVersion,
 		UpdatedBy:            presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to update the action. Please check your input and try again.")
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -241,14 +241,14 @@ func (h *handler) ActionPatch(c *echo.Context) error {
 func (h *handler) ActionDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "The action ID provided is invalid.")
 	}
 
 	if err := h.definitionUseCase.DeleteById(c.Request().Context(), domainusecasesaction.DeleteActionRequest{
 		Id:        id,
 		DeletedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to delete the action. Please try again.")
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -274,7 +274,7 @@ func (h *handler) ActionDelete(c *echo.Context) error {
 func (h *handler) ActionDispatchPost(c *echo.Context) error {
 	actionId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "The action ID provided is invalid.")
 	}
 
 	var req presentationhttprequest.ActionDispatchRequest
@@ -283,11 +283,11 @@ func (h *handler) ActionDispatchPost(c *echo.Context) error {
 	}
 	nodeId, err := presentationhttputils.RequiredUUID(req.NodeId, "node_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Please select a valid node.")
 	}
 	payload, err := presentationhttputils.RequiredRawJSON(req.Payload, "payload")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "A valid payload is required.")
 	}
 
 	executedAt := time.Now().UTC()
@@ -303,10 +303,10 @@ func (h *handler) ActionDispatchPost(c *echo.Context) error {
 		ActorId:    presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to dispatch the action. Please try again.")
 	}
 	if actionLog == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("action log"))
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("action log"), "The action could not be dispatched right now.")
 	}
 
 	return c.JSON(http.StatusCreated, presentationhttpresponse.ActionLog(*actionLog))
@@ -327,12 +327,12 @@ func (h *handler) ActionDispatchPost(c *echo.Context) error {
 func (h *handler) ActionLogGetList(c *echo.Context) error {
 	filter, err := h.actionLogFilter(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "One or more of the filters provided is invalid.")
 	}
 
 	actionLogs, total, err := h.historyUseCase.ReadByFilter(c.Request().Context(), filter)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to load action logs right now. Please try again.")
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.CountDataResponse[presentationhttpresponse.ActionLogResponse]{
@@ -356,12 +356,12 @@ func (h *handler) ActionLogGetList(c *echo.Context) error {
 func (h *handler) ActionLogDelete(c *echo.Context) error {
 	filter, err := h.actionLogDeleteFilter(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "One or more of the filters provided is invalid.")
 	}
 
 	count, err := h.historyUseCase.DeleteByFilter(c.Request().Context(), filter)
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to delete action logs right now. Please try again.")
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.CountResponse{Count: count})

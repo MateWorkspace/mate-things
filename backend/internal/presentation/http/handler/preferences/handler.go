@@ -43,11 +43,11 @@ func NewHandler(updateUseCase domainusecasespreferences.Update) *handler {
 func (h *handler) PreferencesPatch(c *echo.Context) error {
 	resource, err := presentationhttputils.RequiredString(c.Param("resource"), "resource")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Please provide a valid resource type.")
 	}
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "The resource ID provided is invalid.")
 	}
 
 	var req presentationhttprequest.PreferencesPatchRequest
@@ -56,7 +56,7 @@ func (h *handler) PreferencesPatch(c *echo.Context) error {
 	}
 	preferences, err := presentationhttputils.RequiredRawJSON(req.Preferences, "preferences")
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "A valid preferences value is required.")
 	}
 
 	updatedBy := presentationhttputils.ActorId(c)
@@ -81,7 +81,7 @@ func (h *handler) PreferencesPatch(c *echo.Context) error {
 		err = domainmodels.NewError("resource is not supported", domainmodels.ErrTypeValidation, nil)
 	}
 	if err != nil {
-		return presentationhttputils.Error(c, err)
+		return presentationhttputils.Error(c, err, "Unable to update preferences. Please check your input and try again.")
 	}
 
 	return c.NoContent(http.StatusNoContent)
