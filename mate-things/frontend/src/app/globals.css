@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
 :root {
+  /* Brand palette, per frontend/AGENTS.md - light-mode values as given. */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #231f20; /* ink, on a light surface */
+  --surface: #ffeac5; /* pale cream card/panel fill */
+  --primary: #603f26; /* dark brown - logo fill, primary ink, CTAs */
+  --accent: #c49a6c; /* mid tan - secondary accents, borders */
+  --highlight: #fedbb5; /* soft peach - hover/active tints */
+  --ink: #231f20; /* near-black outline/stroke detail */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --color-highlight: var(--highlight);
+  --color-ink: var(--ink);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-anton);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Not a naive invert (see frontend/AGENTS.md's Dark & light mode
+       rule): background/surface darken toward a warm near-black rather
+       than neutral gray, primary lightens enough to stay legible, and
+       the light-mode surface cream is reused as the dark-mode foreground
+       so the palette stays tight instead of growing new hexes. */
+    --background: #1a1210;
+    --foreground: #ffeac5;
+    --surface: #2a1f19;
+    --primary: #e0b988;
+    --accent: #c49a6c;
+    --highlight: #fedbb5;
+    --ink: #e8dccb;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }

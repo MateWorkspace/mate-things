@@ -10,6 +10,7 @@ import {
 import type { PermissionResponse } from "@/lib/api/permissions";
 import type { RoleResponse } from "@/lib/api/roles";
 import type { UserResponse } from "@/lib/api/users";
+import { decodeJwtExpiry } from "@/lib/jwt";
 
 export interface LoginRequest {
   username: string;
@@ -32,17 +33,27 @@ async function persistSession(session: LoginResponse): Promise<void> {
   const cookieStore = await cookies();
   const secure = process.env.NODE_ENV === "production";
 
+  // Each cookie's expiry mirrors its own JWT's real `exp` claim rather
+  // than a guessed duration - correct regardless of how BE_TOKEN_ACCESS_
+  // DURATION/BE_TOKEN_REFRESH_DURATION are configured for a given
+  // deployment. Falls back to a session cookie (no `expires`) only if the
+  // token is somehow unparsable.
+  const accessExpires = decodeJwtExpiry(session.access_token) ?? undefined;
+  const refreshExpires = decodeJwtExpiry(session.refresh_token) ?? undefined;
+
   cookieStore.set(ACCESS_TOKEN_COOKIE, session.access_token, {
     httpOnly: true,
     secure,
     sameSite: "lax",
     path: "/",
+    expires: accessExpires,
   });
   cookieStore.set(REFRESH_TOKEN_COOKIE, session.refresh_token, {
     httpOnly: true,
     secure,
     sameSite: "lax",
     path: "/",
+    expires: refreshExpires,
   });
 }
 
