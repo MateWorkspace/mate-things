@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Anton, Inter } from "next/font/google";
 
+import ToastProvider from "@/components/ui/toast-provider";
+
 import "./globals.css";
 
 // Body face: humanist/geometric, deliberately neutral so the display face
@@ -34,7 +36,9 @@ export default function RootLayout({
       lang="en"
       className={`h-full antialiased ${inter.variable} ${anton.variable}`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

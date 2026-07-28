@@ -6,5 +6,5 @@ import { logout } from "@/lib/api/auth";
 
 export async function logoutAction(): Promise<void> {
   await logout();
-  redirect("/login");
+  redirect("/login?signedOut=1");
 }

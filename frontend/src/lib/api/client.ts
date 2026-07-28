@@ -15,13 +15,15 @@ export const REFRESH_TOKEN_COOKIE = "mate_refresh_token";
 
 export class ApiError extends Error {
   readonly status: number;
-  readonly code: string;
+  readonly title: string;
+  readonly details?: string;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, title: string, message: string, details?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
-    this.code = code;
+    this.title = title;
+    this.details = details;
   }
 }
 
@@ -126,7 +128,7 @@ export async function apiFetch<T>(
     // that should go through apiRequest directly instead.
     throw new ApiError(
       response.status,
-      "unexpected_redirect",
+      "Unexpected Redirect",
       `Unexpected redirect response for ${path} - use apiRequest directly for redirect-returning endpoints.`,
     );
   }
@@ -138,8 +140,9 @@ export async function apiFetch<T>(
 
     throw new ApiError(
       response.status,
-      errorBody?.code ?? "unknown_error",
+      errorBody?.error ?? "Something Went Wrong",
       errorBody?.message ?? response.statusText,
+      errorBody?.details,
     );
   }
 

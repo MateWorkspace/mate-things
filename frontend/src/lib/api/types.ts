@@ -27,8 +27,9 @@ export interface CountResponse {
 }
 
 export interface ErrorResponse {
-  code: string;
+  error: string;
   message: string;
+  details: string;
 }
 
 // Mirrors response/common.go's AuditResponse, embedded (via Go struct

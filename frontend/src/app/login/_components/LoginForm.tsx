@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 import { loginAction, type LoginFormState } from "../_lib/actions";
 
@@ -15,6 +16,15 @@ export default function LoginForm() {
     loginAction,
     initialState,
   );
+  const toast = useToast();
+  const lastShown = useRef<LoginFormState | null>(null);
+
+  useEffect(() => {
+    if (state.title && state !== lastShown.current) {
+      lastShown.current = state;
+      toast.error(state.title, state.message ?? "");
+    }
+  }, [state, toast]);
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -40,12 +50,6 @@ export default function LoginForm() {
           required
         />
       </div>
-
-      {state.error && (
-        <p role="alert" className="text-sm font-medium text-red-700">
-          {state.error}
-        </p>
-      )}
 
       <Button type="submit" disabled={isPending} className="mt-1 w-full">
         {isPending ? "Signing in…" : "Sign in"}

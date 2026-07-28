@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { Suspense } from "react";
 
 import mark from "@/assets/vertical.svg";
 
 import LoginForm from "./_components/LoginForm";
+import SignedOutNotice from "./_components/SignedOutNotice";
 
 export const metadata: Metadata = {
   title: "Sign in — Mate Things",
@@ -41,6 +43,10 @@ export default function LoginPage() {
           <div className="mt-8">
             <LoginForm />
           </div>
+
+          <Suspense fallback={null}>
+            <SignedOutNotice />
+          </Suspense>
         </div>
       </div>
     </div>
