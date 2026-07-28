@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 
+import { API_BASE_URL } from "@/config/env";
 import type { ErrorResponse } from "@/lib/api/types";
 
 // Server-only: this whole module (and every file under src/lib/api/) never
@@ -25,11 +26,7 @@ export class ApiError extends Error {
 }
 
 function getBaseUrl(): string {
-  const base = process.env.API_BASE_URL;
-  if (!base) {
-    throw new Error("API_BASE_URL environment variable is not set");
-  }
-  return `${base.replace(/\/$/, "")}${API_VERSION_PATH}`;
+  return `${API_BASE_URL.replace(/\/$/, "")}${API_VERSION_PATH}`;
 }
 
 /**

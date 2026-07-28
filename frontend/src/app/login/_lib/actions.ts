@@ -7,6 +7,7 @@ import { ApiError } from "@/lib/api/client";
 
 export interface LoginFormState {
   error?: string;
+  username?: string;
 }
 
 export async function loginAction(
@@ -17,7 +18,7 @@ export async function loginAction(
   const password = String(formData.get("password") ?? "");
 
   if (!username || !password) {
-    return { error: "Enter your username and password." };
+    return { error: "Enter your username and password.", username };
   }
 
   try {
@@ -29,9 +30,10 @@ export async function loginAction(
           err.status === 401
             ? "Incorrect username or password."
             : err.message,
+        username,
       };
     }
-    return { error: "Something went wrong. Try again." };
+    return { error: "Something went wrong. Try again.", username };
   }
 
   redirect("/dashboard");

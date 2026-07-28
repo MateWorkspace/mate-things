@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 
+import { IS_PRODUCTION } from "@/config/env";
 import {
   ACCESS_TOKEN_COOKIE,
   apiFetch,
@@ -31,7 +32,6 @@ export interface LoginResponse {
 
 async function persistSession(session: LoginResponse): Promise<void> {
   const cookieStore = await cookies();
-  const secure = process.env.NODE_ENV === "production";
 
   // Each cookie's expiry mirrors its own JWT's real `exp` claim rather
   // than a guessed duration - correct regardless of how BE_TOKEN_ACCESS_
@@ -43,14 +43,14 @@ async function persistSession(session: LoginResponse): Promise<void> {
 
   cookieStore.set(ACCESS_TOKEN_COOKIE, session.access_token, {
     httpOnly: true,
-    secure,
+    secure: IS_PRODUCTION,
     sameSite: "lax",
     path: "/",
     expires: accessExpires,
   });
   cookieStore.set(REFRESH_TOKEN_COOKIE, session.refresh_token, {
     httpOnly: true,
-    secure,
+    secure: IS_PRODUCTION,
     sameSite: "lax",
     path: "/",
     expires: refreshExpires,

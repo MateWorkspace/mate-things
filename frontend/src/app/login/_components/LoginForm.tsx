@@ -24,6 +24,7 @@ export default function LoginForm() {
           id="username"
           name="username"
           autoComplete="username"
+          defaultValue={state.username}
           autoFocus
           required
         />
