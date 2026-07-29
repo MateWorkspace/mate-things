@@ -8,6 +8,9 @@ import (
 )
 
 type ConfigParameter interface {
+	// ValidateSchema checks a config schema without persisting it, so callers
+	// can reject a bad schema before any irreversible side effect.
+	ValidateSchema(parameters []ConfigParameterInput) error
 	ReplaceForFirmware(ctx context.Context, request ReplaceConfigParametersRequest) error
 	ReadByFirmwareId(ctx context.Context, request ReadConfigParametersByFirmwareIdRequest) ([]domainmodels.FirmwareConfigParameter, error)
 }

@@ -50,6 +50,12 @@ func (u *usecase) Create(
 		return domainusecasesnode.CreateFirmwareResult{}, err
 	}
 
+	// Validated up front: binary upload and the DB row are irreversible enough
+	// that a bad schema must not get past this point.
+	if err := u.configParameter.ValidateSchema(request.ConfigSchema); err != nil {
+		return domainusecasesnode.CreateFirmwareResult{}, err
+	}
+
 	path, size, checksum, err := u.storage.Store(ctx, name, content)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to store firmware binary", domainmodels.LoggerMeta{
@@ -266,6 +272,11 @@ func (u *usecase) ReplaceBinaryById(
 
 	content, err := applicationshared.RequiredFirmwareContent(request.Content, "file")
 	if err != nil {
+		return domainusecasesnode.FirmwareBinaryStatResult{}, err
+	}
+
+	// See Create: reject a bad schema before the binary is stored.
+	if err := u.configParameter.ValidateSchema(request.ConfigSchema); err != nil {
 		return domainusecasesnode.FirmwareBinaryStatResult{}, err
 	}
 

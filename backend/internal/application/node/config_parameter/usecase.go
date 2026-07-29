@@ -30,17 +30,28 @@ func NewUsecaseImpl(
 	}
 }
 
-func (u *usecase) ReplaceForFirmware(ctx context.Context, request domainusecasesnode.ReplaceConfigParametersRequest) error {
-	const tag = "node/config_parameter/ReplaceForFirmware"
-
-	params := make([]domaincontractsrepository.FirmwareConfigParameterInput, 0, len(request.Parameters))
-	for _, param := range request.Parameters {
-		if !validValueTypes[param.ValueType] {
-			return domainmodels.NewError("config parameter value_type must be one of string, uint32, bool", domainmodels.ErrTypeValidation, nil)
-		}
+func (u *usecase) ValidateSchema(parameters []domainusecasesnode.ConfigParameterInput) error {
+	for _, param := range parameters {
 		if param.Key == "" {
 			return domainmodels.NewError("config parameter key is required", domainmodels.ErrTypeValidation, nil)
 		}
+		if !validValueTypes[param.ValueType] {
+			return domainmodels.NewError("config parameter value_type must be one of string, uint32, bool", domainmodels.ErrTypeValidation, nil)
+		}
+	}
+
+	return nil
+}
+
+func (u *usecase) ReplaceForFirmware(ctx context.Context, request domainusecasesnode.ReplaceConfigParametersRequest) error {
+	const tag = "node/config_parameter/ReplaceForFirmware"
+
+	if err := u.ValidateSchema(request.Parameters); err != nil {
+		return err
+	}
+
+	params := make([]domaincontractsrepository.FirmwareConfigParameterInput, 0, len(request.Parameters))
+	for _, param := range request.Parameters {
 		params = append(params, domaincontractsrepository.FirmwareConfigParameterInput{
 			Key:       param.Key,
 			ValueType: param.ValueType,
