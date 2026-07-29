@@ -6,7 +6,7 @@ it deviates from the documented expectation (cross-reference
 `17-known-gaps-summary.md` for anything already flagged as a known gap
 so a deviation there isn't mistaken for a new bug).
 
-Total test cases: 191
+Total test cases: 205
 
 Before running anything, complete [`00-setup.md`](scenario/00-setup.md) (build the image, run the container, obtain `ACCESS_TOKEN`).
 
@@ -249,6 +249,23 @@ Before running anything, complete [`00-setup.md`](scenario/00-setup.md) (build t
 - [ ] **MQTT-11** — Action ack with unknown execution_id (negative/edge)
 - [ ] **MQTT-12** — OTA message reaches the device (positive, ties to `10-node.md` NODE-11)
 - [ ] **MQTT-13** — Resubscription after broker reconnect (edge)
+
+## 18 — Dynamic Config over MQTT (`scenario/18-dynamic-config.md`)
+
+- [ ] **CFG-01** — Create firmware with a `config_schema` (positive, multipart)
+- [ ] **CFG-02** — Get config parameters for a firmware with a schema (positive)
+- [ ] **CFG-03** — Create with an invalid `value_type` (negative, no side effect)
+- [ ] **CFG-04** — Create with an empty key in the schema (negative)
+- [ ] **CFG-05** — Get config parameters for a nonexistent firmware id (edge, ⚠ known gap)
+- [ ] **CFG-06** — Get node config before anything is set (positive/edge)
+- [ ] **CFG-07** — Set a config value (positive, publishes over MQTT)
+- [ ] **CFG-08** — Get node config after the set (positive)
+- [ ] **CFG-09** — Set an unknown config key (negative)
+- [ ] **CFG-10** — Set a value whose type doesn't match the schema (negative)
+- [ ] **CFG-11** — Get/set config for a nonexistent node UUID (negative, regression)
+- [ ] **CFG-12** — Config endpoints as a role lacking `node_config:get`/`node_config:set` (negative)
+- [ ] **CFG-13** — Node config after a firmware reassignment (edge, lineage semantics)
+- [ ] **CFG-14** — Secret-ish keys returned in plaintext (edge, accepted tradeoff)
 
 ## Reference
 

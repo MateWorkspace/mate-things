@@ -20,6 +20,9 @@ func FirmwareConfigParameters(params []domainmodels.FirmwareConfigParameter) []F
 	return result
 }
 
+// NodeConfigValueResponse echoes config values verbatim, including secret-ish
+// keys such as `mqtt_pass`, which are stored as plaintext. Accepted tradeoff:
+// the endpoint is gated behind `node_config:get` (super/admin only, not user).
 type NodeConfigValueResponse struct {
 	Key       string `json:"key" example:"mqtt_host"`
 	Value     string `json:"value" example:"broker.example.com"`
