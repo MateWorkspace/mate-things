@@ -321,3 +321,64 @@ func ScanPgxActionLogs(rows pgx.Rows) ([]domainmodels.ActionLog, error) {
 	}
 	return items, rows.Err()
 }
+
+func ScanPgxFirmwareConfigParameter(row pgx.Row) (domainmodels.FirmwareConfigParameter, error) {
+	var item domainmodels.FirmwareConfigParameter
+	err := row.Scan(
+		&item.Id,
+		&item.FirmwareId,
+		&item.Key,
+		&item.ValueType,
+		&item.Preferences,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+		&item.DeletedAt,
+		&item.CreatedBy,
+		&item.UpdatedBy,
+		&item.DeletedBy,
+	)
+	return item, err
+}
+
+func ScanPgxFirmwareConfigParameters(rows pgx.Rows) ([]domainmodels.FirmwareConfigParameter, error) {
+	items := make([]domainmodels.FirmwareConfigParameter, 0)
+	for rows.Next() {
+		item, err := ScanPgxFirmwareConfigParameter(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func ScanPgxNodeConfigValue(row pgx.Row) (domainmodels.NodeConfigValue, error) {
+	var item domainmodels.NodeConfigValue
+	err := row.Scan(
+		&item.Id,
+		&item.NodeId,
+		&item.FirmwareId,
+		&item.Key,
+		&item.Value,
+		&item.Preferences,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+		&item.DeletedAt,
+		&item.CreatedBy,
+		&item.UpdatedBy,
+		&item.DeletedBy,
+	)
+	return item, err
+}
+
+func ScanPgxNodeConfigValues(rows pgx.Rows) ([]domainmodels.NodeConfigValue, error) {
+	items := make([]domainmodels.NodeConfigValue, 0)
+	for rows.Next() {
+		item, err := ScanPgxNodeConfigValue(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
