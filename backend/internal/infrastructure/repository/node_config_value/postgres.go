@@ -39,9 +39,6 @@ func (p *postgresImpl) ReadByNodeId(ctx context.Context, nodeId uuid.UUID) ([]do
 
 	rows, err := p.Dt.Query(ctx, query, args...)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return []domainmodels.NodeConfigValue{}, nil
-		}
 		return nil, infrastructurerepositoryshared.MapPgxError("failed to read node config values", err)
 	}
 	defer rows.Close()

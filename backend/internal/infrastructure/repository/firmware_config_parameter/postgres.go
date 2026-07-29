@@ -2,7 +2,6 @@ package infrastructurerepositoryfirmwareconfigparameter
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Masterminds/squirrel"
 	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
@@ -10,7 +9,6 @@ import (
 	infrastructurerepositoryshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/shared"
 	"github.com/MateWorkspace/mate-things/backend/pkg/pgxdt"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
 type postgresImpl struct {
@@ -42,25 +40,27 @@ func (p *postgresImpl) ReplaceForFirmwareId(
 		keys = append(keys, param.Key)
 	}
 
-	deleteQuery, deleteArgs, err := p.querySoftDeleteMissing(firmwareId, keys, actorId)
-	if err != nil {
-		return infrastructurerepositoryshared.QueryBuildError("failed to build delete firmware config parameters query", err)
-	}
-	if _, err := p.Dt.Exec(ctx, deleteQuery, deleteArgs...); err != nil {
-		return infrastructurerepositoryshared.MapPgxError("failed to delete stale firmware config parameters", err)
-	}
-
-	for _, param := range params {
-		upsertQuery, upsertArgs, err := p.queryUpsert(firmwareId, param.Key, param.ValueType, actorId)
+	return p.Dt.WithTx(ctx, func(ctx context.Context) error {
+		deleteQuery, deleteArgs, err := p.querySoftDeleteMissing(firmwareId, keys, actorId)
 		if err != nil {
-			return infrastructurerepositoryshared.QueryBuildError("failed to build upsert firmware config parameter query", err)
+			return infrastructurerepositoryshared.QueryBuildError("failed to build delete firmware config parameters query", err)
 		}
-		if _, err := p.Dt.Exec(ctx, upsertQuery, upsertArgs...); err != nil {
-			return infrastructurerepositoryshared.MapPgxError("failed to upsert firmware config parameter", err)
+		if _, err := p.Dt.Exec(ctx, deleteQuery, deleteArgs...); err != nil {
+			return infrastructurerepositoryshared.MapPgxError("failed to delete stale firmware config parameters", err)
 		}
-	}
 
-	return nil
+		for _, param := range params {
+			upsertQuery, upsertArgs, err := p.queryUpsert(firmwareId, param.Key, param.ValueType, actorId)
+			if err != nil {
+				return infrastructurerepositoryshared.QueryBuildError("failed to build upsert firmware config parameter query", err)
+			}
+			if _, err := p.Dt.Exec(ctx, upsertQuery, upsertArgs...); err != nil {
+				return infrastructurerepositoryshared.MapPgxError("failed to upsert firmware config parameter", err)
+			}
+		}
+
+		return nil
+	})
 }
 
 func (p *postgresImpl) ReadByFirmwareId(
@@ -74,9 +74,6 @@ func (p *postgresImpl) ReadByFirmwareId(
 
 	rows, err := p.Dt.Query(ctx, query, args...)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return []domainmodels.FirmwareConfigParameter{}, nil
-		}
 		return nil, infrastructurerepositoryshared.MapPgxError("failed to read firmware config parameters", err)
 	}
 	defer rows.Close()
