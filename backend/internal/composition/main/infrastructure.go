@@ -28,8 +28,10 @@ import (
 	infrastructurerepositoryaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/action"
 	infrastructurerepositoryactionlog "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/action_log"
 	infrastructurerepositoryfirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/firmware"
+	infrastructurerepositoryfirmwareconfigparameter "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/firmware_config_parameter"
 	infrastructurerepositorynode "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node"
 	infrastructurerepositorynodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class"
+	infrastructurerepositorynodeconfigvalue "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_config_value"
 	infrastructurerepositorypayloadschema "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/payload_schema"
 	infrastructurerepositorypermission "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/permission"
 	infrastructurerepositoryrole "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/role"
@@ -48,17 +50,19 @@ type infrastructure struct {
 
 	transactor domaincontractsutility.Transactor
 
-	actionRepository          domaincontractsrepository.Action
-	actionLogRepository       domaincontractsrepository.ActionLog
-	firmwareRepository        domaincontractsrepository.Firmware
-	nodeRepository            domaincontractsrepository.Node
-	nodeClassRepository       domaincontractsrepository.NodeClass
-	payloadSchemaRepository   domaincontractsrepository.PayloadSchema
-	permissionRepository      domaincontractsrepository.Permission
-	roleRepository            domaincontractsrepository.Role
-	rolePermissionRepository  domaincontractsrepository.RolePermission
-	telemetryRecordRepository domaincontractsrepository.TelemetryRecord
-	userRepository            domaincontractsrepository.User
+	actionRepository                  domaincontractsrepository.Action
+	actionLogRepository               domaincontractsrepository.ActionLog
+	firmwareRepository                domaincontractsrepository.Firmware
+	firmwareConfigParameterRepository domaincontractsrepository.FirmwareConfigParameter
+	nodeRepository                    domaincontractsrepository.Node
+	nodeConfigValueRepository         domaincontractsrepository.NodeConfigValue
+	nodeClassRepository               domaincontractsrepository.NodeClass
+	payloadSchemaRepository           domaincontractsrepository.PayloadSchema
+	permissionRepository              domaincontractsrepository.Permission
+	roleRepository                    domaincontractsrepository.Role
+	rolePermissionRepository          domaincontractsrepository.RolePermission
+	telemetryRecordRepository         domaincontractsrepository.TelemetryRecord
+	userRepository                    domaincontractsrepository.User
 
 	actionCache         domaincontractscache.Action
 	firmwareCache       domaincontractscache.Firmware
@@ -99,7 +103,9 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	actionRepository := infrastructurerepositoryaction.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	actionLogRepository := infrastructurerepositoryactionlog.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	firmwareRepository := infrastructurerepositoryfirmware.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	firmwareConfigParameterRepository := infrastructurerepositoryfirmwareconfigparameter.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeRepository := infrastructurerepositorynode.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	nodeConfigValueRepository := infrastructurerepositorynodeconfigvalue.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeClassRepository := infrastructurerepositorynodeclass.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	payloadSchemaRepository := infrastructurerepositorypayloadschema.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	permissionRepository := infrastructurerepositorypermission.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -140,17 +146,19 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 
 		transactor: transactor,
 
-		actionRepository:          actionRepository,
-		actionLogRepository:       actionLogRepository,
-		firmwareRepository:        firmwareRepository,
-		nodeRepository:            nodeRepository,
-		nodeClassRepository:       nodeClassRepository,
-		payloadSchemaRepository:   payloadSchemaRepository,
-		permissionRepository:      permissionRepository,
-		roleRepository:            roleRepository,
-		rolePermissionRepository:  rolePermissionRepository,
-		telemetryRecordRepository: telemetryRecordRepository,
-		userRepository:            userRepository,
+		actionRepository:                  actionRepository,
+		actionLogRepository:               actionLogRepository,
+		firmwareRepository:                firmwareRepository,
+		firmwareConfigParameterRepository: firmwareConfigParameterRepository,
+		nodeRepository:                    nodeRepository,
+		nodeConfigValueRepository:         nodeConfigValueRepository,
+		nodeClassRepository:               nodeClassRepository,
+		payloadSchemaRepository:           payloadSchemaRepository,
+		permissionRepository:              permissionRepository,
+		roleRepository:                    roleRepository,
+		rolePermissionRepository:          rolePermissionRepository,
+		telemetryRecordRepository:         telemetryRecordRepository,
+		userRepository:                    userRepository,
 
 		actionCache:         actionCache,
 		firmwareCache:       firmwareCache,

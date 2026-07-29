@@ -232,6 +232,15 @@ definitions:
         example: barista
         type: string
     type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.SetNodeConfigValueRequest:
+    properties:
+      key:
+        example: mqtt_host
+        type: string
+      value:
+        example: broker.example.com
+        type: string
+    type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPasswordPatchRequest:
     properties:
       password:
@@ -390,6 +399,15 @@ definitions:
         example: 482112
         type: integer
     type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareConfigParameterResponse:
+    properties:
+      key:
+        example: mqtt_host
+        type: string
+      value_type:
+        example: string
+        type: string
+    type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareCreateResponse:
     properties:
       binary_path:
@@ -499,6 +517,18 @@ definitions:
         type: string
       updated_by:
         example: e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeConfigValueResponse:
+    properties:
+      key:
+        example: mqtt_host
+        type: string
+      updated_at:
+        example: "2026-07-29T14:05:00Z"
+        type: string
+      value:
+        example: broker.example.com
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse:
@@ -2684,6 +2714,10 @@ paths:
         name: file
         required: true
         type: file
+      - description: config_schema
+        in: formData
+        name: config_schema
+        type: string
       produces:
       - application/json
       responses:
@@ -2898,6 +2932,10 @@ paths:
         name: file
         required: true
         type: file
+      - description: config_schema
+        in: formData
+        name: config_schema
+        type: string
       produces:
       - application/json
       responses:
@@ -2928,6 +2966,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Firmware Binary Put
+      tags:
+      - Firmwares
+  /v1/firmwares/{id}/config-parameters:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareConfigParameterResponse'
+            type: array
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Firmware Config Parameters
       tags:
       - Firmwares
   /v1/firmwares/by-name/{name}:
@@ -3517,6 +3593,89 @@ paths:
       security:
       - BearerAuth: []
       summary: Node
+      tags:
+      - Nodes
+  /v1/nodes/{id}/config:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeConfigValueResponse'
+            type: array
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Node Config
+      tags:
+      - Nodes
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.SetNodeConfigValueRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Node Config
       tags:
       - Nodes
   /v1/nodes/{id}/firmware:

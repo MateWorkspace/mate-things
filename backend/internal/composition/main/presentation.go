@@ -48,6 +48,8 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 		l.app.nodeDeviceManagement,
 		l.app.nodeFirmwareManagement,
 		l.app.nodeOta,
+		l.app.nodeConfigParameter,
+		l.app.nodeConfigValue,
 	)
 	actionHandler := presentationhttphandleraction.NewHandler(
 		l.app.actionDefinition,

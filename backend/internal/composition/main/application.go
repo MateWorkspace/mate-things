@@ -12,6 +12,8 @@ import (
 	applicationadminusermanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/user_management"
 	applicationauthsession "github.com/MateWorkspace/mate-things/backend/internal/application/auth/session"
 	applicationnodeclassmanagement "github.com/MateWorkspace/mate-things/backend/internal/application/node/class_management"
+	applicationnodeconfigparameter "github.com/MateWorkspace/mate-things/backend/internal/application/node/config_parameter"
+	applicationnodeconfigvalue "github.com/MateWorkspace/mate-things/backend/internal/application/node/config_value"
 	applicationnodedevicemanagement "github.com/MateWorkspace/mate-things/backend/internal/application/node/device_management"
 	applicationnodefirmwaremanagement "github.com/MateWorkspace/mate-things/backend/internal/application/node/firmware_management"
 	applicationnodemessagingcallback "github.com/MateWorkspace/mate-things/backend/internal/application/node/messaging_callback"
@@ -65,6 +67,8 @@ type application struct {
 	authSession domainusecasesauth.Session
 
 	nodeClassManagement    domainusecasesnode.ClassManagement
+	nodeConfigParameter    domainusecasesnode.ConfigParameter
+	nodeConfigValue        domainusecasesnode.ConfigValue
 	nodeDeviceManagement   domainusecasesnode.DeviceManagement
 	nodeFirmwareManagement domainusecasesnode.FirmwareManagement
 	nodeMessagingCallback  domainusecasesnode.MessagingCallback
@@ -134,11 +138,20 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	)
 
 	nodeClassManagement := applicationnodeclassmanagement.NewUsecaseImpl(nodeClassRepoCache, l.infra.logger)
+	nodeConfigParameter := applicationnodeconfigparameter.NewUsecaseImpl(l.infra.firmwareConfigParameterRepository, l.infra.logger)
 	nodeDeviceManagement := applicationnodedevicemanagement.NewUsecaseImpl(nodeRepoCache, l.infra.logger)
 	nodeFirmwareManagement := applicationnodefirmwaremanagement.NewUsecaseImpl(
 		firmwareRepoCache,
 		nodeRepoCache,
 		l.infra.firmwareStorage,
+		nodeConfigParameter,
+		l.infra.logger,
+	)
+	nodeConfigValue := applicationnodeconfigvalue.NewUsecaseImpl(
+		l.infra.nodeConfigValueRepository,
+		l.infra.firmwareConfigParameterRepository,
+		nodeRepoCache,
+		l.infra.nodePublisher,
 		l.infra.logger,
 	)
 	nodeMessagingCallback := applicationnodemessagingcallback.NewUsecaseImpl(
@@ -202,6 +215,8 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		authSession: authSession,
 
 		nodeClassManagement:    nodeClassManagement,
+		nodeConfigParameter:    nodeConfigParameter,
+		nodeConfigValue:        nodeConfigValue,
 		nodeDeviceManagement:   nodeDeviceManagement,
 		nodeFirmwareManagement: nodeFirmwareManagement,
 		nodeMessagingCallback:  nodeMessagingCallback,
