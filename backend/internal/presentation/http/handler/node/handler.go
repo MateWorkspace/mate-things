@@ -1060,9 +1060,17 @@ func parseConfigSchemaFormValue(raw string) ([]domainusecasesnode.ConfigParamete
 		return nil, nil
 	}
 
-	var schema []domainusecasesnode.ConfigParameterInput
-	if err := json.Unmarshal([]byte(raw), &schema); err != nil {
+	var items []presentationhttprequest.FirmwareConfigSchemaItemRequest
+	if err := json.Unmarshal([]byte(raw), &items); err != nil {
 		return nil, domainmodels.NewError("config_schema must be a valid JSON array", domainmodels.ErrTypeValidation, err)
+	}
+
+	schema := make([]domainusecasesnode.ConfigParameterInput, 0, len(items))
+	for _, item := range items {
+		schema = append(schema, domainusecasesnode.ConfigParameterInput{
+			Key:       item.Key,
+			ValueType: item.ValueType,
+		})
 	}
 
 	return schema, nil
@@ -1108,6 +1116,7 @@ func (h *handler) FirmwareConfigParametersGet(c *echo.Context) error {
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
 // @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/nodes/{id}/config [get]
 func (h *handler) NodeConfigGet(c *echo.Context) error {

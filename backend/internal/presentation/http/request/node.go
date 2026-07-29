@@ -32,6 +32,13 @@ type OtaDispatchRequest struct {
 	FirmwareUrl string `json:"firmware_url" example:"https://cdn.mate-things.internal/firmwares/espresso-fw/v3/firmware.bin"`
 }
 
+// FirmwareConfigSchemaItemRequest is one entry of the `config_schema`
+// multipart form field on firmware create/binary-replace.
+type FirmwareConfigSchemaItemRequest struct {
+	Key       string `json:"key" example:"mqtt_host"`
+	ValueType string `json:"value_type" example:"string"`
+}
+
 type SetNodeConfigValueRequest struct {
 	Key   string `json:"key" example:"mqtt_host"`
 	Value string `json:"value" example:"broker.example.com"`
