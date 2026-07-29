@@ -36,11 +36,25 @@ func NewUsecaseImpl(
 	}
 }
 
+// ReadByNodeId returns only the values whose key still exists in the node's
+// CURRENT firmware's config schema. Stored rows stay keyed to the firmware they
+// were set under, so a node that was reassigned to another firmware keeps its
+// old rows as history, but they are hidden here to keep the read surface
+// identical to what SetByNodeId will accept.
 func (u *usecase) ReadByNodeId(
 	ctx context.Context,
 	request domainusecasesnode.ReadConfigValuesByNodeIdRequest,
 ) ([]domainmodels.NodeConfigValue, error) {
 	const tag = "node/config_value/ReadByNodeId"
+
+	node, err := u.node.ReadById(ctx, request.NodeId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to read node", domainmodels.LoggerMeta{
+			"err":     err,
+			"node_id": request.NodeId,
+		})
+		return nil, err
+	}
 
 	values, err := u.repository.ReadByNodeId(ctx, request.NodeId)
 	if err != nil {
@@ -51,7 +65,28 @@ func (u *usecase) ReadByNodeId(
 		return nil, err
 	}
 
-	return values, nil
+	params, err := u.parameterRepository.ReadByFirmwareId(ctx, node.FirmwareId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to read firmware config parameters", domainmodels.LoggerMeta{
+			"err":         err,
+			"firmware_id": node.FirmwareId,
+		})
+		return nil, err
+	}
+
+	currentKeys := make(map[string]bool, len(params))
+	for _, param := range params {
+		currentKeys[param.Key] = true
+	}
+
+	current := make([]domainmodels.NodeConfigValue, 0, len(values))
+	for _, value := range values {
+		if currentKeys[value.Key] {
+			current = append(current, value)
+		}
+	}
+
+	return current, nil
 }
 
 func (u *usecase) SetByNodeId(ctx context.Context, request domainusecasesnode.SetConfigValueRequest) error {

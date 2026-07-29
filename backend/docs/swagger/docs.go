@@ -4479,6 +4479,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
                         }
                     },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
