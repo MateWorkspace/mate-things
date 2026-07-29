@@ -15,7 +15,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
       <div
-        className="bg-background flex min-h-[240px] flex-col justify-center gap-6 px-6 py-10 sm:min-h-[320px] sm:px-10 sm:py-12 lg:min-h-screen lg:w-[46%] lg:px-16"
+        className="bg-background flex min-h-60 flex-col justify-center gap-6 px-6 py-10 sm:min-h-80 sm:px-10 sm:py-12 lg:min-h-screen lg:w-[46%] lg:px-16"
         style={{
           backgroundImage:
             "linear-gradient(color-mix(in srgb, var(--color-primary) 12%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 12%, transparent) 1px, transparent 1px)",
@@ -29,7 +29,7 @@ export default function LoginPage() {
           className="h-auto w-48 sm:w-56 lg:w-72"
         />
         <p className="text-primary/80 max-w-xs text-base sm:max-w-sm sm:text-lg lg:text-xl">
-          Fleet control for every Mate device
+          Fleet control for every MATE device
         </p>
       </div>
 

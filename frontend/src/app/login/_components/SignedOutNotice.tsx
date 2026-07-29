@@ -5,8 +5,6 @@ import { useEffect, useRef } from "react";
 
 import { useToast } from "@/hooks/use-toast";
 
-// Renders nothing - fires a one-shot success toast when arriving from
-// logout, then strips the query param so a page refresh doesn't re-fire it.
 export default function SignedOutNotice() {
   const searchParams = useSearchParams();
   const router = useRouter();
