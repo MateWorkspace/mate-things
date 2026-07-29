@@ -91,12 +91,18 @@ schema.
 
 ### CFG-11 — Get/set config for a nonexistent node UUID (negative, regression)
 ```bash
-curl -s -i http://127.0.0.1:18080/api/v1/nodes/00000000-0000-0000-0000-000000000000/config \
+GONE=$(python3 -c "import uuid;print(uuid.uuid4())")
+curl -s -i http://127.0.0.1:18080/api/v1/nodes/$GONE/config \
   -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -s -i -X PUT http://127.0.0.1:18080/api/v1/nodes/$GONE/config \
+  -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" \
+  -d '{"key":"mqtt_host","value":"x"}'
 ```
-**Expect:** `404` on both GET and PUT. GET previously returned `200 []` for
-an unknown node because it skipped the node lookup — this case guards that
-fix.
+**Expect:** `404` (`node not found`) on both GET and PUT. GET previously
+returned `200 []` for an unknown node because it skipped the node lookup —
+this case guards that fix. Use a *random* UUID, not the all-zeros one:
+`RequiredUUID` rejects the nil UUID as malformed, so that returns `400`
+before the lookup is reached.
 
 ### CFG-12 — Config endpoints as a role lacking `node_config:get`/`node_config:set` (negative)
 Using `USER_TOKEN` (role `user`, which holds neither permission):
