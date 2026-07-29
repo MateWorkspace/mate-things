@@ -12,23 +12,26 @@ import (
 )
 
 type usecase struct {
-	firmware domainusecasesrepocache.Firmware
-	node     domainusecasesrepocache.Node
-	storage  domaincontractsstorage.Firmware
-	logger   domaincontractslogger.Leveled
+	firmware        domainusecasesrepocache.Firmware
+	node            domainusecasesrepocache.Node
+	storage         domaincontractsstorage.Firmware
+	configParameter domainusecasesnode.ConfigParameter
+	logger          domaincontractslogger.Leveled
 }
 
 func NewUsecaseImpl(
 	firmware domainusecasesrepocache.Firmware,
 	node domainusecasesrepocache.Node,
 	storage domaincontractsstorage.Firmware,
+	configParameter domainusecasesnode.ConfigParameter,
 	logger domaincontractslogger.Leveled,
 ) domainusecasesnode.FirmwareManagement {
 	return &usecase{
-		firmware: firmware,
-		node:     node,
-		storage:  storage,
-		logger:   logger,
+		firmware:        firmware,
+		node:            node,
+		storage:         storage,
+		configParameter: configParameter,
+		logger:          logger,
 	}
 }
 
@@ -74,6 +77,20 @@ func (u *usecase) Create(
 			})
 		}
 		return domainusecasesnode.CreateFirmwareResult{}, err
+	}
+
+	if len(request.ConfigSchema) > 0 {
+		if err := u.configParameter.ReplaceForFirmware(ctx, domainusecasesnode.ReplaceConfigParametersRequest{
+			FirmwareId: id,
+			Parameters: request.ConfigSchema,
+			ActorId:    request.CreatedBy,
+		}); err != nil {
+			u.logger.Error(ctx, tag, "failed to ingest firmware config schema", domainmodels.LoggerMeta{
+				"err":         err,
+				"firmware_id": id,
+			})
+			return domainusecasesnode.CreateFirmwareResult{}, err
+		}
 	}
 
 	return domainusecasesnode.CreateFirmwareResult{
@@ -275,6 +292,20 @@ func (u *usecase) ReplaceBinaryById(
 			})
 		}
 		return domainusecasesnode.FirmwareBinaryStatResult{}, err
+	}
+
+	if len(request.ConfigSchema) > 0 {
+		if err := u.configParameter.ReplaceForFirmware(ctx, domainusecasesnode.ReplaceConfigParametersRequest{
+			FirmwareId: request.Id,
+			Parameters: request.ConfigSchema,
+			ActorId:    request.UpdatedBy,
+		}); err != nil {
+			u.logger.Error(ctx, tag, "failed to ingest firmware config schema", domainmodels.LoggerMeta{
+				"err":         err,
+				"firmware_id": request.Id,
+			})
+			return domainusecasesnode.FirmwareBinaryStatResult{}, err
+		}
 	}
 
 	return domainusecasesnode.FirmwareBinaryStatResult{

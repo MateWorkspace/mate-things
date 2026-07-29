@@ -25,10 +25,11 @@ type FirmwareManagement interface {
 }
 
 type CreateFirmwareRequest struct {
-	NodeClassId uuid.UUID
-	Name        string
-	Content     io.Reader
-	CreatedBy   *uuid.UUID
+	NodeClassId  uuid.UUID
+	Name         string
+	Content      io.Reader
+	CreatedBy    *uuid.UUID
+	ConfigSchema []ConfigParameterInput
 }
 
 type CreateFirmwareResult struct {
@@ -75,9 +76,10 @@ type UpdateFirmwareRequest struct {
 }
 
 type ReplaceFirmwareBinaryByIdRequest struct {
-	Id        uuid.UUID
-	Content   io.Reader
-	UpdatedBy *uuid.UUID
+	Id           uuid.UUID
+	Content      io.Reader
+	UpdatedBy    *uuid.UUID
+	ConfigSchema []ConfigParameterInput
 }
 
 type DownloadFirmwareBinaryByIdRequest struct {
