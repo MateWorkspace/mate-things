@@ -28,4 +28,11 @@ type Publish interface {
 		actionName string,
 		payload json.RawMessage,
 	) (err error)
+
+	Config(
+		ctx context.Context,
+		nodeDeviceId string,
+		key string,
+		value string,
+	) (err error)
 }

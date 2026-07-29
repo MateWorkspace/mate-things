@@ -17,3 +17,8 @@ type ActionPayload struct {
 	Action      string          `json:"action"`
 	Payload     json.RawMessage `json:"payload"`
 }
+
+type ConfigPayload struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}

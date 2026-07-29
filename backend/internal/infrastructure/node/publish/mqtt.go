@@ -15,6 +15,7 @@ const (
 	registrationAckQos = 1
 	otaQos             = 1
 	actionQos          = 1
+	configQos          = 1
 )
 
 type mqttImpl struct {
@@ -78,6 +79,26 @@ func (m *mqttImpl) Action(
 	return m.publish(
 		ctx, infrastructurenodeshared.NodeSubTopic(nodeDeviceId, "action"),
 		actionQos, false, actionPayload,
+	)
+}
+
+func (m *mqttImpl) Config(
+	ctx context.Context,
+	nodeDeviceId string,
+	key string,
+	value string,
+) (err error) {
+	payload, err := json.Marshal(infrastructurenodeshared.ConfigPayload{
+		Key:   key,
+		Value: value,
+	})
+	if err != nil {
+		return domainmodels.NewError("failed to build payload", domainmodels.ErrTypeValidation, err)
+	}
+
+	return m.publish(
+		ctx, infrastructurenodeshared.NodeSubTopic(nodeDeviceId, "config"),
+		configQos, false, payload,
 	)
 }
 
