@@ -31,3 +31,8 @@ type OtaDispatchRequest struct {
 	FirmwareId  string `json:"firmware_id" example:"9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"`
 	FirmwareUrl string `json:"firmware_url" example:"https://cdn.mate-things.internal/firmwares/espresso-fw/v3/firmware.bin"`
 }
+
+type SetNodeConfigValueRequest struct {
+	Key   string `json:"key" example:"mqtt_host"`
+	Value string `json:"value" example:"broker.example.com"`
+}

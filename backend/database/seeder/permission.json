@@ -43,6 +43,8 @@
   { "name": "node:set", "description": "Update nodes." },
   { "name": "node:remove", "description": "Delete nodes." },
   { "name": "ota:dispatch", "description": "Dispatch an OTA firmware update to a node." },
+  { "name": "node_config:get", "description": "View a node's config values." },
+  { "name": "node_config:set", "description": "Set a node's config value." },
 
   { "name": "action:get", "description": "View actions." },
   { "name": "action:add", "description": "Create actions." },

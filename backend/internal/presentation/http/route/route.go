@@ -79,6 +79,8 @@ type NodeHandler interface {
 	NodePatch(c *echo.Context) error
 	NodeFirmwarePatch(c *echo.Context) error
 	NodeDelete(c *echo.Context) error
+	NodeConfigGet(c *echo.Context) error
+	NodeConfigPut(c *echo.Context) error
 
 	FirmwarePost(c *echo.Context) error
 	FirmwareGetList(c *echo.Context) error
@@ -93,6 +95,7 @@ type NodeHandler interface {
 	FirmwareBinaryStatByNameGet(c *echo.Context) error
 	FirmwareBinaryStatByNameHead(c *echo.Context) error
 	FirmwareDelete(c *echo.Context) error
+	FirmwareConfigParametersGet(c *echo.Context) error
 
 	OtaDispatchByNodeIdPost(c *echo.Context) error
 	OtaDispatchByNodeDeviceIdPost(c *echo.Context) error
@@ -222,6 +225,7 @@ func routeNode(v1 *echo.Group, handler NodeHandler, permission PermissionMiddlew
 	v1.POST("/node-classes", handler.NodeClassPost, permission("node_class:add"))
 	v1.GET("/node-classes/by-name/:name", handler.NodeClassGetByName, permission("node_class:get"))
 	v1.GET("/node-classes/:node_class_id/firmwares", handler.FirmwareGetByNodeClassId, permission("firmware:get"))
+	v1.GET("/firmwares/:id/config-parameters", handler.FirmwareConfigParametersGet, permission("firmware:get"))
 	v1.GET("/node-classes/:id", handler.NodeClassGetById, permission("node_class:get"))
 	v1.PATCH("/node-classes/:id", handler.NodeClassPatch, permission("node_class:set"))
 	v1.DELETE("/node-classes/:id", handler.NodeClassDelete, permission("node_class:remove"))
@@ -235,6 +239,8 @@ func routeNode(v1 *echo.Group, handler NodeHandler, permission PermissionMiddlew
 	v1.GET("/nodes/:id", handler.NodeGetById, permission("node:get"))
 	v1.PATCH("/nodes/:id", handler.NodePatch, permission("node:set"))
 	v1.DELETE("/nodes/:id", handler.NodeDelete, permission("node:remove"))
+	v1.GET("/nodes/:id/config", handler.NodeConfigGet, permission("node_config:get"))
+	v1.PUT("/nodes/:id/config", handler.NodeConfigPut, permission("node_config:set"))
 
 	v1.GET("/firmwares", handler.FirmwareGetList, permission("firmware:get"))
 	v1.POST("/firmwares", handler.FirmwarePost, permission("firmware:add"))

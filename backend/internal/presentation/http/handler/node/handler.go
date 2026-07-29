@@ -1,9 +1,12 @@
 package presentationhttphandlernode
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
 	presentationhttprequest "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/request"
 	presentationhttpresponse "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/response"
@@ -13,10 +16,12 @@ import (
 )
 
 type handler struct {
-	classUseCase    domainusecasesnode.ClassManagement
-	deviceUseCase   domainusecasesnode.DeviceManagement
-	firmwareUseCase domainusecasesnode.FirmwareManagement
-	otaUseCase      domainusecasesnode.Ota
+	classUseCase           domainusecasesnode.ClassManagement
+	deviceUseCase          domainusecasesnode.DeviceManagement
+	firmwareUseCase        domainusecasesnode.FirmwareManagement
+	otaUseCase             domainusecasesnode.Ota
+	configParameterUseCase domainusecasesnode.ConfigParameter
+	configValueUseCase     domainusecasesnode.ConfigValue
 }
 
 func NewHandler(
@@ -24,12 +29,16 @@ func NewHandler(
 	deviceUseCase domainusecasesnode.DeviceManagement,
 	firmwareUseCase domainusecasesnode.FirmwareManagement,
 	otaUseCase domainusecasesnode.Ota,
+	configParameterUseCase domainusecasesnode.ConfigParameter,
+	configValueUseCase domainusecasesnode.ConfigValue,
 ) *handler {
 	return &handler{
-		classUseCase:    classUseCase,
-		deviceUseCase:   deviceUseCase,
-		firmwareUseCase: firmwareUseCase,
-		otaUseCase:      otaUseCase,
+		classUseCase:           classUseCase,
+		deviceUseCase:          deviceUseCase,
+		firmwareUseCase:        firmwareUseCase,
+		otaUseCase:             otaUseCase,
+		configParameterUseCase: configParameterUseCase,
+		configValueUseCase:     configValueUseCase,
 	}
 }
 
@@ -469,6 +478,7 @@ func (h *handler) NodeDelete(c *echo.Context) error {
 // @Param node_class_id formData string true "node_class_id"
 // @Param name formData string true "name"
 // @Param file formData file true "file"
+// @Param config_schema formData string false "config_schema"
 // @Success 201 {object} presentationhttpresponse.FirmwareCreateResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -493,11 +503,17 @@ func (h *handler) FirmwarePost(c *echo.Context) error {
 	}
 	defer content.Close()
 
+	configSchema, err := parseConfigSchemaFormValue(c.FormValue("config_schema"))
+	if err != nil {
+		return presentationhttputils.Error(c, err, "The config_schema field must be a valid JSON array of {key,value_type} objects.")
+	}
+
 	result, err := h.firmwareUseCase.Create(c.Request().Context(), domainusecasesnode.CreateFirmwareRequest{
-		NodeClassId: nodeClassId,
-		Name:        c.FormValue("name"),
-		Content:     content,
-		CreatedBy:   presentationhttputils.ActorId(c),
+		NodeClassId:  nodeClassId,
+		Name:         c.FormValue("name"),
+		Content:      content,
+		ConfigSchema: configSchema,
+		CreatedBy:    presentationhttputils.ActorId(c),
 	})
 	if err != nil {
 		return presentationhttputils.Error(c, err, "Unable to upload the firmware. Please check your input and try again.")
@@ -744,6 +760,7 @@ func (h *handler) FirmwarePatch(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Param file formData file true "file"
+// @Param config_schema formData string false "config_schema"
 // @Success 200 {object} presentationhttpresponse.FirmwareBinaryStatResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -767,10 +784,16 @@ func (h *handler) FirmwareBinaryPut(c *echo.Context) error {
 	}
 	defer content.Close()
 
+	configSchema, err := parseConfigSchemaFormValue(c.FormValue("config_schema"))
+	if err != nil {
+		return presentationhttputils.Error(c, err, "The config_schema field must be a valid JSON array of {key,value_type} objects.")
+	}
+
 	stat, err := h.firmwareUseCase.ReplaceBinaryById(c.Request().Context(), domainusecasesnode.ReplaceFirmwareBinaryByIdRequest{
-		Id:        id,
-		Content:   content,
-		UpdatedBy: presentationhttputils.ActorId(c),
+		Id:           id,
+		Content:      content,
+		ConfigSchema: configSchema,
+		UpdatedBy:    presentationhttputils.ActorId(c),
 	})
 	if err != nil {
 		return presentationhttputils.Error(c, err, "Unable to upload the firmware binary. Please try again.")
@@ -1029,4 +1052,124 @@ func otaRequest(req presentationhttprequest.OtaDispatchRequest) (uuid.UUID, stri
 	}
 
 	return firmwareId, req.FirmwareUrl, nil
+}
+
+func parseConfigSchemaFormValue(raw string) ([]domainusecasesnode.ConfigParameterInput, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+
+	var schema []domainusecasesnode.ConfigParameterInput
+	if err := json.Unmarshal([]byte(raw), &schema); err != nil {
+		return nil, domainmodels.NewError("config_schema must be a valid JSON array", domainmodels.ErrTypeValidation, err)
+	}
+
+	return schema, nil
+}
+
+// FirmwareConfigParametersGet godoc
+//
+// @Summary Firmware Config Parameters
+// @Tags Firmwares
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 200 {array} presentationhttpresponse.FirmwareConfigParameterResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/firmwares/{id}/config-parameters [get]
+func (h *handler) FirmwareConfigParametersGet(c *echo.Context) error {
+	firmwareId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
+	}
+
+	params, err := h.configParameterUseCase.ReadByFirmwareId(c.Request().Context(), domainusecasesnode.ReadConfigParametersByFirmwareIdRequest{
+		FirmwareId: firmwareId,
+	})
+	if err != nil {
+		return presentationhttputils.Error(c, err, "Unable to read the firmware's config parameters. Please try again.")
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.FirmwareConfigParameters(params))
+}
+
+// NodeConfigGet godoc
+//
+// @Summary Node Config
+// @Tags Nodes
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 200 {array} presentationhttpresponse.NodeConfigValueResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/nodes/{id}/config [get]
+func (h *handler) NodeConfigGet(c *echo.Context) error {
+	nodeId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+	}
+
+	values, err := h.configValueUseCase.ReadByNodeId(c.Request().Context(), domainusecasesnode.ReadConfigValuesByNodeIdRequest{
+		NodeId: nodeId,
+	})
+	if err != nil {
+		return presentationhttputils.Error(c, err, "Unable to read the node's config values. Please try again.")
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.NodeConfigValues(values))
+}
+
+// NodeConfigPut godoc
+//
+// @Summary Node Config
+// @Tags Nodes
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Param request body presentationhttprequest.SetNodeConfigValueRequest true "request"
+// @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/nodes/{id}/config [put]
+func (h *handler) NodeConfigPut(c *echo.Context) error {
+	nodeId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+	}
+
+	var req presentationhttprequest.SetNodeConfigValueRequest
+	if err := presentationhttputils.Bind(c, &req); err != nil {
+		return err
+	}
+
+	key, err := presentationhttputils.RequiredString(req.Key, "key")
+	if err != nil {
+		return presentationhttputils.Error(c, err, "Please provide a config key.")
+	}
+	value, err := presentationhttputils.RequiredString(req.Value, "value")
+	if err != nil {
+		return presentationhttputils.Error(c, err, "Please provide a config value.")
+	}
+
+	if err := h.configValueUseCase.SetByNodeId(c.Request().Context(), domainusecasesnode.SetConfigValueRequest{
+		NodeId:  nodeId,
+		Key:     key,
+		Value:   value,
+		ActorId: presentationhttputils.ActorId(c),
+	}); err != nil {
+		return presentationhttputils.Error(c, err, "Unable to set the node's config value. Please check your input and try again.")
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
