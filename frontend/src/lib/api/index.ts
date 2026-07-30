@@ -3,6 +3,7 @@ export * from "./actions";
 export * from "./auth";
 export * from "./client";
 export * from "./firmwares";
+export * from "./node-config";
 export * from "./node-classes";
 export * from "./nodes";
 export * from "./ota";

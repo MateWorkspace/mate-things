@@ -26,6 +26,11 @@ export interface FirmwareBinaryStatResponse {
   checksum: string;
 }
 
+export interface FirmwareConfigParameterResponse {
+  key: string;
+  value_type: string;
+}
+
 export interface UpdateFirmwareRequest {
   node_class_id?: string;
   name?: string;
@@ -63,6 +68,12 @@ export async function getFirmwareByName(
 
 export async function getFirmwareById(id: string): Promise<FirmwareResponse> {
   return apiFetch(`/firmwares/${id}`);
+}
+
+export async function getFirmwareConfigParameters(
+  id: string,
+): Promise<FirmwareConfigParameterResponse[]> {
+  return apiFetch(`/firmwares/${id}/config-parameters`);
 }
 
 /**
