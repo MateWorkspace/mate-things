@@ -31,6 +31,28 @@ server-side (`cookies()`) when calling the backend from Server Components.
 Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript (`strict`),
 Tailwind CSS v4.
 
+## Current product surface
+
+Protected routes live under `src/app/(authenticated)/` and share the
+permission-aware `AppShell`:
+
+| Group | Routes | Primary permissions |
+|---|---|---|
+| Overview | `/dashboard` | Cards render only from reads the session may perform |
+| Fleet | `/nodes`, `/nodes/[id]`, `/node-classes`, `/node-classes/[id]`, `/firmware`, `/firmware/[id]` | `node:*`, `node_config:*`, `node_class:*`, `firmware:*`, `ota:dispatch` |
+| Operations | `/actions`, `/actions/[id]`, `/action-history` | `action:*`, `action_log:*` |
+| Observability | `/telemetry`, `/node-logs` | `telemetry_record:*`, `node_log:*` |
+| Administration | `/admin/users`, `/admin/users/[id]`, `/admin/access-control`, `/admin/payload-schemas`, `/admin/payload-schemas/[id]` | `user:*`, role/permission assignment permissions, `payload_schema:*` |
+
+The node detail route is the contextual operations workspace: Overview,
+Configuration, Firmware/OTA, Actions, Telemetry, and Logs are URL-selected
+tabs and are individually permission-gated.
+
+Navigation definitions live in `src/config/navigation.ts`, grouped by product
+purpose and filtered through `visibleNavigation()`. Route authorization is
+centralized in `src/lib/route-access.ts`. These are presentation conveniences,
+not substitutes for page-level and Server Action permission checks.
+
 # Code Rules
 
 ## Directory structure & colocation
@@ -44,6 +66,12 @@ Tailwind CSS v4.
   `actions.ts`, `auth.ts`), mirroring the backend's own resource grouping.
   Components never call `fetch` against the backend directly — they go
   through `src/lib/api/*`.
+- Feature mutations live beside their route in `_lib/actions.ts`. Reusable
+  session-level mutations may live in `src/lib/api/` or a shared component's
+  action module. Keep raw API wrappers and Server Actions separate: wrappers
+  express the backend transport contract; actions enforce session permissions,
+  validate direct-call input, invoke wrappers, and revalidate or redirect only
+  after a successful mutation.
 - Anything used by exactly one route lives inside that route's folder in a
   private, non-routable subfolder prefixed with `_`:
   `the-page/_components`, `the-page/_hooks`, `the-page/_lib`,
@@ -103,13 +131,63 @@ most of the tree stays server-rendered.
 - Reads: fetch in Server Components (or a `src/lib/api/*` function they
   call), so data loads before any JS ships to the client.
 - Mutations (dispatching an action, uploading firmware, editing a node):
-  use Server Actions (`'use server'`) in `src/lib/api/*`, called from a
-  `<form action={...}>` or from a Client Component's event handler. Always
+  use Server Actions (`'use server'`), normally in the owning route's
+  `_lib/actions.ts`, called from a `<form action={...}>` or from a Client
+  Component's event handler. Always
   re-verify the caller's session/permissions inside the Server Action
   itself — it's a public POST endpoint regardless of which UI calls it,
   same as the backend does for its own handlers.
 - Never call `revalidatePath`/`revalidateTag` speculatively — only after a
   mutation actually changes what a cached read would return.
+- Parallelize independent reads with `Promise.all`, but only issue a read when
+  the session owns its permission. A hidden panel that still performs a
+  forbidden background request is broken.
+- Use local `loading.tsx`, `error.tsx`, and `not-found.tsx` boundaries for
+  meaningful transitions and recoverable failures. Detail pages map backend
+  404 responses to `notFound()`.
+- Dashboard, telemetry, action-history, and node-log data is operationally
+  live. Do not cache it as static data. Shared smart refresh pauses while the
+  tab is hidden, supports manual refresh, and keeps query windows bounded.
+
+## API and device-operation contracts
+
+- `src/lib/api/client.ts` owns authorization headers, JSON encoding, error
+  normalization, and same-origin/backend-base resolution. Do not duplicate
+  those concerns in resource wrappers.
+- Collection wrappers accept typed queries and return the backend's paginated
+  envelope. Complete selectors use tested all-page helpers with deduplication
+  and safe termination; never impose a silent `48`-item option cap.
+- Node `device_id` is immutable. Show it as identity/context, never as an
+  ordinary editable field.
+- OTA dispatch sends `{ firmware_id }`. The backend authoritatively checks node
+  compatibility, resolves the binary URL, and publishes checksum/size data.
+  The frontend mutation requires `ota:dispatch` and must not introduce a
+  `firmware:get` dependency.
+- Firmware delete sends the typed confirmation as the expected name; never
+  send a separate client-asserted authoritative name.
+- Firmware binary replacement preserves the distinction between omitted
+  `config_schema` (unchanged) and explicit `[]` (clear).
+- String node-config values are passed verbatim, including empty and
+  whitespace-only values. Do not `trim()` them into a different value or treat
+  empty as absent.
+
+## Collections, cards, and records
+
+- Resource collections are card-first. Use
+  `src/components/collection/` and URL-owned search/filter/page state; do not
+  introduce a desktop table without a materially better small-screen
+  representation.
+- Parse pagination through `src/lib/collection-query.ts`. Page numbers must be
+  positive safe integers; preserve filters when redirecting an out-of-range
+  page.
+- Distinguish a truly empty collection from “no results match these filters.”
+  Their copy and recovery actions are different.
+- Action history, telemetry, and node logs share
+  `src/components/records/` controls for bounded time ranges, JSON inspection,
+  record windows, and scoped deletion.
+- Destructive actions require explicit confirmation, remain open while
+  pending, surface backend failures, and cannot repeat from stale success
+  state. Keep dialogs mounted and control `open` so focus restoration works.
 
 ## TypeScript
 
@@ -138,18 +216,39 @@ most of the tree stays server-rendered.
 
 ## Linting & verification
 
-- `npm run lint` must pass clean before considering any change done.
+- Available verification commands are:
+
+  ```bash
+  npm run typecheck
+  npm run lint
+  npm test
+  npm run build
+  npm run test:e2e
+  ```
+
+- At minimum, `typecheck`, `lint`, and the production build must pass before
+  considering a frontend change done. Run focused Vitest coverage while
+  iterating and the full suite for shared/auth/API changes. Use Playwright for
+  login, shell, responsive drawer, focus, and browser accessibility behavior.
 - Turbopack is the default bundler for both `next dev` and `next build` in
   this version — don't add webpack-specific config unless there's a
   concrete reason, and note it if you do.
+- Server Actions accept firmware uploads up to the explicit bounded limit in
+  `next.config.ts`; do not raise it casually or bypass it with browser-visible
+  backend credentials.
 
 ## Accessibility
 
-Use semantic HTML elements (`<button>`, `<nav>`, `<table>`, headings in
+Use semantic HTML elements (`<button>`, `<nav>`, headings in
 order) over generic `<div>`s with click handlers. Icon-only controls need
 an `aria-label`. Interactive elements must be keyboard-reachable and show a
 visible focus state — don't strip default focus rings without replacing
 them.
+
+The shell includes a skip link, modal focus containment/restoration, and a
+mobile drawer. Preserve those behaviors when changing navigation, the profile
+dialog, or shared `Dialog`; Escape/overlay close must be ignored while a
+mutation is pending.
 
 # Design Rules
 
@@ -262,17 +361,16 @@ Use the rules below regardless of which face is ultimately chosen:
 ## Responsiveness
 
 This is an admin/ops dashboard — desktop is the primary use case (device
-lists, tables, dispatch forms), but it must stay usable on tablet and
+collections, record inspection, dispatch forms), but it must stay usable on tablet and
 mobile (an operator checking a device from their phone), not just avoid
 visibly breaking:
 
 - Build **mobile-first**: unprefixed Tailwind classes are the small-screen
   baseline; layer `sm:`/`md:`/`lg:`/`xl:` on top for wider viewports,
   rather than designing for desktop and bolting on a mobile fallback.
-- Data-dense elements need an explicit small-screen plan, not just
-  `overflow-x-auto` on a wide table — e.g. collapse to a card/list layout,
-  hide non-essential columns, or paginate, depending on what the data
-  actually needs.
+- Data-dense elements need an explicit small-screen plan. Prefer the
+  established card/list and pagination patterns, hide secondary metadata when
+  justified, and reserve horizontal scrolling for inherently tabular content.
 - Never hardcode pixel widths/heights that break at common breakpoints;
   use relative units (`%`, `rem`, `fr`, `flex`/`grid`) and Tailwind's
   breakpoint scale so layouts reflow instead of overflowing or clipping.

@@ -23,15 +23,16 @@ platform for ESP32-class devices. It provides:
 - **Preferences** — arbitrary per-resource key/value preferences (e.g. UI
   state) attached to any entity.
 
-The backend is the product's core; the frontend is currently an
-unstarted Next.js scaffold (see below).
+The Go backend is the authority for business rules and device orchestration.
+The Next.js frontend is a complete permission-aware operations cockpit for
+fleet, observability, and administration workflows.
 
 ## Project structure
 
 ```
 mate-things/
 ├── backend/           Go API + MQTT service (see below)
-├── frontend/           Next.js admin dashboard — scaffold only, not yet built out
+├── frontend/           Next.js operations cockpit (see frontend/AGENTS.md)
 ├── Dockerfile           multi-stage build: backend + frontend into one runtime image
 ├── entrypoint.sh        container entrypoint: migrate → seed → run
 ├── compose.yml           minimal single-service compose file for local/prod runs
@@ -125,12 +126,30 @@ presentation → application → domain ← infrastructure
 
 ### Frontend (`frontend/`)
 
-A default `create-next-app` scaffold (Next.js 16, App Router, React 19) —
-`src/app/page.tsx` is still the stock starter page. `src/core/` mirrors the
-backend's layering (`application/domain/infrastructure/composition`) as a
-placeholder for when the admin dashboard is actually built, and
-`src/shared/` holds cross-cutting `components/hooks/lib`. Nothing here talks
-to the backend API yet.
+Next.js 16 App Router + React 19 operations cockpit. Read
+`frontend/AGENTS.md` before changing it; that file is authoritative for
+frontend structure, styling, Server Component/Action boundaries, and
+verification.
+
+- `src/app/(authenticated)/` owns the protected product routes and shared
+  shell: dashboard, nodes, node classes, firmware, actions, action history,
+  telemetry, node logs, users, access control, and payload schemas.
+- Route-local UI and mutation code is colocated in `_components/` and
+  `_lib/`; reusable collection, layout, profile, preference, record,
+  refresh, and primitive UI components live in `src/components/`.
+- `src/lib/api/` is the only frontend backend-API boundary. Server
+  Components perform reads; feature-local Server Actions recheck permissions
+  before mutations.
+- Navigation is grouped by purpose and filtered by exact permissions in
+  `src/config/navigation.ts`. Hiding a link is not authorization: protected
+  pages and every Server Action must independently enforce access.
+- Collection pages use URL-owned filters/pagination and responsive resource
+  cards rather than desktop-only tables. Record-heavy pages share bounded
+  time filters, JSON inspection, scoped deletion, and visibility-aware smart
+  refresh.
+- Authentication tokens remain in HTTP-only cookies. The Go service is the
+  production ingress and reverse-proxies non-API traffic to the standalone
+  Next.js server.
 
 ## Development flow
 
@@ -190,6 +209,22 @@ for presigned downloads. There is no separate proxy process.
    replace `docs/agent_test/<version>/` or a live-service integration check
    for cross-boundary behavior.
 
+### Verification checklist for any frontend change
+
+From `frontend/`, run:
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
+
+Use `npm run test:e2e` for authentication, shell, focus, or other
+browser-level behavior. A backend contract change consumed by the frontend
+must be verified on both sides; mocked frontend tests alone do not prove
+permission or request-shape compatibility.
+
 ### Automated-test convention
 
 - Write tests against observable behavior and real package boundaries.
@@ -241,6 +276,29 @@ table/type.
   structured fields and must not grow a redundant raw-line column.
 - HTTP level filters must reject unsupported values as validation errors
   before PostgreSQL sees the enum.
+
+### Cross-layer fleet contracts
+
+- Node `device_id` is the MQTT/device identity and is immutable through the
+  node update workflow. Changing it requires a deliberately designed identity
+  migration, not an ordinary edit form.
+- Persisted node and node-class names may contain safe underscores and
+  hyphens (for example `node_<device-id>` and `base_node`). Keep create/update
+  validation compatible with those stored names while rejecting path-like or
+  unsafe input.
+- OTA dispatch accepts a `firmware_id`. The backend—not the browser—loads the
+  authoritative node and firmware, checks node-class compatibility, resolves
+  the firmware binary URL, and publishes authoritative checksum/size metadata.
+  The route is usable with `ota:dispatch` alone; do not add an accidental
+  `firmware:get` dependency to the mutation.
+- Firmware deletion requires the expected firmware name in the JSON request.
+  The backend compares it with the authoritative stored name before deleting;
+  the typed-name dialog is a safety interlock, not a source of truth.
+- Firmware binary replacement distinguishes an omitted `config_schema`
+  (preserve the current schema) from an explicit empty array (clear it).
+- String node-config values are stored verbatim, including empty or
+  whitespace-only strings. Validate presence separately from value content;
+  numeric and boolean types retain their own validation.
 
 ### RBAC seed and cache rollout
 
