@@ -98,18 +98,20 @@ export default function NodeClassForm({
         </button>
       ) : null}
 
-      {editorOpen ? (
+      {showEditor ? (
         <NodeClassEditorDialog
-          key={editorInstance}
+          key={`editor-${editorInstance}`}
           nodeClass={nodeClass}
+          open={editorOpen}
           onClose={() => setEditorOpen(false)}
         />
       ) : null}
 
-      {nodeClass && deleteOpen ? (
+      {nodeClass && canDelete ? (
         <DeleteNodeClassDialog
-          key={deleteInstance}
+          key={`delete-${deleteInstance}`}
           nodeClass={nodeClass}
+          open={deleteOpen}
           onClose={() => setDeleteOpen(false)}
         />
       ) : null}
@@ -119,20 +121,27 @@ export default function NodeClassForm({
 
 function NodeClassEditorDialog({
   nodeClass,
+  open,
   onClose,
 }: {
   nodeClass?: NodeClassResponse;
+  open: boolean;
   onClose: () => void;
 }) {
   const action = nodeClass ? updateNodeClassAction : createNodeClassAction;
   const [state, formAction, isPending] = useActionState(action, INITIAL_STATE);
   const fieldId = useId();
   useActionToast(state);
+  const close = () => {
+    if (!isPending) {
+      onClose();
+    }
+  };
 
   return (
     <Dialog
-      open={state.status !== "success"}
-      onClose={onClose}
+      open={open && state.status !== "success"}
+      onClose={close}
       title={nodeClass ? `Edit ${nodeClass.name}` : "Create node class"}
       variant="sheet"
     >
@@ -190,7 +199,7 @@ function NodeClassEditorDialog({
             type="button"
             variant="secondary"
             disabled={isPending}
-            onClick={onClose}
+            onClick={close}
           >
             Cancel
           </Button>
@@ -205,9 +214,11 @@ function NodeClassEditorDialog({
 
 function DeleteNodeClassDialog({
   nodeClass,
+  open,
   onClose,
 }: {
   nodeClass: NodeClassResponse;
+  open: boolean;
   onClose: () => void;
 }) {
   const [confirmation, setConfirmation] = useState("");
@@ -216,16 +227,22 @@ function DeleteNodeClassDialog({
     INITIAL_STATE,
   );
   const fieldId = useId();
+  const close = () => {
+    if (!isPending) {
+      onClose();
+    }
+  };
 
   return (
     <Dialog
-      open
-      onClose={onClose}
+      open={open}
+      onClose={close}
       title={`Delete ${nodeClass.name}`}
       variant="sheet"
     >
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="node_class_id" value={nodeClass.id} />
+        <input type="hidden" name="node_class_name" value={nodeClass.name} />
 
         <div className="border-critical/40 bg-critical/5 rounded-xl border p-4">
           <p className="text-sm">
@@ -276,7 +293,7 @@ function DeleteNodeClassDialog({
             type="button"
             variant="secondary"
             disabled={isPending}
-            onClick={onClose}
+            onClick={close}
           >
             Cancel
           </Button>

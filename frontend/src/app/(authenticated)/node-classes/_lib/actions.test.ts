@@ -7,7 +7,6 @@ import {
   deleteNodeClass,
   getNodeClassById,
   updateNodeClass,
-  type NodeClassResponse,
 } from "@/lib/api/node-classes";
 import { requireSessionContext } from "@/lib/session";
 import { formData } from "@/test/form-data";
@@ -42,14 +41,6 @@ vi.mock("@/lib/session", () => ({
 }));
 
 const EMPTY_STATE: FormActionState = { status: "idle" };
-
-const NODE_CLASS: NodeClassResponse = {
-  id: "class-1",
-  name: "Cold Storage",
-  description: "Temperature-controlled sensors",
-  preferences: {},
-  created_at: "2026-07-30T00:00:00Z",
-};
 
 function permit(...permissions: string[]) {
   vi.mocked(requireSessionContext).mockResolvedValue({
@@ -154,19 +145,19 @@ describe("node class actions", () => {
     expect(state.status).toBe("success");
   });
 
-  it("compares delete confirmation with the backend's current class name", async () => {
+  it("rejects a typed-name mismatch without reading the class", async () => {
     permit("node_class:remove");
-    vi.mocked(getNodeClassById).mockResolvedValue(NODE_CLASS);
 
     const state = await deleteNodeClassAction(
       EMPTY_STATE,
       formData({
         node_class_id: "class-1",
+        node_class_name: "Cold Storage",
         confirmation: "Cold storage",
       }),
     );
 
-    expect(getNodeClassById).toHaveBeenCalledWith("class-1");
+    expect(getNodeClassById).not.toHaveBeenCalled();
     expect(state).toMatchObject({
       status: "error",
       fieldErrors: { confirmation: expect.any(String) },
@@ -182,6 +173,7 @@ describe("node class actions", () => {
       EMPTY_STATE,
       formData({
         node_class_id: "class-1",
+        node_class_name: "Cold Storage",
         confirmation: "Cold Storage",
       }),
     );
@@ -194,18 +186,22 @@ describe("node class actions", () => {
     expect(deleteNodeClass).not.toHaveBeenCalled();
   });
 
-  it("redirects to the collection only after confirmed deletion succeeds", async () => {
+  it("deletes with remove-only permission without making a read request", async () => {
     permit("node_class:remove");
-    vi.mocked(getNodeClassById).mockResolvedValue(NODE_CLASS);
+    vi.mocked(getNodeClassById).mockRejectedValue(
+      new Error("GET requires node_class:get"),
+    );
 
     await deleteNodeClassAction(
       EMPTY_STATE,
       formData({
         node_class_id: "class-1",
+        node_class_name: "Cold Storage",
         confirmation: "Cold Storage",
       }),
     );
 
+    expect(getNodeClassById).not.toHaveBeenCalled();
     expect(deleteNodeClass).toHaveBeenCalledWith("class-1");
     expect(redirect).toHaveBeenCalledWith("/node-classes");
     expect(vi.mocked(deleteNodeClass).mock.invocationCallOrder[0]).toBeLessThan(
@@ -215,7 +211,6 @@ describe("node class actions", () => {
 
   it("does not redirect when the backend rejects a dependent deletion", async () => {
     permit("node_class:remove");
-    vi.mocked(getNodeClassById).mockResolvedValue(NODE_CLASS);
     vi.mocked(deleteNodeClass).mockRejectedValue(
       new Error("dependent resources"),
     );
@@ -224,6 +219,7 @@ describe("node class actions", () => {
       EMPTY_STATE,
       formData({
         node_class_id: "class-1",
+        node_class_name: "Cold Storage",
         confirmation: "Cold Storage",
       }),
     );

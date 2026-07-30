@@ -1,9 +1,21 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { NodeClassResponse } from "@/lib/api/node-classes";
 
+import {
+  createNodeClassAction,
+  deleteNodeClassAction,
+  type FormActionState,
+} from "../_lib/actions";
 import NodeClassForm from "./NodeClassForm";
 
 vi.mock("../_lib/actions", () => ({
@@ -20,8 +32,24 @@ const NODE_CLASS: NodeClassResponse = {
   created_at: "2026-07-30T00:00:00Z",
 };
 
+function deferredAction() {
+  let resolve!: (state: FormActionState) => void;
+  const promise = new Promise<FormActionState>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
+}
+
 describe("NodeClassForm", () => {
-  afterEach(cleanup);
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   it("opens a modal with the create fields", async () => {
     const user = userEvent.setup();
@@ -75,5 +103,143 @@ describe("NodeClassForm", () => {
       "placeholder",
       "Cold Storage",
     );
+  });
+
+  it("mounts editor and delete dialogs without duplicate React keys", () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    render(<NodeClassForm canDelete nodeClass={NODE_CLASS} />);
+
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("restores trigger focus through a controlled editor close", async () => {
+    const user = userEvent.setup();
+    render(<NodeClassForm />);
+    const trigger = screen.getByRole("button", {
+      name: "Create node class",
+    });
+
+    await user.click(trigger);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(
+      screen.queryByRole("dialog", { name: "Create node class" }),
+    ).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("submits the rendered class name as the typed-confirmation interlock", async () => {
+    const user = userEvent.setup();
+    vi.mocked(deleteNodeClassAction).mockResolvedValue({
+      status: "error",
+      title: "Deletion rejected",
+    });
+    render(<NodeClassForm canDelete nodeClass={NODE_CLASS} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Delete Cold Storage" }),
+    );
+    await user.type(
+      screen.getByLabelText("Confirm class name"),
+      "Cold Storage",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Permanently delete class" }),
+    );
+
+    await waitFor(() => {
+      expect(deleteNodeClassAction).toHaveBeenCalledOnce();
+    });
+    const submitted = vi.mocked(deleteNodeClassAction).mock.calls[0][1];
+    expect(submitted.get("node_class_name")).toBe("Cold Storage");
+  });
+
+  it("keeps the editor open on Escape while creation is pending", async () => {
+    const user = userEvent.setup();
+    const deferred = deferredAction();
+    vi.mocked(createNodeClassAction).mockReturnValue(deferred.promise);
+    render(<NodeClassForm />);
+    const trigger = screen.getByRole("button", {
+      name: "Create node class",
+    });
+
+    await user.click(trigger);
+    await user.type(screen.getByLabelText("Name"), "Cold Storage");
+    await user.click(screen.getByRole("button", { name: "Create class" }));
+    expect(
+      await screen.findByRole("button", { name: "Saving…" }),
+    ).toBeDisabled();
+
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.getByRole("dialog", { name: "Create node class" }),
+    ).toBeVisible();
+
+    await act(async () => {
+      deferred.resolve({
+        status: "success",
+        title: "Node class created",
+      });
+      await deferred.promise;
+    });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Create node class" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(trigger).toHaveFocus();
+  });
+
+  it("keeps delete confirmation open on Escape while deletion is pending", async () => {
+    const user = userEvent.setup();
+    const deferred = deferredAction();
+    vi.mocked(deleteNodeClassAction).mockReturnValue(deferred.promise);
+    render(<NodeClassForm canDelete nodeClass={NODE_CLASS} />);
+    const trigger = screen.getByRole("button", {
+      name: "Delete Cold Storage",
+    });
+
+    await user.click(trigger);
+    await user.type(
+      screen.getByLabelText("Confirm class name"),
+      "Cold Storage",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Permanently delete class" }),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Deleting…" }),
+    ).toBeDisabled();
+
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.getByRole("dialog", { name: "Delete Cold Storage" }),
+    ).toBeVisible();
+
+    await act(async () => {
+      deferred.resolve({
+        status: "error",
+        title: "Deletion rejected",
+        message: "Dependent resources still exist.",
+      });
+      await deferred.promise;
+    });
+    expect(
+      await screen.findByText("Dependent resources still exist."),
+    ).toBeVisible();
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Delete Cold Storage" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(trigger).toHaveFocus();
   });
 });

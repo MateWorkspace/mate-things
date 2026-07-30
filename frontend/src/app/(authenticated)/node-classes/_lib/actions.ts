@@ -7,7 +7,6 @@ import { ApiError } from "@/lib/api/client";
 import {
   createNodeClass,
   deleteNodeClass,
-  getNodeClassById,
   updateNodeClass,
 } from "@/lib/api/node-classes";
 import { requireSessionContext } from "@/lib/session";
@@ -141,32 +140,37 @@ export async function deleteNodeClassAction(
   }
 
   const nodeClassId = String(formData.get("node_class_id") ?? "").trim();
+  const nodeClassName = String(formData.get("node_class_name") ?? "").trim();
   const confirmation = String(formData.get("confirmation") ?? "");
+  const fieldErrors = requiredFieldErrors({
+    node_class_id: nodeClassId,
+    node_class_name: nodeClassName,
+  });
 
-  if (!nodeClassId) {
+  if (Object.keys(fieldErrors).length > 0) {
     return {
       status: "error",
       title: "Check the node class",
-      message: "A node class ID is required.",
-      fieldErrors: { node_class_id: "This field is required." },
+      message: "The node class identity is incomplete. Refresh and try again.",
+      fieldErrors,
+    };
+  }
+
+  // This typed-name check is a UI safety interlock, not authorization.
+  // Authorization is the remove permission above plus the backend DELETE
+  // endpoint. Avoiding a class read keeps remove-only custom roles functional.
+  if (confirmation !== nodeClassName) {
+    return {
+      status: "error",
+      title: "Node class name does not match",
+      message: "Enter the exact class name before deleting it.",
+      fieldErrors: {
+        confirmation: "The confirmation must exactly match the class name.",
+      },
     };
   }
 
   try {
-    const nodeClass = await getNodeClassById(nodeClassId);
-
-    if (confirmation !== nodeClass.name) {
-      return {
-        status: "error",
-        title: "Node class name does not match",
-        message: "Enter the exact current class name before deleting it.",
-        fieldErrors: {
-          confirmation:
-            "The confirmation must exactly match the current class name.",
-        },
-      };
-    }
-
     await deleteNodeClass(nodeClassId);
   } catch (error) {
     return actionError(error);
