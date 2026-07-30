@@ -21,6 +21,8 @@ import NodeClassForm from "./_components/NodeClassForm";
 
 export const metadata: Metadata = {
   title: "Node Classes — Mate Things",
+  description:
+    "Manage device compatibility groups and their related nodes, firmware, and actions.",
 };
 
 type RawSearchParams = Record<string, string | string[] | undefined>;

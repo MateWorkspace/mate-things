@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import PageHeader from "@/components/ui/page-header";
@@ -34,10 +35,6 @@ import {
   normalizeNodeTab,
 } from "./_lib/node-tabs";
 
-export const metadata: Metadata = {
-  title: "Node details — Mate Things",
-};
-
 type RawSearchParams = Record<string, string | string[] | undefined>;
 
 interface NodeDetailPageProps {
@@ -45,6 +42,23 @@ interface NodeDetailPageProps {
   searchParams: Promise<RawSearchParams>;
 }
 
+const getNode = cache(getNodeById);
+
+export async function generateMetadata({
+  params,
+}: Pick<NodeDetailPageProps, "params">): Promise<Metadata> {
+  const { id } = await params;
+
+  try {
+    const node = await getNode(id);
+    return {
+      title: `${node.name} — Mate Things`,
+      description: `Fleet details and operations for node ${node.device_id}.`,
+    };
+  } catch {
+    return { title: "Node details — Mate Things" };
+  }
+}
 export default async function NodeDetailPage({
   params,
   searchParams,
@@ -58,7 +72,7 @@ export default async function NodeDetailPage({
 
   let node;
   try {
-    node = await getNodeById(id);
+    node = await getNode(id);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       notFound();

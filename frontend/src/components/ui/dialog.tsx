@@ -49,7 +49,12 @@ export default function Dialog({
         dialog.showModal();
       }
 
-      dialog.focus();
+      window.requestAnimationFrame(() => {
+        const closeButton = dialog.querySelector<HTMLButtonElement>(
+          "[data-dialog-close]",
+        );
+        (closeButton ?? dialog).focus();
+      });
       return;
     }
 
@@ -81,10 +86,17 @@ export default function Dialog({
   return (
     <dialog
       ref={dialogRef}
+      tabIndex={-1}
       aria-labelledby={titleId}
+      aria-modal="true"
       onCancel={(event) => {
         event.preventDefault();
         onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
       }}
       onClose={() => {
         if (!closingFromPropRef.current) {
@@ -113,11 +125,15 @@ export default function Dialog({
           <h2 id={titleId} className="font-display text-xl tracking-wide">
             {title}
           </h2>
-          {variant === "drawer" ? (
-            <IconButton aria-label="Close navigation" onClick={onClose}>
-              <X aria-hidden="true" className="size-5" />
-            </IconButton>
-          ) : null}
+          <IconButton
+            data-dialog-close
+            aria-label={
+              variant === "drawer" ? "Close navigation" : `Close ${title}`
+            }
+            onClick={onClose}
+          >
+            <X aria-hidden="true" className="size-5" />
+          </IconButton>
         </div>
         <div className="mt-4">{children}</div>
       </div>

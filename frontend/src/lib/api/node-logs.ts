@@ -16,6 +16,7 @@ export interface NodeLogResponse {
 }
 
 export interface NodeLogFilterQuery {
+  /** ISO 8601 timestamps. */
   logged_at_start?: string;
   logged_at_end?: string;
   node_device_id?: string;

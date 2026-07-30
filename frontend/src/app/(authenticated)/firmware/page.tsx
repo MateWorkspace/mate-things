@@ -22,6 +22,8 @@ import FirmwareForm from "./_components/FirmwareForm";
 
 export const metadata: Metadata = {
   title: "Firmware — Mate Things",
+  description:
+    "Manage versioned device firmware, binaries, compatibility, and configuration schemas.",
 };
 
 type RawSearchParams = Record<string, string | string[] | undefined>;

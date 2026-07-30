@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Card from "@/components/ui/card";
@@ -19,12 +20,27 @@ import { requirePermission } from "@/lib/session";
 import FirmwareForm from "../_components/FirmwareForm";
 import { formatBytes } from "../_lib/format";
 
-export const metadata: Metadata = {
-  title: "Firmware details — Mate Things",
-};
-
 interface FirmwareDetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+const getFirmware = cache(getFirmwareById);
+
+export async function generateMetadata({
+  params,
+}: FirmwareDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+
+  try {
+    const firmware = await getFirmware(id);
+    return {
+      title: `${firmware.name} — Mate Things`,
+      description:
+        "Firmware binary, compatibility, configuration schema, and fleet assignment details.",
+    };
+  } catch {
+    return { title: "Firmware details — Mate Things" };
+  }
 }
 
 const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
@@ -43,7 +59,7 @@ export default async function FirmwareDetailPage({
 
   let firmware;
   try {
-    firmware = await getFirmwareById(id);
+    firmware = await getFirmware(id);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       notFound();

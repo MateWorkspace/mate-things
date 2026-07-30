@@ -27,7 +27,10 @@ export function ErrorState(props: StateProps) {
   return <State {...props} />;
 }
 
-export function AccessDeniedState({ action }: Pick<StateProps, "action"> = {}) {
+export function AccessDeniedState({
+  action,
+  description = "Your account is signed in, but it does not have permission to view this page.",
+}: Pick<StateProps, "action"> & { description?: string } = {}) {
   return (
     <section className="border-border bg-muted rounded-2xl border p-6 text-center">
       <ShieldX aria-hidden="true" className="text-critical mx-auto size-10" />
@@ -35,8 +38,7 @@ export function AccessDeniedState({ action }: Pick<StateProps, "action"> = {}) {
         Access denied
       </h1>
       <p className="text-foreground/70 mx-auto mt-2 max-w-lg text-sm">
-        Your account is signed in, but it does not have permission to view this
-        page.
+        {description}
       </p>
       {action ? <div className="mt-5">{action}</div> : null}
     </section>

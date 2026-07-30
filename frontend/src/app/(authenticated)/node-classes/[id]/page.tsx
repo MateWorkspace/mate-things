@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Card from "@/components/ui/card";
@@ -19,12 +20,28 @@ import { requirePermission } from "@/lib/session";
 
 import NodeClassForm from "../_components/NodeClassForm";
 
-export const metadata: Metadata = {
-  title: "Node Class Details — Mate Things",
-};
-
 interface NodeClassDetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+const getNodeClass = cache(getNodeClassById);
+
+export async function generateMetadata({
+  params,
+}: NodeClassDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+
+  try {
+    const nodeClass = await getNodeClass(id);
+    return {
+      title: `${nodeClass.name} — Mate Things`,
+      description:
+        nodeClass.description ||
+        "Node class compatibility and related fleet resources.",
+    };
+  } catch {
+    return { title: "Node Class Details — Mate Things" };
+  }
 }
 
 const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
@@ -177,7 +194,7 @@ export default async function NodeClassDetailPage({
   const canReadFirmware = permissions.has("firmware:get");
   const canReadNodes = permissions.has("node:get");
   const canReadActions = permissions.has("action:get");
-  const nodeClassRequest = getNodeClassById(id).catch((error: unknown) => {
+  const nodeClassRequest = getNodeClass(id).catch((error: unknown) => {
     if (error instanceof ApiError && error.status === 404) {
       return null;
     }

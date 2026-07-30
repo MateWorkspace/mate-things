@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import { visibleNavigation } from "@/config/navigation";
@@ -32,6 +32,10 @@ export default function AppShell({
   const sidebarPreferenceWrite = useRef(Promise.resolve());
   const navigation = visibleNavigation(new Set(permissions));
 
+  useEffect(() => {
+    setMobileNavigationOpen(false);
+  }, [pathname]);
+
   const toggleDesktopSidebar = () => {
     const nextCollapsed = !sidebarCollapsed;
     setSidebarCollapsed(nextCollapsed);
@@ -41,7 +45,13 @@ export default function AppShell({
   };
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background min-h-screen overflow-x-clip">
+      <a
+        href="#main-content"
+        className="bg-primary text-surface focus-visible:ring-focus fixed top-2 left-4 z-50 -translate-y-20 rounded-xl px-4 py-2.5 text-sm font-semibold transition-transform focus-visible:translate-y-0 focus-visible:ring-2 focus-visible:outline-none"
+      >
+        Skip to main content
+      </a>
       <AppBar
         user={user}
         permissions={permissions}
@@ -62,7 +72,13 @@ export default function AppShell({
             idPrefix="desktop"
           />
         </aside>
-        <div className="min-w-0 flex-1">{children}</div>
+        <div
+          id="main-content"
+          tabIndex={-1}
+          className="min-w-0 flex-1 focus:outline-none"
+        >
+          {children}
+        </div>
       </div>
       <Dialog
         open={mobileNavigationOpen}

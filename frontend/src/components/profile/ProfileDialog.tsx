@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import LogoutButton from "@/components/layout/LogoutButton";
 import Button from "@/components/ui/button";
@@ -42,24 +42,18 @@ export default function ProfileDialog({
   const tabs = canChangePassword ? [PROFILE_TAB, SECURITY_TAB] : [PROFILE_TAB];
   const [activeTab, setActiveTab] = useState(PROFILE_TAB.id);
   const [editing, setEditing] = useState(false);
-  const [hadProfileEditPermission, setHadProfileEditPermission] =
-    useState(canEditProfile);
-  const [hadSecurityPermission, setHadSecurityPermission] =
-    useState(canChangePassword);
 
-  if (canEditProfile !== hadProfileEditPermission) {
-    setHadProfileEditPermission(canEditProfile);
+  useEffect(() => {
     if (!canEditProfile) {
       setEditing(false);
     }
-  }
+  }, [canEditProfile]);
 
-  if (canChangePassword !== hadSecurityPermission) {
-    setHadSecurityPermission(canChangePassword);
+  useEffect(() => {
     if (!canChangePassword && activeTab === SECURITY_TAB.id) {
       setActiveTab(PROFILE_TAB.id);
     }
-  }
+  }, [activeTab, canChangePassword]);
 
   const closeDialog = useCallback(() => {
     setActiveTab(PROFILE_TAB.id);

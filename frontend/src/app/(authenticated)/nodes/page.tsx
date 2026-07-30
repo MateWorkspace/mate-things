@@ -22,6 +22,8 @@ import NodeFilters, { type ConnectionFilter } from "./_components/NodeFilters";
 
 export const metadata: Metadata = {
   title: "Nodes — Mate Things",
+  description:
+    "Browse, filter, and monitor self-registered nodes across the device fleet.",
 };
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
