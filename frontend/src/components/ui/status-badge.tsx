@@ -25,11 +25,11 @@ const STATUS_ICON = {
 } satisfies Record<StatusVariant, LucideIcon>;
 
 const VARIANT_CLASSES: Record<StatusVariant, string> = {
-  success: "border-success/30 bg-success/15 text-success",
-  warning: "border-warning/30 bg-warning/15 text-warning",
-  critical: "border-critical/30 bg-critical/15 text-critical",
-  info: "border-info/30 bg-info/15 text-info",
-  neutral: "border-border bg-muted text-foreground",
+  success: "border-success/30 bg-background text-success",
+  warning: "border-warning/30 bg-background text-warning",
+  critical: "border-critical/30 bg-background text-critical",
+  info: "border-info/30 bg-background text-info",
+  neutral: "border-border bg-background text-foreground",
 };
 
 export default function StatusBadge({ variant, children }: StatusBadgeProps) {
