@@ -1,6 +1,7 @@
 import { refresh } from "next/cache";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "@/lib/api/client";
 import { updateProfile, updateProfilePassword } from "@/lib/api/profile";
 import { requireSessionContext } from "@/lib/session";
 import { formData } from "@/test/form-data";
@@ -38,7 +39,7 @@ function permit(...permissions: string[]) {
 
 describe("profile actions", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("trims profile fields, updates the profile, and refreshes the route", async () => {
@@ -81,6 +82,37 @@ describe("profile actions", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it("checks authentication before rejecting invalid profile fields", async () => {
+    const sessionError = new Error("authentication redirect");
+    vi.mocked(requireSessionContext).mockRejectedValue(sessionError);
+
+    await expect(
+      saveProfileAction(
+        IDLE_STATE,
+        formData({ name: " ", username: " ", bio: "" }),
+      ),
+    ).rejects.toBe(sessionError);
+
+    expect(requireSessionContext).toHaveBeenCalledOnce();
+    expect(updateProfile).not.toHaveBeenCalled();
+  });
+
+  it("checks profile:set before rejecting invalid profile fields", async () => {
+    permit("profile:get");
+
+    const result = await saveProfileAction(
+      IDLE_STATE,
+      formData({ name: " ", username: " ", bio: "" }),
+    );
+
+    expect(requireSessionContext).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({
+      status: "error",
+      title: "Permission denied",
+    });
+    expect(updateProfile).not.toHaveBeenCalled();
+  });
+
   it("rechecks profile:set before updating a profile", async () => {
     permit("profile:get");
 
@@ -94,6 +126,53 @@ describe("profile actions", () => {
       title: "Permission denied",
     });
     expect(updateProfile).not.toHaveBeenCalled();
+  });
+
+  it("shows authoritative profile validation details from a 400 response", async () => {
+    permit("profile:set");
+    vi.mocked(updateProfile).mockRejectedValue(
+      new ApiError(
+        400,
+        "Invalid Format",
+        "Unable to update your profile.",
+        "username may only contain letters and numbers",
+      ),
+    );
+
+    const result = await saveProfileAction(
+      IDLE_STATE,
+      formData({ name: "Alex Morgan", username: "alex!", bio: "" }),
+    );
+
+    expect(result).toMatchObject({
+      status: "error",
+      title: "Invalid Format",
+      message: "username may only contain letters and numbers",
+    });
+  });
+
+  it("does not expose internal profile error details", async () => {
+    permit("profile:set");
+    vi.mocked(updateProfile).mockRejectedValue(
+      new ApiError(
+        500,
+        "Internal Server Error",
+        "Unable to update your profile.",
+        "postgres: connection refused at 10.0.0.5",
+      ),
+    );
+
+    const result = await saveProfileAction(
+      IDLE_STATE,
+      formData({ name: "Alex Morgan", username: "alex", bio: "" }),
+    );
+
+    expect(result).toMatchObject({
+      status: "error",
+      title: "Internal Server Error",
+      message: "Unable to update your profile.",
+    });
+    expect(JSON.stringify(result)).not.toContain("10.0.0.5");
   });
 
   it("rejects a password confirmation mismatch before mutation", async () => {
@@ -115,6 +194,26 @@ describe("profile actions", () => {
     expect(updateProfilePassword).not.toHaveBeenCalled();
   });
 
+  it("checks profile_security:set before rejecting a password mismatch", async () => {
+    permit("profile:get");
+
+    const result = await changePasswordAction(
+      IDLE_STATE,
+      formData({
+        current_password: "current-secret",
+        new_password: "new-secret",
+        confirm_password: "different-secret",
+      }),
+    );
+
+    expect(requireSessionContext).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({
+      status: "error",
+      title: "Permission denied",
+    });
+    expect(updateProfilePassword).not.toHaveBeenCalled();
+  });
+
   it("rechecks profile_security:set before changing a password", async () => {
     permit("profile:get");
 
@@ -132,6 +231,33 @@ describe("profile actions", () => {
       title: "Permission denied",
     });
     expect(updateProfilePassword).not.toHaveBeenCalled();
+  });
+
+  it("shows authoritative password validation details from a 400 response", async () => {
+    permit("profile_security:set");
+    vi.mocked(updateProfilePassword).mockRejectedValue(
+      new ApiError(
+        400,
+        "Invalid Format",
+        "Unable to change your password.",
+        "new_password must be at least 8 characters",
+      ),
+    );
+
+    const result = await changePasswordAction(
+      IDLE_STATE,
+      formData({
+        current_password: "current-secret",
+        new_password: "short",
+        confirm_password: "short",
+      }),
+    );
+
+    expect(result).toMatchObject({
+      status: "error",
+      title: "Invalid Format",
+      message: "new_password must be at least 8 characters",
+    });
   });
 
   it("changes a password after confirmation and authorization", async () => {

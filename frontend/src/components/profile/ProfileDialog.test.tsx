@@ -52,6 +52,75 @@ describe("ProfileDialog", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("summarizes the anonymous identity, role identifier, and effective permissions", () => {
+    render(
+      <ProfileDialog
+        open
+        user={USER}
+        permissions={["profile:get", "profile:set"]}
+        onClose={() => undefined}
+      />,
+    );
+
+    expect(
+      screen.getByRole("img", { name: "Anonymous profile icon" }),
+    ).toBeVisible();
+    expect(screen.getByText(USER.role_id)).toBeVisible();
+    expect(screen.getByText("profile:get")).toBeVisible();
+    expect(screen.getByText("profile:set")).toBeVisible();
+  });
+
+  it("uses a viewport-bounded mobile sheet that recenters on desktop", () => {
+    render(
+      <ProfileDialog
+        open
+        user={USER}
+        permissions={["profile:get"]}
+        onClose={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Your profile" })).toHaveClass(
+      "bottom-0",
+      "max-h-[calc(100dvh-1rem)]",
+      "overflow-y-auto",
+      "sm:inset-0",
+      "sm:m-auto",
+    );
+  });
+
+  it("returns to Profile when the Security permission is removed", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <ProfileDialog
+        open
+        user={USER}
+        permissions={["profile:get", "profile:set", "profile_security:set"]}
+        onClose={() => undefined}
+      />,
+    );
+
+    await user.click(screen.getByRole("tab", { name: "Security" }));
+    expect(screen.getByLabelText("Current password")).toBeVisible();
+
+    rerender(
+      <ProfileDialog
+        open
+        user={USER}
+        permissions={["profile:get", "profile:set"]}
+        onClose={() => undefined}
+      />,
+    );
+
+    const profileTab = screen.getByRole("tab", { name: "Profile" });
+    expect(profileTab).toHaveAttribute("aria-selected", "true");
+    expect(profileTab).toHaveAttribute("tabindex", "0");
+    expect(
+      screen.queryByRole("tab", { name: "Security" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Current password")).not.toBeInTheDocument();
+  });
+
   it("announces a saved profile inline and in a toast", async () => {
     const user = userEvent.setup();
     vi.mocked(saveProfileAction).mockResolvedValue({

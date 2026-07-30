@@ -23,10 +23,13 @@ function permissionDenied(): FormActionState {
 
 function actionError(error: unknown): FormActionState {
   if (error instanceof ApiError) {
+    const validationDetails =
+      error.status === 400 ? error.details?.trim() : undefined;
+
     return {
       status: "error",
       title: error.title,
-      message: error.message,
+      message: validationDetails || error.message,
     };
   }
 
@@ -41,6 +44,11 @@ export async function saveProfileAction(
   _previousState: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
+  const session = await requireSessionContext();
+  if (!session.permissions.has("profile:set")) {
+    return permissionDenied();
+  }
+
   const name = String(formData.get("name") ?? "").trim();
   const username = String(formData.get("username") ?? "").trim();
   const bio = String(formData.get("bio") ?? "").trim();
@@ -61,11 +69,6 @@ export async function saveProfileAction(
     };
   }
 
-  const session = await requireSessionContext();
-  if (!session.permissions.has("profile:set")) {
-    return permissionDenied();
-  }
-
   try {
     await updateProfile({ name, username, bio });
     refresh();
@@ -84,6 +87,11 @@ export async function changePasswordAction(
   _previousState: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
+  const session = await requireSessionContext();
+  if (!session.permissions.has("profile_security:set")) {
+    return permissionDenied();
+  }
+
   const currentPassword = String(formData.get("current_password") ?? "");
   const newPassword = String(formData.get("new_password") ?? "");
   const confirmPassword = String(formData.get("confirm_password") ?? "");
@@ -97,11 +105,6 @@ export async function changePasswordAction(
         confirm_password: "The confirmation must match the new password.",
       },
     };
-  }
-
-  const session = await requireSessionContext();
-  if (!session.permissions.has("profile_security:set")) {
-    return permissionDenied();
   }
 
   try {

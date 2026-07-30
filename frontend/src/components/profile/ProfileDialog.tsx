@@ -42,6 +42,15 @@ export default function ProfileDialog({
   const tabs = canChangePassword ? [PROFILE_TAB, SECURITY_TAB] : [PROFILE_TAB];
   const [activeTab, setActiveTab] = useState(PROFILE_TAB.id);
   const [editing, setEditing] = useState(false);
+  const [hadSecurityPermission, setHadSecurityPermission] =
+    useState(canChangePassword);
+
+  if (canChangePassword !== hadSecurityPermission) {
+    setHadSecurityPermission(canChangePassword);
+    if (!canChangePassword && activeTab === SECURITY_TAB.id) {
+      setActiveTab(PROFILE_TAB.id);
+    }
+  }
 
   const closeDialog = useCallback(() => {
     setActiveTab(PROFILE_TAB.id);
@@ -50,7 +59,12 @@ export default function ProfileDialog({
   }, [onClose]);
 
   return (
-    <Dialog open={open} onClose={closeDialog} title="Your profile">
+    <Dialog
+      open={open}
+      onClose={closeDialog}
+      title="Your profile"
+      variant="sheet"
+    >
       <Tabs
         tabs={tabs}
         activeTab={activeTab}
@@ -73,6 +87,7 @@ export default function ProfileDialog({
           ) : (
             <ProfileView
               user={user}
+              permissions={permissions}
               canEdit={canEditProfile}
               onEdit={() => setEditing(true)}
             />
