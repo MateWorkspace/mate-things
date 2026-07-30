@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
 import PageHeader from "@/components/ui/page-header";
-import { EmptyState, LoadingState } from "@/components/ui/states";
+import { EmptyState } from "@/components/ui/states";
 import { requireSessionContext } from "@/lib/session";
+
+import FleetMetricSkeleton from "./_components/FleetMetricSkeleton";
 
 export const metadata: Metadata = {
   title: "Dashboard — Mate Things",
@@ -38,9 +40,9 @@ export default async function DashboardPage() {
         <section aria-label="Fleet metrics">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {visibleMetricPositions.map((position) => (
-              <LoadingState
+              <FleetMetricSkeleton
                 key={position.title}
-                title={`${position.title} unavailable`}
+                title={position.title}
               />
             ))}
           </div>
