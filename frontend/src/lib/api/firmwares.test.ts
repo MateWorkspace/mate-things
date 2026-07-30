@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiFetch } from "@/lib/api/client";
 
-import { createFirmware, replaceFirmwareBinary } from "./firmwares";
+import {
+  createFirmware,
+  deleteFirmware,
+  replaceFirmwareBinary,
+} from "./firmwares";
 
 vi.mock("@/lib/api/client", () => ({
   apiFetch: vi.fn(),
@@ -55,5 +59,23 @@ describe("firmware multipart wrappers", () => {
     expect(body.get("config_schema")).toBe(
       '[{"key":"broker","value_type":"string"}]',
     );
+  });
+
+  it("sends an explicit empty schema so replacing a binary clears old parameters", async () => {
+    const file = new File(["replacement"], "freezer-v3.bin");
+
+    await replaceFirmwareBinary("firmware-1", file, []);
+
+    const body = vi.mocked(apiFetch).mock.calls[0][1]?.body as FormData;
+    expect(body.get("config_schema")).toBe("[]");
+  });
+
+  it("sends the typed name for authoritative delete confirmation", async () => {
+    await deleteFirmware("firmware-1", "freezer-v2");
+
+    expect(apiFetch).toHaveBeenCalledWith("/firmwares/firmware-1", {
+      method: "DELETE",
+      body: { expected_name: "freezer-v2" },
+    });
   });
 });

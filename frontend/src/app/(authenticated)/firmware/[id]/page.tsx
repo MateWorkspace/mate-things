@@ -11,7 +11,7 @@ import {
   getFirmwareById,
   getFirmwareConfigParameters,
 } from "@/lib/api/firmwares";
-import { listNodeClasses } from "@/lib/api/node-classes";
+import { listAllNodeClasses } from "@/lib/api/node-classes";
 import { listNodes } from "@/lib/api/nodes";
 import { requirePermission } from "@/lib/session";
 
@@ -54,7 +54,7 @@ export default async function FirmwareDetailPage({
   const canReadNodes = permissions.has("node:get");
   const [configSchema, nodeClasses, nodes, downloadUrl] = await Promise.all([
     getFirmwareConfigParameters(firmware.id),
-    canReadClass ? listNodeClasses({ limit: 48 }) : Promise.resolve(null),
+    canReadClass ? listAllNodeClasses() : Promise.resolve(null),
     canReadNodes
       ? listNodes({ firmware_id: firmware.id, limit: 12 })
       : Promise.resolve(null),
@@ -63,11 +63,11 @@ export default async function FirmwareDetailPage({
       : Promise.resolve(null),
   ]);
   const nodeClassOptions =
-    nodeClasses?.data.map(({ id: nodeClassId, name }) => ({
+    nodeClasses?.map(({ id: nodeClassId, name }) => ({
       id: nodeClassId,
       name,
     })) ?? [];
-  const nodeClass = nodeClasses?.data.find(
+  const nodeClass = nodeClasses?.find(
     (item) => item.id === firmware.node_class_id,
   );
   const freshness = firmware.updated_at ?? firmware.created_at;

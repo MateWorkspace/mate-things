@@ -31,6 +31,38 @@ export async function listNodeClasses(
   return apiFetch(`/node-classes${buildQuery(query)}`);
 }
 
+const NODE_CLASS_OPTION_PAGE_LIMIT = 48;
+
+export async function listAllNodeClasses(): Promise<NodeClassResponse[]> {
+  const nodeClasses: NodeClassResponse[] = [];
+  const seenIds = new Set<string>();
+  let page = 1;
+
+  while (true) {
+    const result = await listNodeClasses({
+      page,
+      limit: NODE_CLASS_OPTION_PAGE_LIMIT,
+    });
+
+    for (const nodeClass of result.data) {
+      if (!seenIds.has(nodeClass.id)) {
+        seenIds.add(nodeClass.id);
+        nodeClasses.push(nodeClass);
+      }
+    }
+
+    const responseLimit = Math.max(1, result.page.limit);
+    const totalPages = Math.ceil(result.page.total_items / responseLimit);
+    if (page >= totalPages || result.data.length === 0) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return nodeClasses;
+}
+
 export async function getNodeClassByName(
   name: string,
 ): Promise<NodeClassResponse> {

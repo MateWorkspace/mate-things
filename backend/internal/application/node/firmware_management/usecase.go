@@ -305,18 +305,16 @@ func (u *usecase) ReplaceBinaryById(
 		return domainusecasesnode.FirmwareBinaryStatResult{}, err
 	}
 
-	if len(request.ConfigSchema) > 0 {
-		if err := u.configParameter.ReplaceForFirmware(ctx, domainusecasesnode.ReplaceConfigParametersRequest{
-			FirmwareId: request.Id,
-			Parameters: request.ConfigSchema,
-			ActorId:    request.UpdatedBy,
-		}); err != nil {
-			u.logger.Error(ctx, tag, "failed to ingest firmware config schema", domainmodels.LoggerMeta{
-				"err":         err,
-				"firmware_id": request.Id,
-			})
-			return domainusecasesnode.FirmwareBinaryStatResult{}, err
-		}
+	if err := u.configParameter.ReplaceForFirmware(ctx, domainusecasesnode.ReplaceConfigParametersRequest{
+		FirmwareId: request.Id,
+		Parameters: request.ConfigSchema,
+		ActorId:    request.UpdatedBy,
+	}); err != nil {
+		u.logger.Error(ctx, tag, "failed to ingest firmware config schema", domainmodels.LoggerMeta{
+			"err":         err,
+			"firmware_id": request.Id,
+		})
+		return domainusecasesnode.FirmwareBinaryStatResult{}, err
 	}
 
 	return domainusecasesnode.FirmwareBinaryStatResult{
@@ -425,6 +423,11 @@ func (u *usecase) StatBinaryByName(
 func (u *usecase) DeleteById(ctx context.Context, request domainusecasesnode.DeleteFirmwareRequest) error {
 	const tag = "node/firmware_management/DeleteById"
 
+	expectedName, err := applicationshared.RequiredFirmwareName(request.ExpectedName, "expected_name")
+	if err != nil {
+		return err
+	}
+
 	firmware, err := u.firmware.ReadById(ctx, request.Id)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to read firmware", domainmodels.LoggerMeta{
@@ -432,6 +435,14 @@ func (u *usecase) DeleteById(ctx context.Context, request domainusecasesnode.Del
 			"id":  request.Id,
 		})
 		return err
+	}
+
+	if firmware.Name != expectedName {
+		return domainmodels.NewError(
+			"firmware name confirmation does not match",
+			domainmodels.ErrTypeValidation,
+			nil,
+		)
 	}
 
 	if err := u.firmware.DeleteById(ctx, request.Id, request.DeletedBy); err != nil {

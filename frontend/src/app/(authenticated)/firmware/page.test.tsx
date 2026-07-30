@@ -1,8 +1,9 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { listFirmwares } from "@/lib/api/firmwares";
-import { listNodeClasses } from "@/lib/api/node-classes";
+import { listAllNodeClasses } from "@/lib/api/node-classes";
 import { requirePermission } from "@/lib/session";
 import { USER } from "@/test/fixtures";
 
@@ -13,7 +14,7 @@ vi.mock("@/lib/api/firmwares", () => ({
 }));
 
 vi.mock("@/lib/api/node-classes", () => ({
-  listNodeClasses: vi.fn(),
+  listAllNodeClasses: vi.fn(),
 }));
 
 vi.mock("@/lib/session", () => ({
@@ -53,18 +54,15 @@ describe("FirmwarePage", () => {
       ],
       page: { page: 2, limit: 12, total_items: 13 },
     });
-    vi.mocked(listNodeClasses).mockResolvedValue({
-      data: [
-        {
-          id: "class-1",
-          name: "Cold Storage",
-          description: "",
-          preferences: {},
-          created_at: "2026-07-30T00:00:00Z",
-        },
-      ],
-      page: { page: 1, limit: 48, total_items: 1 },
-    });
+    vi.mocked(listAllNodeClasses).mockResolvedValue([
+      {
+        id: "class-1",
+        name: "Cold Storage",
+        description: "",
+        preferences: {},
+        created_at: "2026-07-30T00:00:00Z",
+      },
+    ]);
   });
 
   afterEach(cleanup);
@@ -107,5 +105,27 @@ describe("FirmwarePage", () => {
     expect(
       screen.getByRole("button", { name: "Upload firmware" }),
     ).toBeVisible();
+  });
+
+  it("makes a node class after the first 48 available in the firmware selector", async () => {
+    const user = userEvent.setup();
+    permit("node_class:get", "firmware:add");
+    vi.mocked(listAllNodeClasses).mockResolvedValue(
+      Array.from({ length: 49 }, (_, index) => ({
+        id: `class-${index + 1}`,
+        name: `Node class ${index + 1}`,
+        description: "",
+        preferences: {},
+        created_at: "2026-07-30T00:00:00Z",
+      })),
+    );
+
+    render(await FirmwarePage({ searchParams: Promise.resolve({}) }));
+    await user.click(screen.getByRole("button", { name: "Upload firmware" }));
+
+    expect(listAllNodeClasses).toHaveBeenCalledOnce();
+    expect(
+      screen.getAllByRole("option", { name: "Node class 49" }),
+    ).toHaveLength(2);
   });
 });

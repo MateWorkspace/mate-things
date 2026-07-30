@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -84,6 +84,54 @@ describe("OtaDialog", () => {
       nodeId: "node-1",
       firmwareId: "firmware-2",
     });
+  });
+
+  it("closes after success and requires a renewed selection and confirmation before reuse", async () => {
+    const user = userEvent.setup();
+    vi.mocked(dispatchOtaAction).mockResolvedValue({
+      status: "success",
+      title: "OTA dispatched",
+      message: "The update request was sent.",
+    });
+    render(<OtaDialog availableFirmwares={FIRMWARES} node={nodeFixture()} />);
+
+    const trigger = screen.getByRole("button", {
+      name: "Dispatch OTA to Cold Storage Sensor 07",
+    });
+    await user.click(trigger);
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Firmware" }),
+      "firmware-2",
+    );
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: /confirm this firmware update/i,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Confirm OTA dispatch" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(dispatchOtaAction).toHaveBeenCalledOnce();
+    expect(
+      screen.queryByRole("button", { name: "Confirm OTA dispatch" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(trigger);
+
+    expect(screen.getByRole("combobox", { name: "Firmware" })).toHaveValue("");
+    expect(
+      screen.getByRole("checkbox", {
+        name: /confirm this firmware update/i,
+      }),
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole("button", { name: "Confirm OTA dispatch" }),
+    ).toBeDisabled();
+    expect(dispatchOtaAction).toHaveBeenCalledOnce();
   });
 
   it("does not render an OTA trigger when no compatible firmware is available", () => {

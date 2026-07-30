@@ -2,6 +2,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "@/lib/api/client";
 import {
   createFirmware,
   deleteFirmware,
@@ -211,6 +212,21 @@ describe("firmware actions", () => {
     expect(result.status).toBe("success");
   });
 
+  it("forwards an intentionally empty replacement schema so old parameters are cleared", async () => {
+    permit("firmware:set");
+    const data = formData({
+      firmware_id: "firmware-1",
+      file: FILE,
+    });
+    data.append("schema_key", "");
+    data.append("schema_value_type", "");
+
+    const result = await replaceFirmwareBinaryAction(EMPTY_STATE, data);
+
+    expect(replaceFirmwareBinary).toHaveBeenCalledWith("firmware-1", FILE, []);
+    expect(result.status).toBe("success");
+  });
+
   it("rechecks firmware:remove before deleting", async () => {
     permit("firmware:get");
 
@@ -227,20 +243,50 @@ describe("firmware actions", () => {
     expect(deleteFirmware).not.toHaveBeenCalled();
   });
 
-  it("requires the exact firmware name before deleting", async () => {
+  it("requires a non-empty confirmation before deleting", async () => {
     permit("firmware:remove");
 
     const result = await deleteFirmwareAction(
       EMPTY_STATE,
       formData({
         firmware_id: "firmware-1",
-        firmware_name: "freezer-v2",
-        confirmation: "Freezer-v2",
+        confirmation: "",
       }),
     );
 
-    expect(result.fieldErrors?.confirmation).toMatch(/exactly match/i);
+    expect(result.fieldErrors?.confirmation).toMatch(/required/i);
     expect(deleteFirmware).not.toHaveBeenCalled();
+  });
+
+  it("relies on the backend identity when a client spoofs the displayed firmware name", async () => {
+    permit("firmware:remove");
+    vi.mocked(deleteFirmware).mockRejectedValue(
+      new ApiError(
+        400,
+        "Invalid request",
+        "Unable to delete the firmware.",
+        "Firmware name confirmation does not match.",
+      ),
+    );
+
+    const result = await deleteFirmwareAction(
+      EMPTY_STATE,
+      formData({
+        firmware_id: "firmware-1",
+        firmware_name: "spoofed-firmware",
+        confirmation: "spoofed-firmware",
+      }),
+    );
+
+    expect(deleteFirmware).toHaveBeenCalledWith(
+      "firmware-1",
+      "spoofed-firmware",
+    );
+    expect(result).toMatchObject({
+      status: "error",
+      message: expect.stringMatching(/does not match/i),
+    });
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   it("deletes and redirects only after backend success", async () => {
@@ -255,7 +301,7 @@ describe("firmware actions", () => {
       }),
     );
 
-    expect(deleteFirmware).toHaveBeenCalledWith("firmware-1");
+    expect(deleteFirmware).toHaveBeenCalledWith("firmware-1", "freezer-v2");
     expect(redirect).toHaveBeenCalledWith("/firmware");
     expect(vi.mocked(deleteFirmware).mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(redirect).mock.invocationCallOrder[0],

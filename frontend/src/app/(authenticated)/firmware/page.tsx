@@ -9,7 +9,7 @@ import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { listFirmwares } from "@/lib/api/firmwares";
-import { listNodeClasses } from "@/lib/api/node-classes";
+import { listAllNodeClasses } from "@/lib/api/node-classes";
 import { parsePageQuery } from "@/lib/collection-query";
 import { requirePermission } from "@/lib/session";
 
@@ -42,10 +42,10 @@ export default async function FirmwarePage({
   const canReadClasses = permissions.has("node_class:get");
   const [firmwares, nodeClasses] = await Promise.all([
     listFirmwares({ ...query, node_class_id: nodeClassId || undefined }),
-    canReadClasses ? listNodeClasses({ limit: 48 }) : Promise.resolve(null),
+    canReadClasses ? listAllNodeClasses() : Promise.resolve(null),
   ]);
   const nodeClassOptions =
-    nodeClasses?.data.map(({ id, name }) => ({ id, name })) ?? [];
+    nodeClasses?.map(({ id, name }) => ({ id, name })) ?? [];
   const classNames = new Map(
     nodeClassOptions.map((nodeClass) => [nodeClass.id, nodeClass.name]),
   );

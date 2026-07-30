@@ -285,35 +285,23 @@ export async function deleteFirmwareAction(
   }
 
   const firmwareId = String(formData.get("firmware_id") ?? "").trim();
-  const firmwareName = String(formData.get("firmware_name") ?? "").trim();
-  const confirmation = String(formData.get("confirmation") ?? "");
+  const confirmation = String(formData.get("confirmation") ?? "").trim();
   const fieldErrors = requiredFieldErrors({
     firmware_id: firmwareId,
-    firmware_name: firmwareName,
+    confirmation,
   });
 
   if (Object.keys(fieldErrors).length > 0) {
     return {
       status: "error",
       title: "Check the firmware",
-      message: "The firmware identity is incomplete. Refresh and try again.",
+      message: "Enter the firmware name to confirm deletion.",
       fieldErrors,
     };
   }
 
-  if (confirmation !== firmwareName) {
-    return {
-      status: "error",
-      title: "Firmware name does not match",
-      message: "Enter the exact firmware name before deleting it.",
-      fieldErrors: {
-        confirmation: "The confirmation must exactly match the firmware name.",
-      },
-    };
-  }
-
   try {
-    await deleteFirmware(firmwareId);
+    await deleteFirmware(firmwareId, confirmation);
   } catch (error) {
     return actionError(error);
   }

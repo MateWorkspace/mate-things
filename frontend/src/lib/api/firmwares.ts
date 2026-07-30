@@ -173,6 +173,12 @@ export async function getFirmwareBinaryUrlByName(
   return location;
 }
 
-export async function deleteFirmware(id: string): Promise<void> {
-  return apiFetch(`/firmwares/${id}`, { method: "DELETE" });
+export async function deleteFirmware(
+  id: string,
+  expectedName: string,
+): Promise<void> {
+  return apiFetch(`/firmwares/${id}`, {
+    method: "DELETE",
+    body: { expected_name: expectedName },
+  });
 }

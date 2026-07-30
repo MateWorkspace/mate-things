@@ -934,6 +934,7 @@ func (h *handler) FirmwareBinaryStatByNameHead(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "id"
+// @Param request body presentationhttprequest.FirmwareDeleteRequest true "request"
 // @Success 204
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -947,9 +948,15 @@ func (h *handler) FirmwareDelete(c *echo.Context) error {
 		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
 	}
 
+	var req presentationhttprequest.FirmwareDeleteRequest
+	if err := presentationhttputils.Bind(c, &req); err != nil {
+		return err
+	}
+
 	if err := h.firmwareUseCase.DeleteById(c.Request().Context(), domainusecasesnode.DeleteFirmwareRequest{
-		Id:        id,
-		DeletedBy: presentationhttputils.ActorId(c),
+		Id:           id,
+		ExpectedName: req.ExpectedName,
+		DeletedBy:    presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err, "Unable to delete the firmware. Please try again.")
 	}

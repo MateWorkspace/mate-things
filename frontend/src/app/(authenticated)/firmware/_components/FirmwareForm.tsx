@@ -64,7 +64,7 @@ function NodeClassField({
   fieldId: string;
   nodeClasses: readonly FirmwareNodeClassOption[];
 }) {
-  if (nodeClasses.length === 0) {
+  if (nodeClasses.length === 0 && !defaultValue) {
     return (
       <div>
         <Label htmlFor={`${fieldId}-node-class`}>Node class ID</Label>
@@ -78,6 +78,11 @@ function NodeClassField({
     );
   }
 
+  const currentClassMissing = Boolean(
+    defaultValue &&
+    !nodeClasses.some((nodeClass) => nodeClass.id === defaultValue),
+  );
+
   return (
     <div>
       <Label htmlFor={`${fieldId}-node-class`}>Node class</Label>
@@ -89,6 +94,9 @@ function NodeClassField({
         className="border-control-border bg-background text-foreground focus-visible:border-focus focus-visible:ring-focus min-h-11 w-full rounded-xl border px-3.5 py-2.5 text-sm focus-visible:ring-2 focus-visible:outline-none"
       >
         <option value="">Select a node class</option>
+        {currentClassMissing ? (
+          <option value={defaultValue}>Current class ({defaultValue})</option>
+        ) : null}
         {nodeClasses.map((nodeClass) => (
           <option key={nodeClass.id} value={nodeClass.id}>
             {nodeClass.name}
@@ -437,7 +445,6 @@ function DeleteDialog({
     >
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="firmware_id" value={firmware.id} />
-        <input type="hidden" name="firmware_name" value={firmware.name} />
         <p className="border-critical/40 bg-critical/5 rounded-xl border p-4 text-sm">
           Nodes or other dependent resources can prevent deletion. Enter the
           exact firmware name <strong>{firmware.name}</strong> to continue.

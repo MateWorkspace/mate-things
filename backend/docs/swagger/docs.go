@@ -3293,6 +3293,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.FirmwareDeleteRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -5355,6 +5364,15 @@ const docTemplate = `{
                 "refresh_token": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJncmFjZS5ob3BwZXIifQ.brewbrewbrew"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.FirmwareDeleteRequest": {
+            "type": "object",
+            "properties": {
+                "expected_name": {
+                    "type": "string",
+                    "example": "espresso-fw"
                 }
             }
         },

@@ -107,6 +107,7 @@ type FirmwareBinaryStatResult struct {
 }
 
 type DeleteFirmwareRequest struct {
-	Id        uuid.UUID
-	DeletedBy *uuid.UUID
+	Id           uuid.UUID
+	ExpectedName string
+	DeletedBy    *uuid.UUID
 }

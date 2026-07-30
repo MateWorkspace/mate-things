@@ -76,6 +76,11 @@ export default function OtaDialog({
                 firmwareId,
               });
               setState(result);
+              if (result.status === "success") {
+                setFirmwareId("");
+                setConfirmed(false);
+                setOpen(false);
+              }
             });
           }}
         >
