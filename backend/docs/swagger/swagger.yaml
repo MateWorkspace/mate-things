@@ -360,6 +360,15 @@ definitions:
       total_items:
         type: integer
     type: object
+  ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeLogResponse
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeLogResponse'
+        type: array
+      total_items:
+        type: integer
+    type: object
   ? github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_TelemetryRecordResponse
   : properties:
       data:
@@ -529,6 +538,30 @@ definitions:
         type: string
       value:
         example: broker.example.com
+        type: string
+    type: object
+  github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeLogResponse:
+    properties:
+      created_at:
+        example: "2026-07-30T14:03:12.100Z"
+        type: string
+      id:
+        example: 918273
+        type: integer
+      level:
+        example: INFO
+        type: string
+      logged_at:
+        example: "2026-07-30T14:03:12.045Z"
+        type: string
+      message:
+        example: 'WiFi connected, IP: 192.168.1.42'
+        type: string
+      node_device_id:
+        example: AC276E5E030C
+        type: string
+      tag:
+        example: wifi_manager
         type: string
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeResponse:
@@ -3439,6 +3472,65 @@ paths:
       summary: Node Class Get By Name
       tags:
       - Node Classes
+  /v1/node-logs:
+    delete:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountResponse'
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Node Log Delete
+      tags:
+      - Node Log
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeLogResponse'
+        "400":
+          description: Invalid Format
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "403":
+          description: Access Denied
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Node Log List
+      tags:
+      - Node Log
   /v1/nodes:
     get:
       produces:

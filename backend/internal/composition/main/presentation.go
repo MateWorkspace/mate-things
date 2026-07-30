@@ -10,6 +10,7 @@ import (
 	presentationhttphandleradmin "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/admin"
 	presentationhttphandlerauth "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/auth"
 	presentationhttphandlernode "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/node"
+	presentationhttphandlernodelog "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/node_log"
 	presentationhttphandlerpreferences "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/preferences"
 	presentationhttphandlerprofile "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/profile"
 	presentationhttphandlertelemetry "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/telemetry"
@@ -57,6 +58,7 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 		l.app.actionHistory,
 	)
 	telemetryHandler := presentationhttphandlertelemetry.NewHandler(l.app.telemetryQuery)
+	nodeLogHandler := presentationhttphandlernodelog.NewHandler(l.app.nodeLogQuery)
 	preferencesHandler := presentationhttphandlerpreferences.NewHandler(l.app.preferencesUpdate)
 	presentationmqtthandler.New(
 		l.infra.logger,
@@ -97,6 +99,7 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 		Node:          nodeHandler,
 		Action:        actionHandler,
 		Telemetry:     telemetryHandler,
+		NodeLog:       nodeLogHandler,
 		Preferences:   preferencesHandler,
 		Token:         l.infra.token,
 		MinioProxy:    presentationhttpproxy.NewMinioProxy(config.MinioEndpoint, config.MinioUseSsl),

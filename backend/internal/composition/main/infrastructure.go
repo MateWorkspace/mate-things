@@ -32,6 +32,7 @@ import (
 	infrastructurerepositorynode "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node"
 	infrastructurerepositorynodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class"
 	infrastructurerepositorynodeconfigvalue "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_config_value"
+	infrastructurerepositorynodelog "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_log"
 	infrastructurerepositorypayloadschema "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/payload_schema"
 	infrastructurerepositorypermission "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/permission"
 	infrastructurerepositoryrole "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/role"
@@ -56,6 +57,7 @@ type infrastructure struct {
 	firmwareConfigParameterRepository domaincontractsrepository.FirmwareConfigParameter
 	nodeRepository                    domaincontractsrepository.Node
 	nodeConfigValueRepository         domaincontractsrepository.NodeConfigValue
+	nodeLogRepository                 domaincontractsrepository.NodeLog
 	nodeClassRepository               domaincontractsrepository.NodeClass
 	payloadSchemaRepository           domaincontractsrepository.PayloadSchema
 	permissionRepository              domaincontractsrepository.Permission
@@ -106,6 +108,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	firmwareConfigParameterRepository := infrastructurerepositoryfirmwareconfigparameter.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeRepository := infrastructurerepositorynode.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeConfigValueRepository := infrastructurerepositorynodeconfigvalue.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	nodeLogRepository := infrastructurerepositorynodelog.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeClassRepository := infrastructurerepositorynodeclass.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	payloadSchemaRepository := infrastructurerepositorypayloadschema.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	permissionRepository := infrastructurerepositorypermission.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -152,6 +155,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		firmwareConfigParameterRepository: firmwareConfigParameterRepository,
 		nodeRepository:                    nodeRepository,
 		nodeConfigValueRepository:         nodeConfigValueRepository,
+		nodeLogRepository:                 nodeLogRepository,
 		nodeClassRepository:               nodeClassRepository,
 		payloadSchemaRepository:           payloadSchemaRepository,
 		permissionRepository:              permissionRepository,

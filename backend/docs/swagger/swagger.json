@@ -4035,6 +4035,100 @@
                 }
             }
         },
+        "/v1/node-logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Node Log"
+                ],
+                "summary": "Node Log List",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeLogResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Node Log"
+                ],
+                "summary": "Node Log Delete",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/nodes": {
             "get": {
                 "security": [
@@ -5663,6 +5757,20 @@
                 }
             }
         },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeLogResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeLogResponse"
+                    }
+                },
+                "total_items": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_TelemetryRecordResponse": {
             "type": "object",
             "properties": {
@@ -5902,6 +6010,39 @@
                 "value": {
                     "type": "string",
                     "example": "broker.example.com"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeLogResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-07-30T14:03:12.100Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 918273
+                },
+                "level": {
+                    "type": "string",
+                    "example": "INFO"
+                },
+                "logged_at": {
+                    "type": "string",
+                    "example": "2026-07-30T14:03:12.045Z"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "WiFi connected, IP: 192.168.1.42"
+                },
+                "node_device_id": {
+                    "type": "string",
+                    "example": "AC276E5E030C"
+                },
+                "tag": {
+                    "type": "string",
+                    "example": "wifi_manager"
                 }
             }
         },

@@ -18,6 +18,7 @@ import (
 	applicationnodefirmwaremanagement "github.com/MateWorkspace/mate-things/backend/internal/application/node/firmware_management"
 	applicationnodemessagingcallback "github.com/MateWorkspace/mate-things/backend/internal/application/node/messaging_callback"
 	applicationnodeota "github.com/MateWorkspace/mate-things/backend/internal/application/node/ota"
+	applicationnodelogquery "github.com/MateWorkspace/mate-things/backend/internal/application/node_log/query"
 	applicationpreferencesupdate "github.com/MateWorkspace/mate-things/backend/internal/application/preferences/update"
 	applicationprofileaccount "github.com/MateWorkspace/mate-things/backend/internal/application/profile/account"
 	applicationprofileme "github.com/MateWorkspace/mate-things/backend/internal/application/profile/me"
@@ -38,6 +39,7 @@ import (
 	domainusecasesadmin "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/admin"
 	domainusecasesauth "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/auth"
 	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
+	domainusecasesnodelog "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node_log"
 	domainusecasespreferences "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/preferences"
 	domainusecasesprofile "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/profile"
 	domainusecasesrepocache "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/repocache"
@@ -82,6 +84,7 @@ type application struct {
 
 	telemetryIngestion domainusecasestelemetry.Ingestion
 	telemetryQuery     domainusecasestelemetry.Query
+	nodeLogQuery       domainusecasesnodelog.Query
 }
 
 func (l *launcher) newApplication(ctx context.Context) error {
@@ -157,6 +160,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	nodeMessagingCallback := applicationnodemessagingcallback.NewUsecaseImpl(
 		nodeRepoCache,
 		l.infra.actionLogRepository,
+		l.infra.nodeLogRepository,
 		l.infra.nodePublisher,
 		l.infra.nodeSubscriptions,
 		l.infra.logger,
@@ -191,6 +195,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		l.infra.logger,
 	)
 	telemetryQuery := applicationtelemetryquery.NewUsecaseImpl(l.infra.telemetryRecordRepository, l.infra.logger)
+	nodeLogQuery := applicationnodelogquery.NewUsecaseImpl(l.infra.nodeLogRepository, l.infra.logger)
 
 	l.app = &application{
 		actionRepoCache:         actionRepoCache,
@@ -230,6 +235,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 
 		telemetryIngestion: telemetryIngestion,
 		telemetryQuery:     telemetryQuery,
+		nodeLogQuery:       nodeLogQuery,
 	}
 
 	l.infra.logger.Info(
