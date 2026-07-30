@@ -45,6 +45,27 @@ export async function listPayloadSchemas(
   return apiFetch(`/admin/payload-schemas${buildQuery(query)}`);
 }
 
+export async function listAllPayloadSchemas(): Promise<
+  PayloadSchemaResponse[]
+> {
+  const schemas: PayloadSchemaResponse[] = [];
+  let page = 1;
+
+  while (true) {
+    const result = await listPayloadSchemas({ page, limit: 100 });
+    schemas.push(...result.data);
+
+    if (
+      result.data.length === 0 ||
+      page >= Math.ceil(result.page.total_items / result.page.limit)
+    ) {
+      return schemas;
+    }
+
+    page += 1;
+  }
+}
+
 export async function getLatestPayloadSchema(
   name: string,
 ): Promise<PayloadSchemaResponse> {

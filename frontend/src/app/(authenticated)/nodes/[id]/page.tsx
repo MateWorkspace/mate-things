@@ -4,13 +4,16 @@ import { notFound } from "next/navigation";
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
+import { listActions } from "@/lib/api/actions";
 import { ApiError } from "@/lib/api/client";
 import {
   getFirmwareConfigParameters,
   listAvailableFirmwaresByNodeId,
 } from "@/lib/api/firmwares";
 import { getNodeConfig } from "@/lib/api/node-config";
+import { listNodeLogs } from "@/lib/api/node-logs";
 import { getNodeById } from "@/lib/api/nodes";
+import { listTelemetryRecords } from "@/lib/api/telemetry";
 import { parsePageQuery } from "@/lib/collection-query";
 import { requirePermission } from "@/lib/session";
 
@@ -19,6 +22,11 @@ import NodeConfigForm from "./_components/NodeConfigForm";
 import NodeEditForm from "./_components/NodeEditForm";
 import NodeFirmwareWorkspace from "./_components/NodeFirmwareWorkspace";
 import NodeOverview from "./_components/NodeOverview";
+import {
+  NodeActionsWorkspace,
+  NodeLogsWorkspace,
+  NodeTelemetryWorkspace,
+} from "./_components/NodeOperationsWorkspace";
 import NodeTabs from "./_components/NodeTabs";
 import {
   getNodeTabButtonId,
@@ -35,29 +43,6 @@ type RawSearchParams = Record<string, string | string[] | undefined>;
 interface NodeDetailPageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<RawSearchParams>;
-}
-
-function WorkspacePlaceholder({ tab }: { tab: string }) {
-  const copy: Record<string, { title: string; description: string }> = {
-    actions: {
-      title: "Action data is not connected yet",
-      description:
-        "This workspace will show available actions and dispatch history when action data is connected.",
-    },
-    telemetry: {
-      title: "Telemetry is not connected yet",
-      description:
-        "This workspace will show node telemetry when telemetry data is connected.",
-    },
-    logs: {
-      title: "Node logs are not connected yet",
-      description:
-        "This workspace will show device log records when node-log data is connected.",
-    },
-  };
-
-  const content = copy[tab];
-  return <EmptyState title={content.title} description={content.description} />;
 }
 
 export default async function NodeDetailPage({
@@ -86,19 +71,36 @@ export default async function NodeDetailPage({
   const canReadFirmware = permissions.has("firmware:get");
   const showConfiguration = activeTab === "configuration";
   const showFirmware = activeTab === "firmware";
+  const showActions = activeTab === "actions";
+  const showTelemetry = activeTab === "telemetry";
+  const showLogs = activeTab === "logs";
   const firmwareQuery = parsePageQuery(rawSearchParams);
   const canLoadConfiguration = showConfiguration && canReadConfig;
   const canLoadSchema =
     canLoadConfiguration && canReadFirmware && Boolean(node.firmware_id);
-  const [values, parameters, availableFirmwares] = await Promise.all([
-    canLoadConfiguration ? getNodeConfig(node.id) : Promise.resolve([]),
-    canLoadSchema
-      ? getFirmwareConfigParameters(node.firmware_id)
-      : Promise.resolve([]),
-    showFirmware && canReadFirmware
-      ? listAvailableFirmwaresByNodeId(node.id, firmwareQuery)
-      : Promise.resolve(null),
-  ]);
+  const [values, parameters, availableFirmwares, actions, telemetry, logs] =
+    await Promise.all([
+      canLoadConfiguration ? getNodeConfig(node.id) : Promise.resolve([]),
+      canLoadSchema
+        ? getFirmwareConfigParameters(node.firmware_id)
+        : Promise.resolve([]),
+      showFirmware && canReadFirmware
+        ? listAvailableFirmwaresByNodeId(node.id, firmwareQuery)
+        : Promise.resolve(null),
+      showActions && permissions.has("action:get")
+        ? listActions({
+            page: 1,
+            limit: 48,
+            node_class_id: node.node_class_id,
+          })
+        : Promise.resolve(null),
+      showTelemetry && permissions.has("telemetry_record:get")
+        ? listTelemetryRecords({ node_device_id: node.device_id })
+        : Promise.resolve(null),
+      showLogs && permissions.has("node_log:get")
+        ? listNodeLogs({ node_device_id: node.device_id })
+        : Promise.resolve(null),
+    ]);
   const panelId = getNodeTabPanelId(node.id, activeTab);
 
   return (
@@ -176,10 +178,36 @@ export default async function NodeDetailPage({
             node={node}
           />
         ) : null}
-        {activeTab !== "overview" &&
-        activeTab !== "configuration" &&
-        activeTab !== "firmware" ? (
-          <WorkspacePlaceholder tab={activeTab} />
+        {showActions && !permissions.has("action:get") ? (
+          <EmptyState
+            title="Action access required"
+            description="action:get permission is required to view actions compatible with this node."
+          />
+        ) : null}
+        {showActions && actions ? (
+          <NodeActionsWorkspace
+            actions={actions.data}
+            canDispatch={permissions.has("action:dispatch")}
+            node={node}
+          />
+        ) : null}
+        {showTelemetry && !permissions.has("telemetry_record:get") ? (
+          <EmptyState
+            title="Telemetry access required"
+            description="telemetry_record:get permission is required to inspect this node's telemetry."
+          />
+        ) : null}
+        {showTelemetry && telemetry ? (
+          <NodeTelemetryWorkspace records={telemetry.data} node={node} />
+        ) : null}
+        {showLogs && !permissions.has("node_log:get") ? (
+          <EmptyState
+            title="Node log access required"
+            description="node_log:get permission is required to inspect this node's logs."
+          />
+        ) : null}
+        {showLogs && logs ? (
+          <NodeLogsWorkspace logs={logs.data} node={node} />
         ) : null}
       </section>
     </main>

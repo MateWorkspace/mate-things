@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { listActions } from "@/lib/api/actions";
 import {
   getFirmwareConfigParameters,
   listAvailableFirmwaresByNodeId,
@@ -23,6 +24,10 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/api/firmwares", () => ({
   getFirmwareConfigParameters: vi.fn(),
   listAvailableFirmwaresByNodeId: vi.fn(),
+}));
+
+vi.mock("@/lib/api/actions", () => ({
+  listActions: vi.fn(),
 }));
 
 vi.mock("@/lib/api/node-config", () => ({
@@ -79,6 +84,10 @@ describe("NodeDetailPage", () => {
       ],
       page: { page: 1, limit: 12, total_items: 1 },
     });
+    vi.mocked(listActions).mockResolvedValue({
+      data: [],
+      page: { page: 1, limit: 48, total_items: 0 },
+    });
   });
 
   afterEach(cleanup);
@@ -111,10 +120,15 @@ describe("NodeDetailPage", () => {
     expect(screen.getByText(/firmware:get permission/i)).toBeVisible();
   });
 
-  it("renders a truthful actions placeholder without configuration reads", async () => {
+  it("loads compatible actions without configuration reads", async () => {
     await renderPage("actions", ["action:get"]);
 
-    expect(screen.getByText(/action data is not connected yet/i)).toBeVisible();
+    expect(listActions).toHaveBeenCalledWith({
+      page: 1,
+      limit: 48,
+      node_class_id: "class-1",
+    });
+    expect(screen.getByText(/no compatible actions/i)).toBeVisible();
     expect(getNodeConfig).not.toHaveBeenCalled();
     expect(getFirmwareConfigParameters).not.toHaveBeenCalled();
   });

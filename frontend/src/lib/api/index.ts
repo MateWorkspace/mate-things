@@ -5,6 +5,7 @@ export * from "./client";
 export * from "./firmwares";
 export * from "./node-config";
 export * from "./node-classes";
+export * from "./node-logs";
 export * from "./nodes";
 export * from "./ota";
 export * from "./payload-schemas";
