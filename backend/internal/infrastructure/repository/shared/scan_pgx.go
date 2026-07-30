@@ -382,3 +382,29 @@ func ScanPgxNodeConfigValues(rows pgx.Rows) ([]domainmodels.NodeConfigValue, err
 	}
 	return items, rows.Err()
 }
+
+func ScanPgxNodeLog(row pgx.Row) (domainmodels.NodeLog, error) {
+	var item domainmodels.NodeLog
+	err := row.Scan(
+		&item.Id,
+		&item.NodeDeviceId,
+		&item.Level,
+		&item.Tag,
+		&item.Message,
+		&item.LoggedAt,
+		&item.CreatedAt,
+	)
+	return item, err
+}
+
+func ScanPgxNodeLogs(rows pgx.Rows) ([]domainmodels.NodeLog, error) {
+	items := make([]domainmodels.NodeLog, 0)
+	for rows.Next() {
+		item, err := ScanPgxNodeLog(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
