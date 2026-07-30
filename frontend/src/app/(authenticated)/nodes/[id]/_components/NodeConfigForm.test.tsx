@@ -31,16 +31,19 @@ describe("NodeConfigForm", () => {
     );
 
     expect(screen.getByLabelText("mqtt host")).toHaveAttribute("type", "text");
+    expect(screen.getByLabelText("mqtt host")).not.toBeRequired();
     expect(screen.getByLabelText("sample rate")).toHaveAttribute(
       "type",
       "number",
     );
+    expect(screen.getByLabelText("sample rate")).toBeRequired();
     expect(screen.getByLabelText("sample rate")).toHaveAttribute("min", "0");
     expect(screen.getByLabelText("sample rate")).toHaveAttribute(
       "max",
       "4294967295",
     );
     expect(screen.getByLabelText("report enabled")).toHaveRole("combobox");
+    expect(screen.getByLabelText("report enabled")).toBeRequired();
     expect(screen.getAllByRole("button", { name: "Save value" })).toHaveLength(
       3,
     );

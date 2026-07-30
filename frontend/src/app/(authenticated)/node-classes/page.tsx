@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
@@ -9,7 +10,10 @@ import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { listNodeClasses } from "@/lib/api/node-classes";
-import { parsePageQuery } from "@/lib/collection-query";
+import {
+  getOutOfRangePageRedirect,
+  parsePageQuery,
+} from "@/lib/collection-query";
 import { requirePermission } from "@/lib/session";
 
 import NodeClassCard from "./_components/NodeClassCard";
@@ -34,6 +38,14 @@ export default async function NodeClassesPage({
   ]);
   const query = parsePageQuery(rawSearchParams);
   const nodeClasses = await listNodeClasses(query);
+  const redirectTarget = getOutOfRangePageRedirect(
+    "/node-classes",
+    rawSearchParams,
+    nodeClasses.page,
+  );
+  if (redirectTarget) {
+    redirect(redirectTarget);
+  }
   const cardPermissions = [...permissions];
   const firstPageHref = `/node-classes?limit=${query.limit}`;
 

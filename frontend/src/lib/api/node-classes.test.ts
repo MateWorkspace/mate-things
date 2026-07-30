@@ -54,4 +54,19 @@ describe("listAllNodeClasses", () => {
       "/node-classes?page=2&limit=48",
     );
   });
+
+  it("deduplicates and stops if a server repeats a page", async () => {
+    vi.mocked(apiFetch)
+      .mockResolvedValueOnce({
+        data: [nodeClass(1)],
+        page: { page: 1, limit: 1, total_items: 1000 },
+      })
+      .mockResolvedValueOnce({
+        data: [nodeClass(1)],
+        page: { page: 2, limit: 1, total_items: 1000 },
+      });
+
+    await expect(listAllNodeClasses()).resolves.toEqual([nodeClass(1)]);
+    expect(apiFetch).toHaveBeenCalledTimes(2);
+  });
 });

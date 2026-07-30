@@ -35,7 +35,6 @@ type ReadNodesByPaginationRequest struct {
 type UpdateNodeRequest struct {
 	Id          uuid.UUID
 	NodeClassId *uuid.UUID
-	DeviceId    *string
 	Name        *string
 	FirmwareId  *uuid.UUID
 	Description *string

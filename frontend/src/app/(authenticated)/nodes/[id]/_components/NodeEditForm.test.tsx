@@ -13,7 +13,7 @@ vi.mock("../_lib/actions", () => ({
 describe("NodeEditForm", () => {
   afterEach(cleanup);
 
-  it("opens a focused form with the node's editable metadata", async () => {
+  it("opens a focused form with immutable device identity", async () => {
     const user = userEvent.setup();
     render(<NodeEditForm node={nodeFixture()} />);
 
@@ -21,7 +21,10 @@ describe("NodeEditForm", () => {
 
     expect(screen.getByRole("dialog")).toBeVisible();
     expect(screen.getByLabelText("Name")).toHaveValue("Cold Storage Sensor 07");
-    expect(screen.getByLabelText("Device ID")).toHaveValue("AC276E5E030C");
+    expect(screen.getByText("AC276E5E030C")).toBeVisible();
+    expect(
+      screen.queryByRole("textbox", { name: "Device ID" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByLabelText("Description")).toHaveValue(
       "Freezer room sensor",
     );

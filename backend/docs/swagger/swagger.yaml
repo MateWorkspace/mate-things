@@ -120,9 +120,6 @@ definitions:
       description:
         example: The espresso machine behind the office kitchen counter.
         type: string
-      device_id:
-        example: ESP32-BARISTA-07
-        type: string
       firmware_id:
         example: 9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08
         type: string
@@ -138,9 +135,8 @@ definitions:
       firmware_id:
         example: 9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08
         type: string
-      firmware_url:
-        example: https://cdn.mate-things.internal/firmwares/espresso-fw/v3/firmware.bin
-        type: string
+    required:
+    - firmware_id
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.PayloadSchemaPatchRequest:
     properties:
@@ -248,6 +244,8 @@ definitions:
       value:
         example: broker.example.com
         type: string
+    required:
+    - value
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.UserPasswordPatchRequest:
     properties:
@@ -3855,8 +3853,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
         "400":
           description: Invalid Format
           schema:
@@ -3985,8 +3983,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
         "400":
           description: Invalid Format
           schema:

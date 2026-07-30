@@ -44,16 +44,26 @@ export async function listAllNodeClasses(): Promise<NodeClassResponse[]> {
       limit: NODE_CLASS_OPTION_PAGE_LIMIT,
     });
 
+    let added = 0;
     for (const nodeClass of result.data) {
       if (!seenIds.has(nodeClass.id)) {
         seenIds.add(nodeClass.id);
         nodeClasses.push(nodeClass);
+        added += 1;
       }
     }
 
-    const responseLimit = Math.max(1, result.page.limit);
+    const responseLimit =
+      Number.isSafeInteger(result.page.limit) && result.page.limit > 0
+        ? result.page.limit
+        : NODE_CLASS_OPTION_PAGE_LIMIT;
     const totalPages = Math.ceil(result.page.total_items / responseLimit);
-    if (page >= totalPages || result.data.length === 0) {
+    if (
+      !Number.isSafeInteger(totalPages) ||
+      page >= totalPages ||
+      result.data.length === 0 ||
+      added === 0
+    ) {
       break;
     }
 

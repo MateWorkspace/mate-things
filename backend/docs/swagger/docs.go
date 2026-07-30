@@ -4295,8 +4295,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK"
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -4778,8 +4778,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK"
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Invalid Format",
@@ -5437,10 +5437,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "The espresso machine behind the office kitchen counter."
                 },
-                "device_id": {
-                    "type": "string",
-                    "example": "ESP32-BARISTA-07"
-                },
                 "firmware_id": {
                     "type": "string",
                     "example": "9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"
@@ -5457,14 +5453,13 @@ const docTemplate = `{
         },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.OtaDispatchRequest": {
             "type": "object",
+            "required": [
+                "firmware_id"
+            ],
             "properties": {
                 "firmware_id": {
                     "type": "string",
                     "example": "9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"
-                },
-                "firmware_url": {
-                    "type": "string",
-                    "example": "https://cdn.mate-things.internal/firmwares/espresso-fw/v3/firmware.bin"
                 }
             }
         },
@@ -5608,6 +5603,9 @@ const docTemplate = `{
         },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.SetNodeConfigValueRequest": {
             "type": "object",
+            "required": [
+                "value"
+            ],
             "properties": {
                 "key": {
                     "type": "string",

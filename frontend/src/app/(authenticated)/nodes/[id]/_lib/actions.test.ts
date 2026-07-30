@@ -76,6 +76,7 @@ describe("node workspace actions", () => {
       formData({
         node_id: "node-1",
         key: "sample_rate",
+        value_type: "uint32",
         value: "30",
       }),
     );
@@ -83,6 +84,73 @@ describe("node workspace actions", () => {
     expect(setNodeConfig).toHaveBeenCalledWith("node-1", "sample_rate", "30");
     expect(refresh).toHaveBeenCalledOnce();
     expect(result.status).toBe("success");
+  });
+
+  it.each([
+    ["empty", ""],
+    ["whitespace", "  "],
+  ])("preserves a present %s string value verbatim", async (_label, value) => {
+    permit("node_config:set");
+
+    const result = await saveNodeConfigAction(
+      IDLE_STATE,
+      formData({
+        node_id: "node-1",
+        key: "mqtt_host",
+        value_type: "string",
+        value,
+      }),
+    );
+
+    expect(setNodeConfig).toHaveBeenCalledWith("node-1", "mqtt_host", value);
+    expect(result.status).toBe("success");
+  });
+
+  it.each([
+    ["uint32", "-1"],
+    ["uint32", "1.5"],
+    ["uint32", "4294967296"],
+    ["bool", "yes"],
+  ])(
+    "rejects invalid %s configuration value %s before the API call",
+    async (valueType, value) => {
+      permit("node_config:set");
+
+      const result = await saveNodeConfigAction(
+        IDLE_STATE,
+        formData({
+          node_id: "node-1",
+          key: "sample_rate",
+          value_type: valueType,
+          value,
+        }),
+      );
+
+      expect(result).toMatchObject({
+        status: "error",
+        fieldErrors: { value: expect.any(String) },
+      });
+      expect(setNodeConfig).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects a direct action request with no value field", async () => {
+    permit("node_config:set");
+
+    const result = await saveNodeConfigAction(
+      IDLE_STATE,
+      formData({
+        node_id: "node-1",
+        key: "mqtt_host",
+        value_type: "string",
+      }),
+    );
+
+    expect(result).toMatchObject({
+      status: "error",
+      fieldErrors: { value: expect.any(String) },
+    });
+    expect(setNodeConfig).not.toHaveBeenCalled();
   });
 
   it("rechecks node:set before updating editable node metadata", async () => {
@@ -105,7 +173,7 @@ describe("node workspace actions", () => {
     expect(updateNode).not.toHaveBeenCalled();
   });
 
-  it("updates only the editable node metadata after authorization", async () => {
+  it("ignores a spoofed device identity and updates only mutable node metadata", async () => {
     permit("node:set");
 
     const result = await saveNodeAction(
@@ -120,7 +188,6 @@ describe("node workspace actions", () => {
 
     expect(updateNode).toHaveBeenCalledWith("node-1", {
       name: "Freezer 07",
-      device_id: "AC276E5E030C",
       description: "Cold room",
     });
     expect(refresh).toHaveBeenCalledOnce();

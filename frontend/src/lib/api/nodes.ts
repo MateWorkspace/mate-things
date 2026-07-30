@@ -17,7 +17,6 @@ export interface NodeResponse extends AuditFields {
 
 export interface UpdateNodeRequest {
   node_class_id?: string;
-  device_id?: string;
   name?: string;
   firmware_id?: string;
   description?: string;

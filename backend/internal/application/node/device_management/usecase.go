@@ -101,7 +101,7 @@ func (u *usecase) UpdateById(ctx context.Context, request domainusecasesnode.Upd
 		ctx,
 		request.Id,
 		request.NodeClassId,
-		request.DeviceId,
+		nil,
 		nil,
 		name,
 		request.FirmwareId,

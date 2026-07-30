@@ -3,9 +3,9 @@ package applicationnodeota
 import (
 	"context"
 
-	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
+	domaincontractsstorage "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/storage"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
 	domainusecasesrepocache "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/repocache"
@@ -15,6 +15,7 @@ import (
 type usecase struct {
 	node      domainusecasesrepocache.Node
 	firmware  domainusecasesrepocache.Firmware
+	storage   domaincontractsstorage.Firmware
 	publisher domaincontractsnode.Publish
 	logger    domaincontractslogger.Leveled
 }
@@ -22,12 +23,14 @@ type usecase struct {
 func NewUsecaseImpl(
 	node domainusecasesrepocache.Node,
 	firmware domainusecasesrepocache.Firmware,
+	storage domaincontractsstorage.Firmware,
 	publisher domaincontractsnode.Publish,
 	logger domaincontractslogger.Leveled,
 ) domainusecasesnode.Ota {
 	return &usecase{
 		node:      node,
 		firmware:  firmware,
+		storage:   storage,
 		publisher: publisher,
 		logger:    logger,
 	}
@@ -49,7 +52,7 @@ func (u *usecase) DispatchByNodeId(
 		return err
 	}
 
-	return u.dispatch(ctx, tag, *node, request.FirmwareId, request.FirmwareUrl, request.ActorId)
+	return u.dispatch(ctx, tag, *node, request.FirmwareId, request.ActorId)
 }
 
 func (u *usecase) DispatchByNodeDeviceId(
@@ -68,7 +71,7 @@ func (u *usecase) DispatchByNodeDeviceId(
 		return err
 	}
 
-	return u.dispatch(ctx, tag, *node, request.FirmwareId, request.FirmwareUrl, request.ActorId)
+	return u.dispatch(ctx, tag, *node, request.FirmwareId, request.ActorId)
 }
 
 func (u *usecase) dispatch(
@@ -76,20 +79,34 @@ func (u *usecase) dispatch(
 	tag string,
 	node domainmodels.Node,
 	firmwareId uuid.UUID,
-	firmwareUrl string,
 	actorId *uuid.UUID,
 ) error {
-	firmwareUrl, err := applicationshared.RequiredURL(firmwareUrl, "firmware_url")
-	if err != nil {
-		return err
-	}
-
 	firmware, err := u.firmware.ReadById(ctx, firmwareId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to read firmware", domainmodels.LoggerMeta{
 			"err":         err,
 			"node_id":     node.Id,
 			"firmware_id": firmwareId,
+			"actor_id":    actorId,
+		})
+		return err
+	}
+
+	if firmware.NodeClassId != node.NodeClassId {
+		return domainmodels.NewError(
+			"firmware is not compatible with this node",
+			domainmodels.ErrTypeValidation,
+			nil,
+		)
+	}
+
+	firmwareUrl, _, err := u.storage.Presign(ctx, firmware.BinaryPath, firmware.Name)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to presign firmware binary", domainmodels.LoggerMeta{
+			"err":         err,
+			"node_id":     node.Id,
+			"firmware_id": firmwareId,
+			"binary_path": firmware.BinaryPath,
 			"actor_id":    actorId,
 		})
 		return err

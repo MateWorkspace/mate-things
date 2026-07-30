@@ -110,29 +110,16 @@ function NodeEditDialog({ node, onClose }: NodeEditDialogProps) {
         </div>
 
         <div>
-          <Label htmlFor="node-edit-device-id">Device ID</Label>
-          <Input
-            id="node-edit-device-id"
-            name="device_id"
-            defaultValue={node.device_id}
-            required
-            spellCheck={false}
-            className="font-mono"
-            aria-invalid={Boolean(state.fieldErrors?.device_id)}
-            aria-describedby={
-              state.fieldErrors?.device_id
-                ? "node-edit-device-id-error"
-                : undefined
-            }
-          />
-          {state.fieldErrors?.device_id ? (
-            <p
-              id="node-edit-device-id-error"
-              className="text-critical mt-1.5 text-sm"
-            >
-              {state.fieldErrors.device_id}
-            </p>
-          ) : null}
+          <p className="text-foreground/80 mb-1.5 text-sm font-medium">
+            Device ID
+          </p>
+          <p className="border-control-border bg-muted text-muted-foreground rounded-xl border px-3.5 py-2.5 font-mono text-sm break-all">
+            {node.device_id}
+          </p>
+          <p className="text-muted-foreground mt-1.5 text-xs">
+            Device identity is assigned during registration and cannot be
+            changed here.
+          </p>
         </div>
 
         <div>

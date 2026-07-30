@@ -27,21 +27,19 @@ NODE_ID=$(curl -s "http://127.0.0.1:18080/api/v1/nodes/by-device/test-device-001
 `PATCH /v1/nodes/$NODE_ID` `{"name":"Renamed Node","description":"..."}`.
 **Expect:** `200`/`204`.
 
-### NODE-05 — Patch `device_id` (negative/edge — real gap, likely unintended)
-`PATCH /v1/nodes/$NODE_ID` `{"device_id":""}` (empty string).
-**Expect:** per audit, `NodePatchRequest.DeviceId *string` is forwarded
-**with zero validation, not even `RequiredString`** — an empty string is
-plausibly accepted and persisted, which would desync the node from any
-future MQTT traffic for its real physical `device_id` (registration/
-status/action_ack all key off `device_id`). This is a meaningfully worse
-gap than the cosmetic ones elsewhere — flag prominently. Verify actual
-behavior and confirm whether `device_id` even *should* be patchable via
-this generic endpoint at all (it may be a design mistake that it's exposed
-here rather than immutable post-registration).
+### NODE-05 — Patch cannot mutate `device_id` (negative)
+Read the node's current `device_id`, then send
+`PATCH /v1/nodes/$NODE_ID` `{"device_id":"","description":"identity check"}`.
+**Expect:** `200`/`204`; the description changes, but a fresh GET shows the
+original non-empty `device_id`. The generic update request intentionally
+ignores this unknown field because device identity is immutable after MQTT
+registration.
 
-### NODE-06 — Patch `device_id` to another existing node's device_id (negative)
-**Expect:** `409` (`device_id` has a `UNIQUE` constraint) — assuming
-NODE-05 didn't already corrupt state; if it did, redo registration first.
+### NODE-06 — Spoof another node's `device_id` (negative)
+Send a PATCH containing another registered node's device ID and a harmless
+description change.
+**Expect:** `200`/`204`; the description may change, but the target node keeps
+its original `device_id` and the other node is unchanged.
 
 ### NODE-07 — Patch `node_class_id` to a nonexistent class (negative)
 **Expect:** `409` (FK violation, same "conflict not not-found" pattern seen
@@ -67,17 +65,18 @@ class).
 ```bash
 curl -s -i -X POST http://127.0.0.1:18080/api/v1/nodes/$NODE_ID/ota \
   -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" \
-  -d "{\"firmware_id\":\"$FW_ID_2\",\"firmware_url\":\"https://example.com/fw.bin\"}"
+  -d "{\"firmware_id\":\"$FW_ID_2\"}"
 ```
-**Expect:** `200`/`202` — and confirm via `mosquitto_sub` (see
-`16-mqtt-flows.md` MQTT-OTA) that the server actually published to
-`/sub/test-device-001/ota`.
+**Expect:** `204` — and confirm via `mosquitto_sub` (see `16-mqtt-flows.md`
+MQTT-OTA) that the server published to `/sub/test-device-001/ota`. The
+published URL, size, and checksum must come from the selected backend firmware
+row and its presigned stored binary; the client does not supply a URL.
 
-### NODE-12 — OTA dispatch with a malformed `firmware_url` (edge, ⚠ known gap)
-`{"firmware_id":"$FW_ID_2","firmware_url":"not a url at all!! 🎉"}`.
-**Expect:** per audit, **no URL-format validation anywhere** in this path
-(`net/url.Parse` never called) — expect this to succeed and get published
-to MQTT verbatim as the `firmware_url` string, garbage and all.
+### NODE-12 — OTA dispatch with incompatible firmware (negative)
+Create/select a firmware whose `node_class_id` differs from the node, then POST
+its `firmware_id` using NODE-11's request.
+**Expect:** `400`; no OTA message is published. Compatibility is enforced by
+the dispatch usecase before presigning or MQTT publish.
 
 ### NODE-13 — OTA dispatch by device_id, nonexistent device (negative)
 `POST /v1/nodes/by-device/does-not-exist/ota`.

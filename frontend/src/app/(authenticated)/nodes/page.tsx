@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
 import PageHeader from "@/components/ui/page-header";
 import {
-  listFirmwares,
-  listNodeClasses,
+  listAllFirmwares,
+  listAllNodeClasses,
   listNodes,
   type ListNodesQuery,
 } from "@/lib/api";
-import { parsePageQuery } from "@/lib/collection-query";
+import {
+  getOutOfRangePageRedirect,
+  parsePageQuery,
+} from "@/lib/collection-query";
 import { requirePermission } from "@/lib/session";
 
 import NodeCard from "./_components/NodeCard";
@@ -55,14 +59,21 @@ export default async function NodesPage({ searchParams }: NodesPageProps) {
 
   const [nodes, classes, firmwares] = await Promise.all([
     listNodes(query),
-    canReadClasses ? listNodeClasses({ limit: 48 }) : null,
-    canReadFirmware ? listFirmwares({ limit: 48 }) : null,
+    canReadClasses ? listAllNodeClasses() : null,
+    canReadFirmware ? listAllFirmwares() : null,
   ]);
+  const redirectTarget = getOutOfRangePageRedirect(
+    "/nodes",
+    rawSearchParams,
+    nodes.page,
+  );
+  if (redirectTarget) {
+    redirect(redirectTarget);
+  }
 
-  const classOptions =
-    classes?.data.map(({ id, name }) => ({ id, name })) ?? [];
+  const classOptions = classes?.map(({ id, name }) => ({ id, name })) ?? [];
   const firmwareOptions =
-    firmwares?.data.map(({ id, name }) => ({ id, name })) ?? [];
+    firmwares?.map(({ id, name }) => ({ id, name })) ?? [];
   const classNames = new Map(
     classOptions.map((nodeClass) => [nodeClass.id, nodeClass.name]),
   );

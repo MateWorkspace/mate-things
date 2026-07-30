@@ -7,12 +7,9 @@ import { ApiError } from "@/lib/api/client";
 import {
   createFirmware,
   deleteFirmware,
-  getFirmwareBinaryUrlById,
-  listAvailableFirmwaresByNodeId,
   replaceFirmwareBinary,
   updateFirmware,
   type FirmwareConfigSchemaItem,
-  type FirmwareResponse,
 } from "@/lib/api/firmwares";
 import { dispatchOtaByNodeId } from "@/lib/api/ota";
 import { requireSessionContext } from "@/lib/session";
@@ -30,7 +27,6 @@ export interface DispatchOtaInput {
 }
 
 const CONFIG_VALUE_TYPES = new Set(["string", "uint32", "bool"]);
-const OTA_PAGE_LIMIT = 48;
 
 function permissionDenied(): FormActionState {
   return {
@@ -309,35 +305,6 @@ export async function deleteFirmwareAction(
   redirect("/firmware");
 }
 
-async function findAvailableFirmware(
-  nodeId: string,
-  firmwareId: string,
-): Promise<FirmwareResponse | undefined> {
-  let pageNumber = 1;
-
-  while (true) {
-    const result = await listAvailableFirmwaresByNodeId(nodeId, {
-      page: pageNumber,
-      limit: OTA_PAGE_LIMIT,
-    });
-    const firmware = result.data.find((item) => item.id === firmwareId);
-
-    if (firmware) {
-      return firmware;
-    }
-
-    const totalPages = Math.max(
-      1,
-      Math.ceil(result.page.total_items / Math.max(1, result.page.limit)),
-    );
-    if (pageNumber >= totalPages || result.data.length === 0) {
-      return undefined;
-    }
-
-    pageNumber += 1;
-  }
-}
-
 export async function dispatchOtaAction(
   input: DispatchOtaInput,
 ): Promise<FormActionState> {
@@ -369,20 +336,8 @@ export async function dispatchOtaAction(
   }
 
   try {
-    const firmware = await findAvailableFirmware(nodeId, firmwareId);
-    if (!firmware) {
-      return {
-        status: "error",
-        title: "Firmware not available",
-        message:
-          "That firmware is not available for this node. Refresh and select a compatible firmware.",
-      };
-    }
-
-    const firmwareUrl = await getFirmwareBinaryUrlById(firmware.id);
     await dispatchOtaByNodeId(nodeId, {
-      firmware_id: firmware.id,
-      firmware_url: firmwareUrl,
+      firmware_id: firmwareId,
     });
     refresh();
   } catch (error) {

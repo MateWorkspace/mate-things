@@ -168,6 +168,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	nodeOta := applicationnodeota.NewUsecaseImpl(
 		nodeRepoCache,
 		firmwareRepoCache,
+		l.infra.firmwareStorage,
 		l.infra.nodePublisher,
 		l.infra.logger,
 	)

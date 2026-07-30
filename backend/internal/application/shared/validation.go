@@ -24,7 +24,7 @@ var (
 	usernamePattern       = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 	passwordPattern       = regexp.MustCompile(`^[\x21-\x7E]+$`)
 	personNamePattern     = regexp.MustCompile(`^[A-Za-z0-9' -]+$`)
-	alphanumericPattern   = regexp.MustCompile(`^[A-Za-z0-9]+$`)
+	nodeNamePattern       = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 	snakeCaseNamePattern  = regexp.MustCompile(`^[a-z0-9]+(_[a-z0-9]+)*$`)
 	firmwareNamePattern   = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 	// A MAC address with the colon separators stripped: 12 hex digits.
@@ -182,11 +182,12 @@ func OptionalPersonName(value *string, field string) (*string, error) {
 	return &v, nil
 }
 
-// Node class name: alphanumeric only.
+// Node class name: alphanumeric, underscore, and dash. Underscores are part
+// of the persisted seed contract (for example, "base_node").
 
 func RequiredNodeClassName(value string, field string) (string, error) {
-	return validateNamePattern(value, field, alphanumericPattern, nodeClassNameMinLength, nodeClassNameMaxLength,
-		"alphanumeric characters")
+	return validateNamePattern(value, field, nodeNamePattern, nodeClassNameMinLength, nodeClassNameMaxLength,
+		"alphanumeric characters, underscores, and dashes")
 }
 
 func OptionalNodeClassName(value *string, field string) (*string, error) {
@@ -200,11 +201,12 @@ func OptionalNodeClassName(value *string, field string) (*string, error) {
 	return &v, nil
 }
 
-// Node name: alphanumeric only, same as node class.
+// Node name follows the same safe persisted contract. Self-registration
+// creates names in the form "node_<device_id>".
 
 func RequiredNodeName(value string, field string) (string, error) {
-	return validateNamePattern(value, field, alphanumericPattern, nodeNameMinLength, nodeNameMaxLength,
-		"alphanumeric characters")
+	return validateNamePattern(value, field, nodeNamePattern, nodeNameMinLength, nodeNameMaxLength,
+		"alphanumeric characters, underscores, and dashes")
 }
 
 func OptionalNodeName(value *string, field string) (*string, error) {

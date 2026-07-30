@@ -6,8 +6,6 @@ import { ApiError } from "@/lib/api/client";
 import {
   createFirmware,
   deleteFirmware,
-  getFirmwareBinaryUrlById,
-  listAvailableFirmwaresByNodeId,
   replaceFirmwareBinary,
   updateFirmware,
 } from "@/lib/api/firmwares";
@@ -38,8 +36,6 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/api/firmwares", () => ({
   createFirmware: vi.fn(),
   deleteFirmware: vi.fn(),
-  getFirmwareBinaryUrlById: vi.fn(),
-  listAvailableFirmwaresByNodeId: vi.fn(),
   replaceFirmwareBinary: vi.fn(),
   updateFirmware: vi.fn(),
 }));
@@ -314,7 +310,7 @@ describe("OTA action", () => {
     vi.resetAllMocks();
   });
 
-  it("rechecks ota:dispatch before reading compatibility", async () => {
+  it("rechecks ota:dispatch before dispatch", async () => {
     permit("firmware:get");
 
     const result = await dispatchOtaAction({
@@ -323,7 +319,6 @@ describe("OTA action", () => {
     });
 
     expect(result.title).toBe("Permission denied");
-    expect(listAvailableFirmwaresByNodeId).not.toHaveBeenCalled();
     expect(dispatchOtaByNodeId).not.toHaveBeenCalled();
   });
 
@@ -338,82 +333,18 @@ describe("OTA action", () => {
       status: "error",
       title: "Check the OTA request",
     });
-    expect(listAvailableFirmwaresByNodeId).not.toHaveBeenCalled();
   });
 
-  it("does not dispatch incompatible firmware", async () => {
+  it("dispatches through the authoritative backend contract for an ota-only role", async () => {
     permit("ota:dispatch");
-    vi.mocked(listAvailableFirmwaresByNodeId).mockResolvedValue({
-      data: [],
-      page: { page: 1, limit: 48, total_items: 0 },
-    });
 
     const result = await dispatchOtaAction({
       nodeId: "node-1",
       firmwareId: "firmware-2",
     });
 
-    expect(result.message).toMatch(/not available/i);
-    expect(dispatchOtaByNodeId).not.toHaveBeenCalled();
-    expect(getFirmwareBinaryUrlById).not.toHaveBeenCalled();
-  });
-
-  it("rechecks compatibility across available-firmware pages and resolves the backend URL", async () => {
-    permit("ota:dispatch");
-    vi.mocked(listAvailableFirmwaresByNodeId)
-      .mockResolvedValueOnce({
-        data: [
-          {
-            id: "firmware-1",
-            node_class_id: "class-1",
-            name: "freezer-v1",
-            size: 1024,
-            checksum: "aaa",
-            binary_path: "firmware/freezer-v1.bin",
-            preferences: {},
-            created_at: "2026-07-30T00:00:00Z",
-          },
-        ],
-        page: { page: 1, limit: 1, total_items: 2 },
-      })
-      .mockResolvedValueOnce({
-        data: [
-          {
-            id: "firmware-2",
-            node_class_id: "class-1",
-            name: "freezer-v2",
-            size: 2048,
-            checksum: "bbb",
-            binary_path: "firmware/freezer-v2.bin",
-            preferences: {},
-            created_at: "2026-07-30T00:00:00Z",
-          },
-        ],
-        page: { page: 2, limit: 1, total_items: 2 },
-      });
-    vi.mocked(getFirmwareBinaryUrlById).mockResolvedValue(
-      "https://storage.example/signed-firmware",
-    );
-
-    const result = await dispatchOtaAction({
-      nodeId: "node-1",
-      firmwareId: "firmware-2",
-    });
-
-    expect(listAvailableFirmwaresByNodeId).toHaveBeenNthCalledWith(
-      1,
-      "node-1",
-      { page: 1, limit: 48 },
-    );
-    expect(listAvailableFirmwaresByNodeId).toHaveBeenNthCalledWith(
-      2,
-      "node-1",
-      { page: 2, limit: 48 },
-    );
-    expect(getFirmwareBinaryUrlById).toHaveBeenCalledWith("firmware-2");
     expect(dispatchOtaByNodeId).toHaveBeenCalledWith("node-1", {
       firmware_id: "firmware-2",
-      firmware_url: "https://storage.example/signed-firmware",
     });
     expect(result.status).toBe("success");
   });

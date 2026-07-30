@@ -96,11 +96,20 @@ mismatch between the DB `name` and the actual stored object path could
 occur. Document actual behavior either way.
 
 ### FW-16 — Delete firmware (positive)
-`DELETE /v1/firmwares/$FW_ID`.
-**Expect:** `200`/`204`. ⚠ Confirm whether the underlying MinIO object is
-actually deleted too, or just the DB row (soft-deleted) — if MinIO objects
-are never cleaned up on firmware delete, that's a storage-leak gap worth
-flagging (not fixing now).
+```bash
+curl -s -i -X DELETE http://127.0.0.1:18080/api/v1/firmwares/$FW_ID \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"expected_name":"test_firmware_v1_renamed"}'
+```
+**Expect:** `204`. Confirm the underlying MinIO object is deleted as well as
+the soft-deleted DB row.
 
-### FW-17 — Get deleted firmware's binary (negative)
+### FW-17 — Delete requires authoritative name confirmation (negative)
+First omit the request body/`expected_name`; then retry with
+`{"expected_name":"wrong_firmware"}`.
+**Expect:** `400` in both cases. A GET by ID still returns the firmware after
+each rejection, and its MinIO object remains available.
+
+### FW-18 — Get deleted firmware's binary (negative)
 **Expect:** `404`.

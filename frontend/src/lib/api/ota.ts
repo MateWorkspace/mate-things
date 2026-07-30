@@ -4,7 +4,6 @@ import { apiFetch } from "@/lib/api/client";
 
 export interface DispatchOtaRequest {
   firmware_id: string;
-  firmware_url: string;
 }
 
 /**

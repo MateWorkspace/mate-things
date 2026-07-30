@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import { redirect } from "next/navigation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -22,6 +23,10 @@ vi.mock("@/lib/api/node-classes", () => ({
 
 vi.mock("@/lib/session", () => ({
   requirePermission: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  redirect: vi.fn(),
 }));
 
 const NODE_CLASS: NodeClassResponse = {
@@ -89,5 +94,27 @@ describe("NodeClassesPage", () => {
     expect(
       screen.queryByRole("button", { name: "Create node class" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("redirects an out-of-range filtered page to the last page", async () => {
+    permit();
+    vi.mocked(listNodeClasses).mockResolvedValue({
+      data: [],
+      page: { page: 9, limit: 12, total_items: 25 },
+    });
+
+    render(
+      await NodeClassesPage({
+        searchParams: Promise.resolve({
+          page: "9",
+          limit: "12",
+          search: "cold",
+        }),
+      }),
+    );
+
+    expect(redirect).toHaveBeenCalledWith(
+      expect.stringMatching(/^\/node-classes\?(?=.*page=3)(?=.*search=cold)/),
+    );
   });
 });

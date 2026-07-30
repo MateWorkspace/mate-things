@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
@@ -10,7 +11,10 @@ import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { listFirmwares } from "@/lib/api/firmwares";
 import { listAllNodeClasses } from "@/lib/api/node-classes";
-import { parsePageQuery } from "@/lib/collection-query";
+import {
+  getOutOfRangePageRedirect,
+  parsePageQuery,
+} from "@/lib/collection-query";
 import { requirePermission } from "@/lib/session";
 
 import FirmwareCard from "./_components/FirmwareCard";
@@ -44,6 +48,14 @@ export default async function FirmwarePage({
     listFirmwares({ ...query, node_class_id: nodeClassId || undefined }),
     canReadClasses ? listAllNodeClasses() : Promise.resolve(null),
   ]);
+  const redirectTarget = getOutOfRangePageRedirect(
+    "/firmware",
+    rawSearchParams,
+    firmwares.page,
+  );
+  if (redirectTarget) {
+    redirect(redirectTarget);
+  }
   const nodeClassOptions =
     nodeClasses?.map(({ id, name }) => ({ id, name })) ?? [];
   const classNames = new Map(

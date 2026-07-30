@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { redirect } from "next/navigation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { listFirmwares } from "@/lib/api/firmwares";
@@ -19,6 +20,10 @@ vi.mock("@/lib/api/node-classes", () => ({
 
 vi.mock("@/lib/session", () => ({
   requirePermission: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  redirect: vi.fn(),
 }));
 
 vi.mock("./_lib/actions", () => ({
@@ -127,5 +132,29 @@ describe("FirmwarePage", () => {
     expect(
       screen.getAllByRole("option", { name: "Node class 49" }),
     ).toHaveLength(2);
+  });
+
+  it("redirects an out-of-range filtered page to the last page", async () => {
+    vi.mocked(listFirmwares).mockResolvedValue({
+      data: [],
+      page: { page: 9, limit: 12, total_items: 25 },
+    });
+
+    render(
+      await FirmwarePage({
+        searchParams: Promise.resolve({
+          page: "9",
+          limit: "12",
+          search: "freezer",
+          node_class_id: "class-1",
+        }),
+      }),
+    );
+
+    expect(redirect).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^\/firmware\?(?=.*page=3)(?=.*search=freezer)(?=.*node_class_id=class-1)/,
+      ),
+    );
   });
 });

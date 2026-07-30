@@ -15,6 +15,8 @@ export interface NodeActionState {
   fieldErrors?: Record<string, string>;
 }
 
+const UINT32_MAX = 4_294_967_295;
+
 function permissionDenied(): NodeActionState {
   return {
     status: "error",
@@ -67,8 +69,28 @@ export async function saveNodeConfigAction(
 
   const nodeId = String(formData.get("node_id") ?? "").trim();
   const key = String(formData.get("key") ?? "").trim();
-  const value = String(formData.get("value") ?? "").trim();
-  const fieldErrors = requiredFields({ node_id: nodeId, key, value });
+  const valueType = String(formData.get("value_type") ?? "").trim();
+  const valueEntry = formData.get("value");
+  const value = typeof valueEntry === "string" ? valueEntry : "";
+  const fieldErrors = requiredFields({
+    node_id: nodeId,
+    key,
+    value_type: valueType,
+  });
+
+  if (typeof valueEntry !== "string") {
+    fieldErrors.value = "This field is required.";
+  } else if (valueType === "uint32") {
+    if (!/^(0|[1-9]\d*)$/.test(value) || Number(value) > UINT32_MAX) {
+      fieldErrors.value = "Enter a whole number from 0 to 4294967295.";
+    }
+  } else if (valueType === "bool") {
+    if (value !== "true" && value !== "false") {
+      fieldErrors.value = 'Choose either "true" or "false".';
+    }
+  } else if (valueType !== "string") {
+    fieldErrors.value_type = "This configuration type is not supported.";
+  }
 
   if (Object.keys(fieldErrors).length > 0) {
     return {
@@ -104,12 +126,10 @@ export async function saveNodeAction(
 
   const nodeId = String(formData.get("node_id") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
-  const deviceId = String(formData.get("device_id") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const fieldErrors = requiredFields({
     node_id: nodeId,
     name,
-    device_id: deviceId,
   });
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -124,7 +144,6 @@ export async function saveNodeAction(
   try {
     await updateNode(nodeId, {
       name,
-      device_id: deviceId,
       description,
     });
     refresh();

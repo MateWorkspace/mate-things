@@ -384,7 +384,6 @@ func (h *handler) NodePatch(c *echo.Context) error {
 	if err := h.deviceUseCase.UpdateById(c.Request().Context(), domainusecasesnode.UpdateNodeRequest{
 		Id:          id,
 		NodeClassId: nodeClassId,
-		DeviceId:    req.DeviceId,
 		Name:        req.Name,
 		FirmwareId:  firmwareId,
 		Description: req.Description,
@@ -978,7 +977,7 @@ func (h *handler) FirmwareDelete(c *echo.Context) error {
 // @Security BearerAuth
 // @Param id path string true "id"
 // @Param request body presentationhttprequest.OtaDispatchRequest true "request"
-// @Success 200
+// @Success 204
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -996,16 +995,15 @@ func (h *handler) OtaDispatchByNodeIdPost(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	firmwareId, firmwareUrl, err := otaRequest(req)
+	firmwareId, err := otaRequest(req)
 	if err != nil {
 		return presentationhttputils.Error(c, err, "Please select a valid firmware.")
 	}
 
 	if err := h.otaUseCase.DispatchByNodeId(c.Request().Context(), domainusecasesnode.DispatchOtaByNodeIdRequest{
-		NodeId:      nodeId,
-		FirmwareId:  firmwareId,
-		FirmwareUrl: firmwareUrl,
-		ActorId:     presentationhttputils.ActorId(c),
+		NodeId:     nodeId,
+		FirmwareId: firmwareId,
+		ActorId:    presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err, "Unable to dispatch the firmware update. Please try again.")
 	}
@@ -1022,7 +1020,7 @@ func (h *handler) OtaDispatchByNodeIdPost(c *echo.Context) error {
 // @Security BearerAuth
 // @Param device_id path string true "device_id"
 // @Param request body presentationhttprequest.OtaDispatchRequest true "request"
-// @Success 200
+// @Success 204
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
@@ -1040,7 +1038,7 @@ func (h *handler) OtaDispatchByNodeDeviceIdPost(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	firmwareId, firmwareUrl, err := otaRequest(req)
+	firmwareId, err := otaRequest(req)
 	if err != nil {
 		return presentationhttputils.Error(c, err, "Please select a valid firmware.")
 	}
@@ -1048,7 +1046,6 @@ func (h *handler) OtaDispatchByNodeDeviceIdPost(c *echo.Context) error {
 	if err := h.otaUseCase.DispatchByNodeDeviceId(c.Request().Context(), domainusecasesnode.DispatchOtaByNodeDeviceIdRequest{
 		NodeDeviceId: deviceId,
 		FirmwareId:   firmwareId,
-		FirmwareUrl:  firmwareUrl,
 		ActorId:      presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err, "Unable to dispatch the firmware update. Please try again.")
@@ -1057,13 +1054,13 @@ func (h *handler) OtaDispatchByNodeDeviceIdPost(c *echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func otaRequest(req presentationhttprequest.OtaDispatchRequest) (uuid.UUID, string, error) {
+func otaRequest(req presentationhttprequest.OtaDispatchRequest) (uuid.UUID, error) {
 	firmwareId, err := presentationhttputils.RequiredUUID(req.FirmwareId, "firmware_id")
 	if err != nil {
-		return uuid.Nil, "", err
+		return uuid.Nil, err
 	}
 
-	return firmwareId, req.FirmwareUrl, nil
+	return firmwareId, nil
 }
 
 func parseConfigSchemaFormValue(raw string) ([]domainusecasesnode.ConfigParameterInput, error) {
@@ -1178,15 +1175,18 @@ func (h *handler) NodeConfigPut(c *echo.Context) error {
 	if err != nil {
 		return presentationhttputils.Error(c, err, "Please provide a config key.")
 	}
-	value, err := presentationhttputils.RequiredString(req.Value, "value")
-	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a config value.")
+	if req.Value == nil {
+		return presentationhttputils.Error(
+			c,
+			domainmodels.NewError("value is required", domainmodels.ErrTypeValidation, nil),
+			"Please provide a config value.",
+		)
 	}
 
 	if err := h.configValueUseCase.SetByNodeId(c.Request().Context(), domainusecasesnode.SetConfigValueRequest{
 		NodeId:  nodeId,
 		Key:     key,
-		Value:   value,
+		Value:   *req.Value,
 		ActorId: presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err, "Unable to set the node's config value. Please check your input and try again.")

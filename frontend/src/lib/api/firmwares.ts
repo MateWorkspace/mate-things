@@ -51,6 +51,48 @@ export async function listFirmwares(
   return apiFetch(`/firmwares${buildQuery(query)}`);
 }
 
+const FIRMWARE_OPTION_PAGE_LIMIT = 48;
+
+export async function listAllFirmwares(): Promise<FirmwareResponse[]> {
+  const firmwares: FirmwareResponse[] = [];
+  const seenIds = new Set<string>();
+  let page = 1;
+
+  while (true) {
+    const result = await listFirmwares({
+      page,
+      limit: FIRMWARE_OPTION_PAGE_LIMIT,
+    });
+
+    let added = 0;
+    for (const firmware of result.data) {
+      if (!seenIds.has(firmware.id)) {
+        seenIds.add(firmware.id);
+        firmwares.push(firmware);
+        added += 1;
+      }
+    }
+
+    const responseLimit =
+      Number.isSafeInteger(result.page.limit) && result.page.limit > 0
+        ? result.page.limit
+        : FIRMWARE_OPTION_PAGE_LIMIT;
+    const totalPages = Math.ceil(result.page.total_items / responseLimit);
+    if (
+      !Number.isSafeInteger(totalPages) ||
+      page >= totalPages ||
+      result.data.length === 0 ||
+      added === 0
+    ) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return firmwares;
+}
+
 export async function listFirmwaresByNodeClassId(
   nodeClassId: string,
   query: PageQuery = {},

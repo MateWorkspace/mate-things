@@ -43,7 +43,6 @@ function ValueControl({
   const commonProps = {
     id: inputId,
     name: "value",
-    required: true,
     disabled: !canSet,
   };
 
@@ -61,6 +60,7 @@ function ValueControl({
         <Input
           {...commonProps}
           type="number"
+          required
           inputMode="numeric"
           min={0}
           max={UINT32_MAX}
@@ -72,6 +72,7 @@ function ValueControl({
       return (
         <select
           {...commonProps}
+          required
           defaultValue={currentValue?.value ?? ""}
           className="border-control-border bg-background text-foreground focus-visible:border-focus focus-visible:ring-focus w-full rounded-xl border px-3.5 py-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
         >
@@ -118,6 +119,7 @@ function ConfigParameterForm({
     >
       <input type="hidden" name="node_id" value={nodeId} />
       <input type="hidden" name="key" value={parameter.key} />
+      <input type="hidden" name="value_type" value={parameter.value_type} />
 
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>

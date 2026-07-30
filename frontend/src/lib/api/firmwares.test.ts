@@ -5,7 +5,9 @@ import { apiFetch } from "@/lib/api/client";
 import {
   createFirmware,
   deleteFirmware,
+  listAllFirmwares,
   replaceFirmwareBinary,
+  type FirmwareResponse,
 } from "./firmwares";
 
 vi.mock("@/lib/api/client", () => ({
@@ -77,5 +79,60 @@ describe("firmware multipart wrappers", () => {
       method: "DELETE",
       body: { expected_name: "freezer-v2" },
     });
+  });
+});
+
+function firmware(index: number): FirmwareResponse {
+  return {
+    id: `firmware-${index}`,
+    node_class_id: "class-1",
+    name: `Firmware ${index}`,
+    size: index,
+    checksum: `checksum-${index}`,
+    binary_path: `firmwares/${index}.bin`,
+    preferences: {},
+    created_at: "2026-07-30T00:00:00Z",
+  };
+}
+
+describe("listAllFirmwares", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("loads every page so options after the first 48 remain reachable", async () => {
+    vi.mocked(apiFetch)
+      .mockResolvedValueOnce({
+        data: Array.from({ length: 48 }, (_, index) => firmware(index + 1)),
+        page: { page: 1, limit: 48, total_items: 49 },
+      })
+      .mockResolvedValueOnce({
+        data: [firmware(49)],
+        page: { page: 2, limit: 48, total_items: 49 },
+      });
+
+    const result = await listAllFirmwares();
+
+    expect(result).toHaveLength(49);
+    expect(result.at(-1)).toMatchObject({
+      id: "firmware-49",
+      name: "Firmware 49",
+    });
+    expect(apiFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("deduplicates and stops if a server repeats a page", async () => {
+    vi.mocked(apiFetch)
+      .mockResolvedValueOnce({
+        data: [firmware(1)],
+        page: { page: 1, limit: 1, total_items: 1000 },
+      })
+      .mockResolvedValueOnce({
+        data: [firmware(1)],
+        page: { page: 2, limit: 1, total_items: 1000 },
+      });
+
+    await expect(listAllFirmwares()).resolves.toEqual([firmware(1)]);
+    expect(apiFetch).toHaveBeenCalledTimes(2);
   });
 });
