@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
 import PageHeader from "@/components/ui/page-header";
-import { EmptyState } from "@/components/ui/states";
 import {
   listFirmwares,
   listNodeClasses,
@@ -14,6 +13,7 @@ import { parsePageQuery } from "@/lib/collection-query";
 import { requirePermission } from "@/lib/session";
 
 import NodeCard from "./_components/NodeCard";
+import NodeCollectionEmptyState from "./_components/NodeCollectionEmptyState";
 import NodeFilters, { type ConnectionFilter } from "./_components/NodeFilters";
 
 export const metadata: Metadata = {
@@ -142,17 +142,13 @@ export default async function NodesPage({ searchParams }: NodesPageProps) {
           ))}
         </section>
       ) : (
-        <EmptyState
-          title={
-            nodes.data.length === 0
-              ? "No nodes found"
-              : `No ${connection} nodes on this page`
-          }
-          description={
-            nodes.data.length === 0
-              ? "Try changing or clearing the fleet filters."
-              : "This quick connection filter only applies to the nodes already loaded on this page."
-          }
+        <NodeCollectionEmptyState
+          connection={connection}
+          firmwareId={firmwareId}
+          limit={pageQuery.limit}
+          nodeClassId={nodeClassId}
+          search={pageQuery.search}
+          totalItems={nodes.page.total_items}
         />
       )}
 
