@@ -47,7 +47,10 @@ func (p *postgresImpl) Create(
 	}
 
 	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create action", err)
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError(
+			"failed to create action", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypeActionNameExists},
+		)
 	}
 
 	return id, nil
@@ -140,7 +143,10 @@ func (p *postgresImpl) UpdateById(
 
 	commandTag, err := p.Dt.Exec(ctx, query, args...)
 	if err != nil {
-		return infrastructurerepositoryshared.MapPgxError("failed to update action", err)
+		return infrastructurerepositoryshared.MapPgxError(
+			"failed to update action", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypeActionNameExists},
+		)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return infrastructurerepositoryshared.NotFound("action not found", nil)
