@@ -3,6 +3,7 @@ package applicationnodemessagingcallback
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -127,10 +128,11 @@ func TestUsecaseLog_PersistsParsedValuesForDevice(t *testing.T) {
 	}
 }
 
-func TestUsecaseLog_PropagatesRepositoryError(t *testing.T) {
+func TestUsecaseLog_PropagatesRepositoryErrorAndLogsDeviceMetadata(t *testing.T) {
 	wantErr := errors.New("database unavailable")
 	repository := &recordingNodeLog{createErr: wantErr}
-	usecase := &usecase{nodeLog: repository, logger: noOpLogger{}}
+	logger := &recordingLogger{}
+	usecase := &usecase{nodeLog: repository, logger: logger}
 
 	err := usecase.Log(context.Background(), domainusecasesnode.NodeLogMessageRequest{
 		DeviceId: "device-42",
@@ -141,6 +143,10 @@ func TestUsecaseLog_PropagatesRepositoryError(t *testing.T) {
 	}
 	if repository.createCalls != 1 {
 		t.Fatalf("Create calls = %d, want 1", repository.createCalls)
+	}
+	wantMeta := domainmodels.LoggerMeta{"err": wantErr, "device_id": "device-42"}
+	if logger.errorCalls != 1 || logger.tag != "node/messaging_callback/Log" || logger.message != "failed to store node log" || !reflect.DeepEqual(logger.meta, wantMeta) {
+		t.Fatalf("Error() = (%d calls, %q, %q, %#v), want (1 call, %q, %q, %#v)", logger.errorCalls, logger.tag, logger.message, logger.meta, "node/messaging_callback/Log", "failed to store node log", wantMeta)
 	}
 }
 
@@ -178,3 +184,21 @@ func (noOpLogger) Error(context.Context, string, string, domainmodels.LoggerMeta
 func (noOpLogger) Warn(context.Context, string, string, domainmodels.LoggerMeta)  {}
 func (noOpLogger) Info(context.Context, string, string, domainmodels.LoggerMeta)  {}
 func (noOpLogger) Debug(context.Context, string, string, domainmodels.LoggerMeta) {}
+
+type recordingLogger struct {
+	errorCalls int
+	tag        string
+	message    string
+	meta       domainmodels.LoggerMeta
+}
+
+func (l *recordingLogger) Error(_ context.Context, tag, message string, meta domainmodels.LoggerMeta) {
+	l.errorCalls++
+	l.tag = tag
+	l.message = message
+	l.meta = meta
+}
+
+func (*recordingLogger) Warn(context.Context, string, string, domainmodels.LoggerMeta)  {}
+func (*recordingLogger) Info(context.Context, string, string, domainmodels.LoggerMeta)  {}
+func (*recordingLogger) Debug(context.Context, string, string, domainmodels.LoggerMeta) {}
