@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useRef, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 
 import Toast, { type ToastVariant } from "@/components/ui/toast";
 
@@ -29,6 +29,19 @@ export default function ToastProvider({
 }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dialogs in this app use the native <dialog>.showModal(), which the
+  // browser renders in the top layer - above every z-indexed element
+  // regardless of stacking context. A plain fixed div can never paint over
+  // that, so the toast container has to be promoted into the top layer
+  // too, via the Popover API.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container && !container.matches(":popover-open")) {
+      container.showPopover();
+    }
+  }, []);
 
   const dismiss = useCallback((id: number) => {
     setToasts((current) =>
@@ -61,7 +74,11 @@ export default function ToastProvider({
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
+      <div
+        ref={containerRef}
+        popover="manual"
+        className="pointer-events-none fixed top-4 right-4 m-0 flex w-full max-w-sm flex-col gap-2 border-0 bg-transparent p-0 overflow-visible"
+      >
         {toasts.map((toast) => (
           <Toast
             key={toast.id}
