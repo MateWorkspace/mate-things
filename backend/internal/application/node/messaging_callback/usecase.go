@@ -17,6 +17,7 @@ const resubscribePageLimit = 100
 type usecase struct {
 	node          domainusecasesrepocache.Node
 	actionLog     domaincontractsrepository.ActionLog
+	nodeLog       domaincontractsrepository.NodeLog
 	publisher     domaincontractsnode.Publish
 	subscriptions domaincontractsnode.Subscriptions
 	logger        domaincontractslogger.Leveled
@@ -25,6 +26,7 @@ type usecase struct {
 func NewUsecaseImpl(
 	node domainusecasesrepocache.Node,
 	actionLog domaincontractsrepository.ActionLog,
+	nodeLog domaincontractsrepository.NodeLog,
 	publisher domaincontractsnode.Publish,
 	subscriptions domaincontractsnode.Subscriptions,
 	logger domaincontractslogger.Leveled,
@@ -32,6 +34,7 @@ func NewUsecaseImpl(
 	return &usecase{
 		node:          node,
 		actionLog:     actionLog,
+		nodeLog:       nodeLog,
 		publisher:     publisher,
 		subscriptions: subscriptions,
 		logger:        logger,
@@ -146,7 +149,19 @@ func (u *usecase) ActionAck(ctx context.Context, request domainusecasesnode.Node
 	return nil
 }
 
-func (u *usecase) Log(_ context.Context, _ domainusecasesnode.NodeLogMessageRequest) error {
+func (u *usecase) Log(ctx context.Context, request domainusecasesnode.NodeLogMessageRequest) error {
+	const tag = "node/messaging_callback/Log"
+
+	level, logTag, message, loggedAt := parseLogLine(string(request.Payload))
+
+	if _, err := u.nodeLog.Create(ctx, request.DeviceId, level, logTag, message, loggedAt); err != nil {
+		u.logger.Error(ctx, tag, "failed to store node log", domainmodels.LoggerMeta{
+			"err":       err,
+			"device_id": request.DeviceId,
+		})
+		return err
+	}
+
 	return nil
 }
 
