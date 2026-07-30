@@ -8,7 +8,17 @@ const ACCESS_TOKEN_COOKIE = "mate_access_token";
 const REFRESH_TOKEN_COOKIE = "mate_refresh_token";
 const API_VERSION_PATH = "/api/v1";
 const REFRESH_BUFFER_MS = 10_000;
-const PROTECTED_PREFIXES = ["/dashboard"];
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/nodes",
+  "/node-classes",
+  "/firmware",
+  "/actions",
+  "/action-history",
+  "/telemetry",
+  "/node-logs",
+  "/admin",
+] as const;
 const AUTH_ONLY_ROUTES = ["/login"];
 
 interface RefreshedTokens {
@@ -66,7 +76,7 @@ function setSessionCookies(
   });
 }
 
-function isProtectedRoute(pathname: string): boolean {
+export function isProtectedRoute(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
