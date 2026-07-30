@@ -9,7 +9,9 @@
   --highlight: #fedbb5;
   --ink: #231f20;
   --muted: #f8f2e8;
+  --muted-foreground: #6b5e58;
   --border: color-mix(in srgb, #231f20 14%, transparent);
+  --control-border: #947664;
   --success: #287a52;
   --warning: #9a5b13;
   --critical: #b43b35;
@@ -27,7 +29,9 @@
   --color-highlight: var(--highlight);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-control-border: var(--control-border);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-critical: var(--critical);
@@ -48,7 +52,9 @@
     --highlight: #fedbb5;
     --ink: #e8dccb;
     --muted: #251b16;
+    --muted-foreground: #cdbba5;
     --border: color-mix(in srgb, #ffeac5 22%, transparent);
+    --control-border: #77695d;
     --success: #65bc8d;
     --warning: #efb462;
     --critical: #ed827a;

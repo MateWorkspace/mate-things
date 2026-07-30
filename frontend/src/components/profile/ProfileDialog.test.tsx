@@ -121,6 +121,59 @@ describe("ProfileDialog", () => {
     expect(screen.queryByLabelText("Current password")).not.toBeInTheDocument();
   });
 
+  it("exits edit mode when profile:set is removed", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <ProfileDialog
+        open
+        user={USER}
+        permissions={["profile:get", "profile:set"]}
+        onClose={() => undefined}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    expect(screen.getByLabelText("Name")).toBeVisible();
+
+    rerender(
+      <ProfileDialog
+        open
+        user={USER}
+        permissions={["profile:get"]}
+        onClose={() => undefined}
+      />,
+    );
+
+    expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Edit profile" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("uses semantic muted-text and control-boundary tokens", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProfileDialog
+        open
+        user={USER}
+        permissions={["profile:get", "profile:set"]}
+        onClose={() => undefined}
+      />,
+    );
+
+    expect(screen.getByText(`@${USER.username}`)).toHaveClass(
+      "text-muted-foreground",
+    );
+    expect(screen.getByText("Role identifier")).toHaveClass(
+      "text-muted-foreground",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    expect(screen.getByRole("textbox", { name: "Bio" })).toHaveClass(
+      "border-control-border",
+    );
+  });
+
   it("announces a saved profile inline and in a toast", async () => {
     const user = userEvent.setup();
     vi.mocked(saveProfileAction).mockResolvedValue({

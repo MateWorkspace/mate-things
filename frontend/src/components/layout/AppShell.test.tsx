@@ -98,4 +98,16 @@ describe("AppShell", () => {
 
     expect(profileName).not.toHaveClass("hidden");
   });
+
+  it("uses the semantic muted-text token for sidebar group labels", () => {
+    render(
+      <AppShell user={USER} permissions={["node:get"]}>
+        <main>Page</main>
+      </AppShell>,
+    );
+
+    expect(screen.getByRole("heading", { name: "Fleet" })).toHaveClass(
+      "text-muted-foreground",
+    );
+  });
 });

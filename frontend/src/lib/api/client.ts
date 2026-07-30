@@ -2,16 +2,12 @@ import { cookies } from "next/headers";
 
 import { API_BASE_URL } from "@/config/env";
 import type { ErrorResponse } from "@/lib/api/types";
+import { ACCESS_TOKEN_COOKIE } from "@/lib/session/cookies";
 
 // Server-only: this whole module (and every file under src/lib/api/) never
 // runs in the browser, so the backend's address never needs to reach the
 // client bundle - a plain env var, not NEXT_PUBLIC_*.
 const API_VERSION_PATH = "/api/v1";
-
-// Shared cookie names for the JWT access/refresh tokens set by auth.ts and
-// read here. httpOnly, never readable by client JS - see AGENTS.md.
-export const ACCESS_TOKEN_COOKIE = "mate_access_token";
-export const REFRESH_TOKEN_COOKIE = "mate_refresh_token";
 
 export class ApiError extends Error {
   readonly status: number;

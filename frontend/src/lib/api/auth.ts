@@ -3,14 +3,14 @@
 import { cookies } from "next/headers";
 
 import { IS_PRODUCTION } from "@/config/env";
-import {
-  ACCESS_TOKEN_COOKIE,
-  apiFetch,
-  REFRESH_TOKEN_COOKIE,
-} from "@/lib/api/client";
+import { apiFetch } from "@/lib/api/client";
 import type { PermissionResponse } from "@/lib/api/permissions";
 import type { RoleResponse } from "@/lib/api/roles";
 import type { UserResponse } from "@/lib/api/users";
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from "@/lib/session/cookies";
 import { decodeJwtExpiry } from "@/lib/session/jwt";
 
 export interface LoginRequest {

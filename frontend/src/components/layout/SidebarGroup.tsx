@@ -58,7 +58,7 @@ export default function SidebarGroup({
     <section aria-labelledby={headingId}>
       <h2
         id={headingId}
-        className={`text-foreground/55 px-3 text-xs font-semibold tracking-wider uppercase ${
+        className={`text-muted-foreground px-3 text-xs font-semibold tracking-wider uppercase ${
           collapsed ? "sr-only" : ""
         }`}
       >

@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { API_BASE_URL, IS_PRODUCTION } from "@/config/env";
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from "@/lib/session/cookies";
 import { decodeJwtExpiry } from "@/lib/session/jwt";
 
-const ACCESS_TOKEN_COOKIE = "mate_access_token";
-const REFRESH_TOKEN_COOKIE = "mate_refresh_token";
 const API_VERSION_PATH = "/api/v1";
 const REFRESH_BUFFER_MS = 10_000;
 const PROTECTED_PREFIXES = [

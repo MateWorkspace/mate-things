@@ -95,7 +95,7 @@ export default function ProfileForm({ user, onCancel }: ProfileFormProps) {
           name="bio"
           defaultValue={user.bio}
           rows={4}
-          className="border-border bg-background text-foreground placeholder:text-foreground/40 focus-visible:border-focus focus-visible:ring-focus w-full resize-y rounded-xl border px-3.5 py-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="border-control-border bg-background text-foreground placeholder:text-foreground/40 focus-visible:border-focus focus-visible:ring-focus w-full resize-y rounded-xl border px-3.5 py-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
         />
       </div>
 

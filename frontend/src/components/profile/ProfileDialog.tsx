@@ -42,8 +42,17 @@ export default function ProfileDialog({
   const tabs = canChangePassword ? [PROFILE_TAB, SECURITY_TAB] : [PROFILE_TAB];
   const [activeTab, setActiveTab] = useState(PROFILE_TAB.id);
   const [editing, setEditing] = useState(false);
+  const [hadProfileEditPermission, setHadProfileEditPermission] =
+    useState(canEditProfile);
   const [hadSecurityPermission, setHadSecurityPermission] =
     useState(canChangePassword);
+
+  if (canEditProfile !== hadProfileEditPermission) {
+    setHadProfileEditPermission(canEditProfile);
+    if (!canEditProfile) {
+      setEditing(false);
+    }
+  }
 
   if (canChangePassword !== hadSecurityPermission) {
     setHadSecurityPermission(canChangePassword);

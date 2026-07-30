@@ -28,7 +28,7 @@ export default function ProfileView({
         </span>
         <div className="min-w-0">
           <p className="truncate font-semibold">{user.name}</p>
-          <p className="text-foreground/60 truncate text-sm">
+          <p className="text-muted-foreground truncate text-sm">
             @{user.username}
           </p>
         </div>
@@ -36,31 +36,31 @@ export default function ProfileView({
 
       <dl className="grid gap-4 sm:grid-cols-2">
         <div>
-          <dt className="text-foreground/60 text-xs font-semibold tracking-wide uppercase">
+          <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
             Name
           </dt>
           <dd className="mt-1 text-sm">{user.name}</dd>
         </div>
         <div>
-          <dt className="text-foreground/60 text-xs font-semibold tracking-wide uppercase">
+          <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
             Username
           </dt>
           <dd className="mt-1 text-sm">{user.username}</dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="text-foreground/60 text-xs font-semibold tracking-wide uppercase">
+          <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
             Bio
           </dt>
           <dd className="mt-1 text-sm">{user.bio || "No biography added."}</dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="text-foreground/60 text-xs font-semibold tracking-wide uppercase">
+          <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
             Role identifier
           </dt>
           <dd className="mt-1 text-sm break-all">{user.role_id}</dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="text-foreground/60 text-xs font-semibold tracking-wide uppercase">
+          <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
             Effective permissions
           </dt>
           <dd className="mt-2">
@@ -76,7 +76,7 @@ export default function ProfileView({
                 ))}
               </ul>
             ) : (
-              <span className="text-foreground/60 text-sm">
+              <span className="text-muted-foreground text-sm">
                 No effective permissions.
               </span>
             )}

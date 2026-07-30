@@ -23,10 +23,24 @@ const METRIC_POSITIONS = [
   },
 ] as const;
 
+const URGENT_ATTENTION_PERMISSIONS = [
+  "node:get",
+  "firmware:get",
+  "action_log:get",
+  "node_log:get",
+] as const;
+const RECENT_WARNING_PERMISSIONS = ["node_log:get"] as const;
+
 export default async function DashboardPage() {
   const { permissions } = await requireSessionContext();
   const visibleMetricPositions = METRIC_POSITIONS.filter((position) =>
     position.permissions.some((permission) => permissions.has(permission)),
+  );
+  const canReadUrgentAttention = URGENT_ATTENTION_PERMISSIONS.some(
+    (permission) => permissions.has(permission),
+  );
+  const canReadRecentWarnings = RECENT_WARNING_PERMISSIONS.some((permission) =>
+    permissions.has(permission),
   );
 
   return (
@@ -49,35 +63,39 @@ export default async function DashboardPage() {
         </section>
       ) : null}
 
-      <section aria-labelledby="urgent-attention-heading">
-        <h2
-          id="urgent-attention-heading"
-          className="font-display text-primary text-xl tracking-wide"
-        >
-          Urgent attention
-        </h2>
-        <div className="mt-4">
-          <EmptyState
-            title="No urgent attention items"
-            description="Urgent fleet conditions will appear here when dashboard data is connected."
-          />
-        </div>
-      </section>
+      {canReadUrgentAttention ? (
+        <section aria-labelledby="urgent-attention-heading">
+          <h2
+            id="urgent-attention-heading"
+            className="font-display text-primary text-xl tracking-wide"
+          >
+            Urgent attention
+          </h2>
+          <div className="mt-4">
+            <EmptyState
+              title="Data not connected"
+              description="Urgent-attention data is not connected in this foundation phase."
+            />
+          </div>
+        </section>
+      ) : null}
 
-      <section aria-labelledby="recent-warnings-heading">
-        <h2
-          id="recent-warnings-heading"
-          className="font-display text-primary text-xl tracking-wide"
-        >
-          Recent warnings
-        </h2>
-        <div className="mt-4">
-          <EmptyState
-            title="No recent warnings"
-            description="Recent fleet warnings will appear here when dashboard data is connected."
-          />
-        </div>
-      </section>
+      {canReadRecentWarnings ? (
+        <section aria-labelledby="recent-warnings-heading">
+          <h2
+            id="recent-warnings-heading"
+            className="font-display text-primary text-xl tracking-wide"
+          >
+            Recent warnings
+          </h2>
+          <div className="mt-4">
+            <EmptyState
+              title="Data not connected"
+              description="Recent-warning data is not connected in this foundation phase."
+            />
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }
