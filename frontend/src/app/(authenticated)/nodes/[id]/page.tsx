@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { ApiError } from "@/lib/api/client";
@@ -115,6 +116,12 @@ export default async function NodeDetailPage({
                 nodeName={node.name}
               />
             ) : null}
+            <PreferencesDialog
+              resource="node"
+              id={node.id}
+              preferences={node.preferences}
+              permissions={[...permissions]}
+            />
           </div>
         }
       />

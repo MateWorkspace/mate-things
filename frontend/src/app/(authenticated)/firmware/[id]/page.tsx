@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Card from "@/components/ui/card";
 import PageHeader from "@/components/ui/page-header";
 import StatusBadge from "@/components/ui/status-badge";
@@ -80,15 +81,24 @@ export default async function FirmwareDetailPage({
         description="Firmware binary, compatibility, configuration schema, and lifecycle details."
         actions={
           permissions.has("firmware:set") ||
-          permissions.has("firmware:remove") ? (
-            <FirmwareForm
-              firmware={firmware}
-              configSchema={configSchema}
-              nodeClasses={nodeClassOptions}
-              canEdit={permissions.has("firmware:set")}
-              canReplace={permissions.has("firmware:set")}
-              canDelete={permissions.has("firmware:remove")}
-            />
+          permissions.has("firmware:remove") ||
+          permissions.has("preferences:set") ? (
+            <div className="flex flex-wrap gap-2">
+              <FirmwareForm
+                firmware={firmware}
+                configSchema={configSchema}
+                nodeClasses={nodeClassOptions}
+                canEdit={permissions.has("firmware:set")}
+                canReplace={permissions.has("firmware:set")}
+                canDelete={permissions.has("firmware:remove")}
+              />
+              <PreferencesDialog
+                resource="firmware"
+                id={firmware.id}
+                preferences={firmware.preferences}
+                permissions={[...permissions]}
+              />
+            </div>
           ) : undefined
         }
       />

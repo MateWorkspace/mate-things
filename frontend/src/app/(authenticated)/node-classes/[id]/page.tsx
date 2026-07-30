@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Card from "@/components/ui/card";
 import PageHeader from "@/components/ui/page-header";
 import StatusBadge from "@/components/ui/status-badge";
@@ -213,12 +214,20 @@ export default async function NodeClassDetailPage({
           nodeClass.description || "No description has been provided."
         }
         actions={
-          canEdit || canDelete ? (
-            <NodeClassForm
-              canDelete={canDelete}
-              canEdit={canEdit}
-              nodeClass={nodeClass}
-            />
+          canEdit || canDelete || permissions.has("preferences:set") ? (
+            <div className="flex flex-wrap gap-2">
+              <NodeClassForm
+                canDelete={canDelete}
+                canEdit={canEdit}
+                nodeClass={nodeClass}
+              />
+              <PreferencesDialog
+                resource="node_class"
+                id={nodeClass.id}
+                preferences={nodeClass.preferences}
+                permissions={[...permissions]}
+              />
+            </div>
           ) : undefined
         }
       />
