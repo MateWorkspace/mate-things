@@ -11,13 +11,7 @@ import {
 } from "@/lib/api/payload-schemas";
 import { requireSessionContext } from "@/lib/session";
 
-export interface PayloadSchemaActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
-export const EMPTY_SCHEMA_STATE: PayloadSchemaActionState = { status: "idle" };
+import type { PayloadSchemaActionState } from "./state";
 
 function denied(permission: string): PayloadSchemaActionState {
   return {

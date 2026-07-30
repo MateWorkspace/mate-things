@@ -9,15 +9,7 @@ import {
 } from "@/lib/api/preferences";
 import { requireSessionContext } from "@/lib/session";
 
-export interface PreferencesActionState {
-  status: "idle" | "success" | "error";
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
-
-export const EMPTY_PREFERENCES_STATE: PreferencesActionState = {
-  status: "idle",
-};
+import type { PreferencesActionState } from "./preferences-state";
 
 export async function savePreferencesAction(
   _previous: PreferencesActionState,

@@ -12,9 +12,9 @@ import type { PayloadSchemaResponse } from "@/lib/api/payload-schemas";
 import {
   createPayloadSchemaAction,
   deletePayloadSchemaAction,
-  EMPTY_SCHEMA_STATE,
   updatePayloadSchemaAction,
 } from "../_lib/actions";
+import { EMPTY_SCHEMA_STATE } from "../_lib/state";
 
 function localDate(value?: string): string {
   if (!value) return "";

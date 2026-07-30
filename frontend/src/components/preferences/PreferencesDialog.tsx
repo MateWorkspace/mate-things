@@ -7,10 +7,8 @@ import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import type { PreferencesResource } from "@/lib/api/preferences";
 
-import {
-  EMPTY_PREFERENCES_STATE,
-  savePreferencesAction,
-} from "./preferences-actions";
+import { savePreferencesAction } from "./preferences-actions";
+import { EMPTY_PREFERENCES_STATE } from "./preferences-state";
 
 interface PreferencesDialogProps {
   resource: PreferencesResource;

@@ -12,14 +12,7 @@ import {
 } from "@/lib/api/users";
 import { requireSessionContext } from "@/lib/session";
 
-export interface UserActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
-
-export const EMPTY_USER_STATE: UserActionState = { status: "idle" };
+import type { UserActionState } from "./state";
 
 function denied(): UserActionState {
   return {

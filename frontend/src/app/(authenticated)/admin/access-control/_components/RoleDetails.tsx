@@ -12,12 +12,12 @@ import type { PermissionResponse } from "@/lib/api/permissions";
 import type { RoleResponse } from "@/lib/api/roles";
 
 import {
-  EMPTY_ACCESS_STATE,
   removeRoleAction,
   saveRoleAction,
   setDefaultRoleAction,
   updateRoleAssignmentsAction,
 } from "../_lib/actions";
+import { EMPTY_ACCESS_STATE } from "../_lib/state";
 import PermissionGroups from "./PermissionGroups";
 
 export default function RoleDetails({

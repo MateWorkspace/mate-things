@@ -19,13 +19,7 @@ import {
 } from "@/lib/api/roles";
 import { requireSessionContext } from "@/lib/session";
 
-export interface AccessActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
-export const EMPTY_ACCESS_STATE: AccessActionState = { status: "idle" };
+import type { AccessActionState } from "./state";
 
 function denied(permission: string): AccessActionState {
   return {

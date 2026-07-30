@@ -10,11 +10,8 @@ import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { PermissionResponse } from "@/lib/api/permissions";
 
-import {
-  EMPTY_ACCESS_STATE,
-  removePermissionAction,
-  savePermissionAction,
-} from "../_lib/actions";
+import { removePermissionAction, savePermissionAction } from "../_lib/actions";
+import { EMPTY_ACCESS_STATE } from "../_lib/state";
 
 export default function PermissionCard({
   permission,

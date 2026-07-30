@@ -8,7 +8,8 @@ import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { UserResponse } from "@/lib/api/users";
 
-import { EMPTY_USER_STATE, resetUserPasswordAction } from "../_lib/actions";
+import { resetUserPasswordAction } from "../_lib/actions";
+import { EMPTY_USER_STATE } from "../_lib/state";
 
 export default function PasswordResetForm({ user }: { user: UserResponse }) {
   const [open, setOpen] = useState(false);

@@ -1,20 +1,35 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import type { RoleResponse } from "@/lib/api/roles";
 import type { UserResponse } from "@/lib/api/users";
 
 import {
   createUserAction,
   deleteUserAction,
-  EMPTY_USER_STATE,
   updateUserAction,
 } from "../_lib/actions";
+import { EMPTY_USER_STATE, type UserActionState } from "../_lib/state";
+
+function useActionToast(state: UserActionState): void {
+  const toast = useToast();
+  const lastShown = useRef<UserActionState | null>(null);
+  useEffect(() => {
+    if (state.status === "idle" || state === lastShown.current) return;
+    lastShown.current = state;
+    if (state.status === "error") {
+      toast.error(state.title ?? "Something went wrong", state.message ?? "");
+    } else {
+      toast.success(state.title ?? "Success", state.message ?? "");
+    }
+  }, [state, toast]);
+}
 
 interface UserFormProps {
   roles: readonly RoleResponse[];
@@ -88,6 +103,7 @@ function EditorDialog({
     user ? updateUserAction : createUserAction,
     EMPTY_USER_STATE,
   );
+  useActionToast(state);
   const id = useId();
   return (
     <Dialog
@@ -187,6 +203,7 @@ function DeleteDialog({
     deleteUserAction,
     EMPTY_USER_STATE,
   );
+  useActionToast(state);
   const [confirmation, setConfirmation] = useState("");
   return (
     <Dialog
