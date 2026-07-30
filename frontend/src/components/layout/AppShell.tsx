@@ -44,6 +44,7 @@ export default function AppShell({
     <div className="bg-background min-h-screen">
       <AppBar
         user={user}
+        permissions={permissions}
         sidebarCollapsed={sidebarCollapsed}
         onDesktopSidebarToggle={toggleDesktopSidebar}
         onMobileNavigationOpen={() => setMobileNavigationOpen(true)}

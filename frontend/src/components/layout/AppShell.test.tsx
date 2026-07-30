@@ -13,6 +13,12 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api/session-actions", () => ({
   setSidebarCollapsedAction: vi.fn().mockResolvedValue(undefined),
+  logoutAction: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/components/profile/profile-actions", () => ({
+  saveProfileAction: vi.fn(),
+  changePasswordAction: vi.fn(),
 }));
 
 describe("AppShell", () => {
