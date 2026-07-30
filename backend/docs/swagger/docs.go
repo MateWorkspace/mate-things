@@ -3279,6 +3279,9 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -5369,6 +5372,9 @@ const docTemplate = `{
         },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.FirmwareDeleteRequest": {
             "type": "object",
+            "required": [
+                "expected_name"
+            ],
             "properties": {
                 "expected_name": {
                     "type": "string",

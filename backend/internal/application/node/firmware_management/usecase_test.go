@@ -91,6 +91,39 @@ func TestReplaceBinaryByIdClearsExistingConfigSchemaWhenRequestIsEmpty(t *testin
 	}
 }
 
+func TestReplaceBinaryByIdLeavesConfigSchemaUnchangedWhenRequestOmitsIt(t *testing.T) {
+	firmwareID := uuid.New()
+	config := &recordingConfigParameter{}
+	usecase := NewUsecaseImpl(
+		&recordingFirmware{
+			readFirmware: &domainmodels.Firmware{
+				Id:   firmwareID,
+				Name: "legacy-firmware",
+			},
+		},
+		&recordingNode{},
+		&recordingFirmwareStorage{
+			storePath:     "firmwares/legacy-firmware.bin",
+			storeSize:     17,
+			storeChecksum: "checksum-v2",
+		},
+		config,
+		&recordingLogger{},
+	)
+
+	_, err := usecase.ReplaceBinaryById(context.Background(), domainusecasesnode.ReplaceFirmwareBinaryByIdRequest{
+		Id:      firmwareID,
+		Content: bytes.NewReader([]byte{0xE9, 0x01, 0x02}),
+	})
+
+	if err != nil {
+		t.Fatalf("ReplaceBinaryById() error = %v, want nil", err)
+	}
+	if config.replaceCalls != 0 {
+		t.Fatalf("ReplaceForFirmware() calls = %d, want 0", config.replaceCalls)
+	}
+}
+
 type recordingFirmware struct {
 	domainusecasesrepocache.Firmware
 	readFirmware *domainmodels.Firmware

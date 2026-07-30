@@ -79,6 +79,8 @@ definitions:
       expected_name:
         example: espresso-fw
         type: string
+    required:
+    - expected_name
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.FirmwarePatchRequest:
     properties:
@@ -2795,6 +2797,8 @@ paths:
       - Firmwares
   /v1/firmwares/{id}:
     delete:
+      consumes:
+      - application/json
       parameters:
       - description: id
         in: path

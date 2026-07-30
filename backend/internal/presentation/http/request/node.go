@@ -28,7 +28,7 @@ type FirmwarePatchRequest struct {
 }
 
 type FirmwareDeleteRequest struct {
-	ExpectedName string `json:"expected_name" example:"espresso-fw"`
+	ExpectedName string `json:"expected_name" example:"espresso-fw" validate:"required"`
 }
 
 type OtaDispatchRequest struct {

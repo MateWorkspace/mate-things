@@ -931,6 +931,7 @@ func (h *handler) FirmwareBinaryStatByNameHead(c *echo.Context) error {
 //
 // @Summary Firmware Delete
 // @Tags Firmwares
+// @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "id"
@@ -952,10 +953,14 @@ func (h *handler) FirmwareDelete(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
+	expectedName, err := presentationhttputils.RequiredString(req.ExpectedName, "expected_name")
+	if err != nil {
+		return presentationhttputils.Error(c, err, "The firmware name confirmation is required.")
+	}
 
 	if err := h.firmwareUseCase.DeleteById(c.Request().Context(), domainusecasesnode.DeleteFirmwareRequest{
 		Id:           id,
-		ExpectedName: req.ExpectedName,
+		ExpectedName: expectedName,
 		DeletedBy:    presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err, "Unable to delete the firmware. Please try again.")

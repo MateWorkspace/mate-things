@@ -305,16 +305,18 @@ func (u *usecase) ReplaceBinaryById(
 		return domainusecasesnode.FirmwareBinaryStatResult{}, err
 	}
 
-	if err := u.configParameter.ReplaceForFirmware(ctx, domainusecasesnode.ReplaceConfigParametersRequest{
-		FirmwareId: request.Id,
-		Parameters: request.ConfigSchema,
-		ActorId:    request.UpdatedBy,
-	}); err != nil {
-		u.logger.Error(ctx, tag, "failed to ingest firmware config schema", domainmodels.LoggerMeta{
-			"err":         err,
-			"firmware_id": request.Id,
-		})
-		return domainusecasesnode.FirmwareBinaryStatResult{}, err
+	if request.ConfigSchema != nil {
+		if err := u.configParameter.ReplaceForFirmware(ctx, domainusecasesnode.ReplaceConfigParametersRequest{
+			FirmwareId: request.Id,
+			Parameters: request.ConfigSchema,
+			ActorId:    request.UpdatedBy,
+		}); err != nil {
+			u.logger.Error(ctx, tag, "failed to ingest firmware config schema", domainmodels.LoggerMeta{
+				"err":         err,
+				"firmware_id": request.Id,
+			})
+			return domainusecasesnode.FirmwareBinaryStatResult{}, err
+		}
 	}
 
 	return domainusecasesnode.FirmwareBinaryStatResult{

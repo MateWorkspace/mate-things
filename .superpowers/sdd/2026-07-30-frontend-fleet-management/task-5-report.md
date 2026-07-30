@@ -9,6 +9,7 @@ Planned commit:
 
 - `feat(frontend): add firmware and OTA workflows`
 - `fix(frontend): harden firmware and OTA workflows` (review round 1)
+- `fix(backend): preserve firmware request intent` (review round 2)
 
 ## Files
 
@@ -77,20 +78,31 @@ selection and confirmation, and requires a fresh confirmation when reopened.
 - `backend/internal/presentation/http/request/node.go`
 - `backend/internal/presentation/http/handler/node/handler.go`
 - `backend/internal/presentation/http/handler/node/handler_test.go`
+- `backend/docs/swagger/firmware_delete_contract_test.go`
 - `backend/docs/swagger/*`
 
 Firmware deletion now accepts `expected_name`, validates it in the application
 layer, reads the authoritative firmware by ID, and refuses to delete the
 database row or binary when the names differ. The route continues to require
 only `firmware:remove`, so remove-only roles do not acquire a new read
-dependency. Binary replacement now always forwards the submitted schema to the
-existing replace repository; an explicit empty array therefore soft-deletes
-all old configuration parameters. HTTP, use-case, frontend API, and Server
-Action regressions cover these paths.
+dependency. Binary replacement forwards the submitted schema to the existing
+replace repository when the multipart field is present; an explicit empty
+array therefore soft-deletes all old configuration parameters, while an
+omitted `config_schema` remains `nil` and preserves the legacy schema. HTTP,
+use-case, frontend API, and Server Action regressions cover these paths.
+
+Review round 2 also makes the DELETE wire contract explicit at every layer:
+the handler rejects missing or blank `expected_name` before delegation, and
+generated Swagger JSON/YAML declare `application/json` plus
+`expected_name` as a required request property. An executable generated
+contract test protects those OpenAPI details.
 
 ## Verification
 
 - Focused review suite: 8 test files, 39 tests passed.
+- Review round 2 focused frontend suite: 2 test files, 21 tests passed.
+- Review round 2 changed Go packages
+  (`firmware_management`, node HTTP handler, generated Swagger): passed.
 - Full frontend suite: 46 test files, 168 tests passed.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed.
@@ -101,7 +113,8 @@ Action regressions cover these paths.
 - `go build ./...`: passed.
 - `go vet ./...`: passed.
 - Swagger generation: passed; firmware DELETE documents the required
-  confirmation body.
+  JSON confirmation body, `application/json` consumption, and required
+  `expected_name` property in both generated YAML and JSON.
 - `gofmt -l` for backend Go files: passed with no output.
 - `git diff --check`: passed.
 
@@ -116,5 +129,5 @@ All npm commands used `PATH=/tmp/mate-node-v24.18.1/bin:$PATH`.
 - The `8mb` Server Action cap is deliberately bounded. A backend-supported
   binary larger than that would require coordinated ingress and frontend limit
   changes.
-- No additional internal reviewer was run; this commit addresses the
-  controller-owned review round 1 findings directly.
+- No additional internal reviewer was run; the follow-up commits address the
+  controller-owned review findings directly.
