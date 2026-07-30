@@ -82,7 +82,10 @@ func (p *postgresImpl) Upsert(
 	}
 
 	if _, err := p.Dt.Exec(ctx, query, args...); err != nil {
-		return infrastructurerepositoryshared.MapPgxError("failed to upsert node config value", err)
+		return infrastructurerepositoryshared.MapPgxError(
+			"failed to upsert node config value", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "node_id_key", Type: domainmodels.ErrTypeNodeConfigKeyExists},
+		)
 	}
 
 	return nil

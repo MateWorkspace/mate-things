@@ -55,7 +55,10 @@ func (p *postgresImpl) ReplaceForFirmwareId(
 				return infrastructurerepositoryshared.QueryBuildError("failed to build upsert firmware config parameter query", err)
 			}
 			if _, err := p.Dt.Exec(ctx, upsertQuery, upsertArgs...); err != nil {
-				return infrastructurerepositoryshared.MapPgxError("failed to upsert firmware config parameter", err)
+				return infrastructurerepositoryshared.MapPgxError(
+					"failed to upsert firmware config parameter", err,
+					infrastructurerepositoryshared.ConflictMatch{Contains: "firmware_id_key", Type: domainmodels.ErrTypeFirmwareConfigKeyExists},
+				)
 			}
 		}
 

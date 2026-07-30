@@ -49,7 +49,10 @@ func (p *postgresImpl) Create(
 	}
 
 	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create node", err)
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError(
+			"failed to create node", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "device_id", Type: domainmodels.ErrTypeNodeDeviceIdExists},
+		)
 	}
 
 	return id, nil
@@ -90,7 +93,10 @@ func (p *postgresImpl) UpsertRegistration(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, infrastructurerepositoryshared.NotFound("firmware not found", err)
 		}
-		return nil, false, infrastructurerepositoryshared.MapPgxError("failed to upsert node registration", err)
+		return nil, false, infrastructurerepositoryshared.MapPgxError(
+			"failed to upsert node registration", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "device_id", Type: domainmodels.ErrTypeNodeDeviceIdExists},
+		)
 	}
 
 	return &item, created, nil
@@ -184,7 +190,10 @@ func (p *postgresImpl) UpdateById(
 
 	commandTag, err := p.Dt.Exec(ctx, query, args...)
 	if err != nil {
-		return infrastructurerepositoryshared.MapPgxError("failed to update node", err)
+		return infrastructurerepositoryshared.MapPgxError(
+			"failed to update node", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "device_id", Type: domainmodels.ErrTypeNodeDeviceIdExists},
+		)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return infrastructurerepositoryshared.NotFound("node not found", nil)

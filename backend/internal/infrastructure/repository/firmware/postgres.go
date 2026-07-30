@@ -47,7 +47,10 @@ func (p *postgresImpl) Create(
 	}
 
 	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create firmware", err)
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError(
+			"failed to create firmware", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypeFirmwareNameExists},
+		)
 	}
 
 	return id, nil
@@ -148,7 +151,10 @@ func (p *postgresImpl) UpdateById(
 
 	commandTag, err := p.Dt.Exec(ctx, query, args...)
 	if err != nil {
-		return infrastructurerepositoryshared.MapPgxError("failed to update firmware", err)
+		return infrastructurerepositoryshared.MapPgxError(
+			"failed to update firmware", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypeFirmwareNameExists},
+		)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return infrastructurerepositoryshared.NotFound("firmware not found", nil)

@@ -44,7 +44,10 @@ func (p *postgresImpl) Create(
 	}
 
 	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create node class", err)
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError(
+			"failed to create node class", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypeNodeClassNameExists},
+		)
 	}
 
 	return id, nil
@@ -131,7 +134,10 @@ func (p *postgresImpl) UpdateById(
 
 	commandTag, err := p.Dt.Exec(ctx, query, args...)
 	if err != nil {
-		return infrastructurerepositoryshared.MapPgxError("failed to update node class", err)
+		return infrastructurerepositoryshared.MapPgxError(
+			"failed to update node class", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypeNodeClassNameExists},
+		)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return infrastructurerepositoryshared.NotFound("node class not found", nil)
