@@ -61,4 +61,21 @@ describe("NodeConfigForm", () => {
       screen.queryByRole("button", { name: "Save value" }),
     ).not.toBeInTheDocument();
   });
+
+  it("distinguishes an unset value from a saved value without an update time", () => {
+    render(
+      <NodeConfigForm
+        canSet
+        nodeId="node-1"
+        parameters={[
+          { key: "saved_without_time", value_type: "string" },
+          { key: "missing_value", value_type: "string" },
+        ]}
+        values={[{ key: "saved_without_time", value: "configured" }]}
+      />,
+    );
+
+    expect(screen.getByText("Set — update time unavailable")).toBeVisible();
+    expect(screen.getByText("Not set")).toBeVisible();
+  });
 });

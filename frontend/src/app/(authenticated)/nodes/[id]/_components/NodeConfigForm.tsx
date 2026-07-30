@@ -128,7 +128,9 @@ function ConfigParameterForm({
             {parameter.key} · {parameter.value_type}
           </p>
         </div>
-        {currentValue?.updated_at ? (
+        {!currentValue ? (
+          <span className="text-muted-foreground text-xs">Not set</span>
+        ) : currentValue.updated_at ? (
           <time
             className="text-muted-foreground text-xs"
             dateTime={currentValue.updated_at}
@@ -141,7 +143,9 @@ function ConfigParameterForm({
             }).format(new Date(currentValue.updated_at))}
           </time>
         ) : (
-          <span className="text-muted-foreground text-xs">Not set</span>
+          <span className="text-muted-foreground text-xs">
+            Set — update time unavailable
+          </span>
         )}
       </div>
 
