@@ -17,6 +17,7 @@
       "action:get", "action:add", "action:dispatch", "action:set", "action:remove",
       "action_log:get", "action_log:remove",
       "telemetry_record:get", "telemetry_record:remove",
+      "node_log:get", "node_log:remove",
       "preferences:set"
     ]
   },
@@ -35,6 +36,7 @@
       "action:get", "action:add", "action:dispatch", "action:set", "action:remove",
       "action_log:get", "action_log:remove",
       "telemetry_record:get", "telemetry_record:remove",
+      "node_log:get", "node_log:remove",
       "preferences:set"
     ]
   },
@@ -44,7 +46,7 @@
     "is_default": true,
     "permissions": [
       "profile:get", "profile:set", "profile_security:set",
-      "node:get", "firmware:get", "action_log:get", "telemetry_record:get"
+      "node:get", "firmware:get", "action_log:get", "telemetry_record:get", "node_log:get"
     ]
   }
 ]

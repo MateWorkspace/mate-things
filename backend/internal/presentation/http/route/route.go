@@ -118,6 +118,11 @@ type TelemetryHandler interface {
 	TelemetryRecordDelete(c *echo.Context) error
 }
 
+type NodeLogHandler interface {
+	NodeLogGetList(c *echo.Context) error
+	NodeLogDelete(c *echo.Context) error
+}
+
 type PreferencesHandler interface {
 	PreferencesPatch(c *echo.Context) error
 }
@@ -129,6 +134,7 @@ type Args struct {
 	Node          NodeHandler
 	Action        ActionHandler
 	Telemetry     TelemetryHandler
+	NodeLog       NodeLogHandler
 	Preferences   PreferencesHandler
 	Token         domaincontractsutility.Token
 	MinioProxy    http.Handler
@@ -154,6 +160,7 @@ func Route(e *echo.Echo, args Args) {
 	routeNode(v1, args.Node, permission)
 	routeAction(v1, args.Action, permission)
 	routeTelemetry(v1, args.Telemetry, permission)
+	routeNodeLog(v1, args.NodeLog, permission)
 	routePreferences(v1, args.Preferences, permission)
 
 	// Presigned S3-style GET/HEAD passthrough to MinIO - no auth middleware,
@@ -270,6 +277,11 @@ func routeAction(v1 *echo.Group, handler ActionHandler, permission PermissionMid
 func routeTelemetry(v1 *echo.Group, handler TelemetryHandler, permission PermissionMiddleware) {
 	v1.GET("/telemetry-records", handler.TelemetryRecordGetList, permission("telemetry_record:get"))
 	v1.DELETE("/telemetry-records", handler.TelemetryRecordDelete, permission("telemetry_record:remove"))
+}
+
+func routeNodeLog(v1 *echo.Group, handler NodeLogHandler, permission PermissionMiddleware) {
+	v1.GET("/node-logs", handler.NodeLogGetList, permission("node_log:get"))
+	v1.DELETE("/node-logs", handler.NodeLogDelete, permission("node_log:remove"))
 }
 
 func routePreferences(v1 *echo.Group, handler PreferencesHandler, permission PermissionMiddleware) {

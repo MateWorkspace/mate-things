@@ -58,5 +58,8 @@
   { "name": "telemetry_record:get", "description": "View telemetry records." },
   { "name": "telemetry_record:remove", "description": "Delete telemetry records." },
 
+  { "name": "node_log:get", "description": "View node logs." },
+  { "name": "node_log:remove", "description": "Delete node logs." },
+
   { "name": "preferences:set", "description": "Update preferences on a resource." }
 ]
