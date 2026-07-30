@@ -5,10 +5,15 @@ import { getProfile, getProfilePermissions } from "@/lib/api/profile";
 import { USER } from "@/test/fixtures";
 
 import {
+  getSession,
   requireAnyPermission,
   requirePermission,
   requireSessionContext,
 } from "./session";
+
+const cookieState = vi.hoisted(() => ({
+  accessToken: "e30.eyJleHAiOjQxMDI0NDQ4MDB9.signature" as string | undefined,
+}));
 
 const navigation = vi.hoisted(() => ({
   forbidden: vi.fn((): never => {
@@ -24,8 +29,8 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/headers", () => ({
   cookies: vi.fn().mockResolvedValue({
     get: vi.fn((name: string) =>
-      name === "mate_access_token"
-        ? { value: "e30.eyJleHAiOjQxMDI0NDQ4MDB9.signature" }
+      name === "mate_access_token" && cookieState.accessToken
+        ? { value: cookieState.accessToken }
         : undefined,
     ),
   }),
@@ -41,6 +46,7 @@ vi.mock("@/lib/api/profile", () => ({
 describe("session authorization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    cookieState.accessToken = "e30.eyJleHAiOjQxMDI0NDQ4MDB9.signature";
     vi.mocked(getProfile).mockResolvedValue(USER);
     vi.mocked(getProfilePermissions).mockResolvedValue([
       {
@@ -51,6 +57,13 @@ describe("session authorization", () => {
         created_at: "2026-07-30T00:00:00Z",
       },
     ]);
+  });
+
+  it("treats a request without an access cookie as anonymous", async () => {
+    cookieState.accessToken = undefined;
+
+    await expect(getSession()).resolves.toBeNull();
+    expect(getProfile).not.toHaveBeenCalled();
   });
 
   it("routes a backend-rejected future-exp token through invalid-session cleanup", async () => {

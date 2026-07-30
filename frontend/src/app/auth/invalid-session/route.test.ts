@@ -6,9 +6,9 @@ import { GET } from "./route";
 const FUTURE_JWT = "e30.eyJleHAiOjQxMDI0NDQ4MDB9.signature";
 
 describe("invalid-session transition", () => {
-  it("clears both httpOnly session cookies before redirecting to login", () => {
+  it("clears both httpOnly session cookies before a same-origin login redirect", () => {
     const request = new NextRequest(
-      "http://localhost:3000/auth/invalid-session",
+      "http://0.0.0.0:3000/auth/invalid-session",
       {
         headers: {
           cookie: [
@@ -22,9 +22,7 @@ describe("invalid-session transition", () => {
     const response = GET(request);
     const setCookies = response.headers.getSetCookie();
 
-    expect(response.headers.get("location")).toBe(
-      "http://localhost:3000/login?sessionInvalid=1",
-    );
+    expect(response.headers.get("location")).toBe("/login?sessionInvalid=1");
     expect(setCookies).toHaveLength(2);
     expect(setCookies).toEqual(
       expect.arrayContaining([

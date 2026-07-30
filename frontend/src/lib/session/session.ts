@@ -1,11 +1,13 @@
 import "server-only";
 
+import { cookies } from "next/headers";
 import { forbidden, redirect } from "next/navigation";
 import { cache } from "react";
 
 import { ApiError } from "@/lib/api/client";
 import { getProfile, getProfilePermissions } from "@/lib/api/profile";
 import type { UserResponse } from "@/lib/api/users";
+import { ACCESS_TOKEN_COOKIE } from "@/lib/session/cookies";
 import {
   canAccessAny,
   hasPermission,
@@ -32,6 +34,11 @@ function interruptSessionError(error: unknown): never {
 }
 
 export const getSession = cache(async (): Promise<UserResponse | null> => {
+  const cookieStore = await cookies();
+  if (!cookieStore.get(ACCESS_TOKEN_COOKIE)?.value) {
+    return null;
+  }
+
   try {
     return await getProfile();
   } catch (error) {
