@@ -40,11 +40,11 @@ func (h *handler) AuthLoginPost(c *echo.Context) error {
 
 	username, err := presentationhttputils.RequiredString(req.Username, "username")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please enter your username.")
+		return presentationhttputils.Error(c, err)
 	}
 	password, err := presentationhttputils.RequiredString(req.Password, "password")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please enter your password.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	result, err := h.sessionUseCase.Login(c.Request().Context(), domainusecasesauth.LoginRequest{
@@ -52,7 +52,7 @@ func (h *handler) AuthLoginPost(c *echo.Context) error {
 		Password: password,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Incorrect username or password.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.LoginResponse{
@@ -85,14 +85,14 @@ func (h *handler) AuthRefreshPost(c *echo.Context) error {
 
 	refreshToken, err := presentationhttputils.RequiredString(req.RefreshToken, "refresh_token")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "A refresh token is required.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	result, err := h.sessionUseCase.Refresh(c.Request().Context(), domainusecasesauth.RefreshRequest{
 		RefreshToken: refreshToken,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Your session is no longer valid. Please sign in again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.LoginResponse{

@@ -17,15 +17,15 @@ func Auth(token domaincontractsutility.Token) echo.MiddlewareFunc {
 
 			accessToken := authorizationToken(req.Header.Get("Authorization"))
 			if accessToken == "" {
-				return presentationhttputils.Error(c, domainmodels.NewError("authorization is required", domainmodels.ErrTypeUnauthorized, nil), "Please sign in to continue.")
+				return presentationhttputils.Error(c, domainmodels.NewError("authorization is required", domainmodels.ErrTypeUnauthorized, nil))
 			}
 
 			claims, err := token.ValidateAccess(accessToken)
 			if err != nil {
-				return presentationhttputils.Error(c, err, "Your session is no longer valid. Please sign in again.")
+				return presentationhttputils.Error(c, err)
 			}
 			if claims == nil || claims.UserId == uuid.Nil {
-				return presentationhttputils.Error(c, domainmodels.NewError("authenticated user is invalid", domainmodels.ErrTypeUnauthorized, nil), "Your session is no longer valid. Please sign in again.")
+				return presentationhttputils.Error(c, domainmodels.NewError("authenticated user is invalid", domainmodels.ErrTypeUnauthorized, nil))
 			}
 
 			ctx := presentationhttputils.InjectAccessClaims(req.Context(), claims)

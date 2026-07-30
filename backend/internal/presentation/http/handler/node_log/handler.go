@@ -33,12 +33,12 @@ func NewHandler(queryUseCase domainusecasesnodelog.Query) *handler {
 func (h *handler) NodeLogGetList(c *echo.Context) error {
 	filter, err := h.filter(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "One or more of the filters provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	logs, total, err := h.queryUseCase.ReadByFilter(c.Request().Context(), filter)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load node logs right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.CountDataResponse[presentationhttpresponse.NodeLogResponse]{
@@ -62,12 +62,12 @@ func (h *handler) NodeLogGetList(c *echo.Context) error {
 func (h *handler) NodeLogDelete(c *echo.Context) error {
 	filter, err := h.deleteFilter(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "One or more of the filters provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	count, err := h.queryUseCase.DeleteByFilter(c.Request().Context(), filter)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to delete node logs right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.CountResponse{Count: count})

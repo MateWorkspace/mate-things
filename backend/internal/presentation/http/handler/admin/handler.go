@@ -59,7 +59,7 @@ func (h *handler) PermissionPost(c *echo.Context) error {
 		CreatedBy:   presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to create the permission. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusCreated, presentationhttpresponse.IdResponse{Id: id.String()})
@@ -80,7 +80,7 @@ func (h *handler) PermissionPost(c *echo.Context) error {
 func (h *handler) PermissionGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	permissions, total, err := h.permissionUseCase.ReadByPagination(c.Request().Context(), domainusecasesadmin.ReadPermissionsByPaginationRequest{
@@ -89,7 +89,7 @@ func (h *handler) PermissionGetList(c *echo.Context) error {
 		Search: page.Search,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load permissions right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.PermissionResponse]{
@@ -115,15 +115,15 @@ func (h *handler) PermissionGetList(c *echo.Context) error {
 func (h *handler) PermissionGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid permission name.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	permission, err := h.permissionUseCase.ReadByName(c.Request().Context(), domainusecasesadmin.ReadPermissionByNameRequest{Name: name})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the permission. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if permission == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("permission"), "The requested permission could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("permission"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Permission(*permission))
@@ -146,15 +146,15 @@ func (h *handler) PermissionGetByName(c *echo.Context) error {
 func (h *handler) PermissionGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The permission ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	permission, err := h.permissionUseCase.ReadById(c.Request().Context(), domainusecasesadmin.ReadPermissionByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the permission. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if permission == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("permission"), "The requested permission could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("permission"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Permission(*permission))
@@ -180,7 +180,7 @@ func (h *handler) PermissionGetById(c *echo.Context) error {
 func (h *handler) PermissionPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The permission ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.PermissionPatchRequest
@@ -194,7 +194,7 @@ func (h *handler) PermissionPatch(c *echo.Context) error {
 		Description: req.Description,
 		UpdatedBy:   presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to update the permission. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -217,14 +217,14 @@ func (h *handler) PermissionPatch(c *echo.Context) error {
 func (h *handler) PermissionDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The permission ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.permissionUseCase.DeleteById(c.Request().Context(), domainusecasesadmin.DeletePermissionRequest{
 		Id:        id,
 		DeletedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to delete the permission. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -257,7 +257,7 @@ func (h *handler) RolePost(c *echo.Context) error {
 		CreatedBy:   presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to create the role. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusCreated, presentationhttpresponse.IdResponse{Id: id.String()})
@@ -278,7 +278,7 @@ func (h *handler) RolePost(c *echo.Context) error {
 func (h *handler) RoleGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	roles, total, err := h.roleUseCase.ReadByPagination(c.Request().Context(), domainusecasesadmin.ReadRolesByPaginationRequest{
@@ -287,7 +287,7 @@ func (h *handler) RoleGetList(c *echo.Context) error {
 		Search: page.Search,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load roles right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.RoleResponse]{
@@ -310,10 +310,10 @@ func (h *handler) RoleGetList(c *echo.Context) error {
 func (h *handler) RoleGetDefault(c *echo.Context) error {
 	role, err := h.roleUseCase.ReadDefault(c.Request().Context(), domainusecasesadmin.ReadDefaultRoleRequest{})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the default role. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if role == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("role"), "No default role has been set.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("role"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Role(*role))
@@ -336,15 +336,15 @@ func (h *handler) RoleGetDefault(c *echo.Context) error {
 func (h *handler) RoleGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid role name.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	role, err := h.roleUseCase.ReadByName(c.Request().Context(), domainusecasesadmin.ReadRoleByNameRequest{Name: name})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the role. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if role == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("role"), "The requested role could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("role"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Role(*role))
@@ -367,15 +367,15 @@ func (h *handler) RoleGetByName(c *echo.Context) error {
 func (h *handler) RoleGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	role, err := h.roleUseCase.ReadById(c.Request().Context(), domainusecasesadmin.ReadRoleByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the role. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if role == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("role"), "The requested role could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("role"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Role(*role))
@@ -397,12 +397,12 @@ func (h *handler) RoleGetById(c *echo.Context) error {
 func (h *handler) RolePermissionsGet(c *echo.Context) error {
 	roleId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	permissions, err := h.roleUseCase.ReadPermissions(c.Request().Context(), domainusecasesadmin.ReadRolePermissionsRequest{RoleId: roleId})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load permissions for this role right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Permissions(permissions))
@@ -428,7 +428,7 @@ func (h *handler) RolePermissionsGet(c *echo.Context) error {
 func (h *handler) RolePatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.RolePatchRequest
@@ -442,7 +442,7 @@ func (h *handler) RolePatch(c *echo.Context) error {
 		Description: req.Description,
 		UpdatedBy:   presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to update the role. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -465,14 +465,14 @@ func (h *handler) RolePatch(c *echo.Context) error {
 func (h *handler) RoleSetDefaultPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.roleUseCase.SetDefaultRole(c.Request().Context(), domainusecasesadmin.SetDefaultRoleRequest{
 		Id:        id,
 		UpdatedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to set the default role right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -495,14 +495,14 @@ func (h *handler) RoleSetDefaultPatch(c *echo.Context) error {
 func (h *handler) RoleDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.roleUseCase.DeleteById(c.Request().Context(), domainusecasesadmin.DeleteRoleRequest{
 		Id:        id,
 		DeletedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to delete the role. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -527,7 +527,7 @@ func (h *handler) RoleDelete(c *echo.Context) error {
 func (h *handler) RolePermissionPost(c *echo.Context) error {
 	roleId, permissionId, err := h.rolePermissionPath(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role or permission ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	id, err := h.roleUseCase.AssignPermission(c.Request().Context(), domainusecasesadmin.AssignRolePermissionRequest{
@@ -536,7 +536,7 @@ func (h *handler) RolePermissionPost(c *echo.Context) error {
 		CreatedBy:    presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to assign this permission to the role. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusCreated, presentationhttpresponse.IdResponse{Id: id.String()})
@@ -560,14 +560,14 @@ func (h *handler) RolePermissionPost(c *echo.Context) error {
 func (h *handler) RolePermissionDeleteByPair(c *echo.Context) error {
 	roleId, permissionId, err := h.rolePermissionPath(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role or permission ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.roleUseCase.RevokePermission(c.Request().Context(), domainusecasesadmin.RevokeRolePermissionRequest{
 		RoleId:       roleId,
 		PermissionId: permissionId,
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to remove this permission from the role. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -588,15 +588,15 @@ func (h *handler) RolePermissionDeleteByPair(c *echo.Context) error {
 func (h *handler) RolePermissionGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	roleId, err := presentationhttputils.QueryUUID(c, "role_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	permissionId, err := presentationhttputils.QueryUUID(c, "permission_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The permission ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	rolePermissions, roles, permissions, total, err := h.roleUseCase.ReadRolePermissionsByPagination(
@@ -609,7 +609,7 @@ func (h *handler) RolePermissionGetList(c *echo.Context) error {
 		},
 	)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load role permissions right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.RolePermissionDetailResponse]{
@@ -635,12 +635,12 @@ func (h *handler) RolePermissionGetList(c *echo.Context) error {
 func (h *handler) RolePermissionGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role permission ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	result, err := h.roleUseCase.ReadRolePermissionById(c.Request().Context(), domainusecasesadmin.ReadRolePermissionByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The requested role permission could not be found.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.RolePermissionDetail(result.RolePermission, result.Role, result.Permission))
@@ -662,14 +662,14 @@ func (h *handler) RolePermissionGetById(c *echo.Context) error {
 func (h *handler) RolePermissionGetByPair(c *echo.Context) error {
 	roleId, err := presentationhttputils.QueryUUID(c, "role_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	permissionId, err := presentationhttputils.QueryUUID(c, "permission_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The permission ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	if roleId == nil || permissionId == nil {
-		return presentationhttputils.Error(c, presentationhttputils.BadPairQuery("role_id", "permission_id"), "Both role_id and permission_id are required.")
+		return presentationhttputils.Error(c, presentationhttputils.BadPairQuery("role_id", "permission_id"))
 	}
 
 	result, err := h.roleUseCase.ReadRolePermissionByRoleIdAndPermissionId(
@@ -677,7 +677,7 @@ func (h *handler) RolePermissionGetByPair(c *echo.Context) error {
 		domainusecasesadmin.ReadRolePermissionByRoleIdAndPermissionIdRequest{RoleId: *roleId, PermissionId: *permissionId},
 	)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The requested role permission could not be found.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.RolePermissionDetail(result.RolePermission, result.Role, result.Permission))
@@ -718,7 +718,7 @@ func (h *handler) PayloadSchemaPost(c *echo.Context) error {
 	}
 	definition, err := presentationhttputils.RequiredRawJSON(req.Definition, "definition")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "A valid schema definition is required.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	id, err := h.schemaUseCase.Create(c.Request().Context(), domainusecasesadmin.CreatePayloadSchemaRequest{
@@ -730,7 +730,7 @@ func (h *handler) PayloadSchemaPost(c *echo.Context) error {
 		CreatedBy:  presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to create the payload schema. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusCreated, presentationhttpresponse.IdResponse{Id: id.String()})
@@ -751,11 +751,11 @@ func (h *handler) PayloadSchemaPost(c *echo.Context) error {
 func (h *handler) PayloadSchemaGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	validAt, err := presentationhttputils.QueryTime(c, "valid_at")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The valid_at date provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	payloadSchemas, total, err := h.schemaUseCase.ReadByPagination(c.Request().Context(), domainusecasesadmin.ReadPayloadSchemasByPaginationRequest{
@@ -765,7 +765,7 @@ func (h *handler) PayloadSchemaGetList(c *echo.Context) error {
 		ValidAt: validAt,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load payload schemas right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.PayloadSchemaResponse]{
@@ -790,15 +790,15 @@ func (h *handler) PayloadSchemaGetList(c *echo.Context) error {
 func (h *handler) PayloadSchemaGetLatest(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.QueryParam("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid payload schema name.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	payloadSchema, err := h.schemaUseCase.ReadLatestByName(c.Request().Context(), domainusecasesadmin.ReadLatestPayloadSchemaByNameRequest{Name: name})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the payload schema. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if payloadSchema == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("payload schema"), "The requested payload schema could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("payload schema"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PayloadSchema(*payloadSchema))
@@ -820,11 +820,11 @@ func (h *handler) PayloadSchemaGetLatest(c *echo.Context) error {
 func (h *handler) PayloadSchemaGetByNameAndVersion(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.QueryParam("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid payload schema name.")
+		return presentationhttputils.Error(c, err)
 	}
 	version, err := presentationhttputils.RequiredInt32(c.QueryParam("version"), "version")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid payload schema version.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	payloadSchema, err := h.schemaUseCase.ReadByNameAndVersion(c.Request().Context(), domainusecasesadmin.ReadPayloadSchemaByNameAndVersionRequest{
@@ -832,10 +832,10 @@ func (h *handler) PayloadSchemaGetByNameAndVersion(c *echo.Context) error {
 		Version: version,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the payload schema. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if payloadSchema == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("payload schema"), "The requested payload schema could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("payload schema"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PayloadSchema(*payloadSchema))
@@ -858,15 +858,15 @@ func (h *handler) PayloadSchemaGetByNameAndVersion(c *echo.Context) error {
 func (h *handler) PayloadSchemaGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The payload schema ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	payloadSchema, err := h.schemaUseCase.ReadById(c.Request().Context(), domainusecasesadmin.ReadPayloadSchemaByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the payload schema. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if payloadSchema == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("payload schema"), "The requested payload schema could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("payload schema"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PayloadSchema(*payloadSchema))
@@ -892,7 +892,7 @@ func (h *handler) PayloadSchemaGetById(c *echo.Context) error {
 func (h *handler) PayloadSchemaPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The payload schema ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.PayloadSchemaPatchRequest
@@ -901,7 +901,7 @@ func (h *handler) PayloadSchemaPatch(c *echo.Context) error {
 	}
 	definition, err := presentationhttputils.OptionalRawJSON(req.Definition, "definition")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The schema definition provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.schemaUseCase.UpdateById(c.Request().Context(), domainusecasesadmin.UpdatePayloadSchemaRequest{
@@ -913,7 +913,7 @@ func (h *handler) PayloadSchemaPatch(c *echo.Context) error {
 		ValidTo:    req.ValidTo,
 		UpdatedBy:  presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to update the payload schema. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -936,14 +936,14 @@ func (h *handler) PayloadSchemaPatch(c *echo.Context) error {
 func (h *handler) PayloadSchemaDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The payload schema ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.schemaUseCase.DeleteById(c.Request().Context(), domainusecasesadmin.DeletePayloadSchemaRequest{
 		Id:        id,
 		DeletedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to delete the payload schema. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -971,7 +971,7 @@ func (h *handler) UserPost(c *echo.Context) error {
 	}
 	roleId, err := presentationhttputils.RequiredUUID(req.RoleId, "role_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please select a valid role.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	id, err := h.userUseCase.Create(c.Request().Context(), domainusecasesadmin.CreateUserRequest{
@@ -983,7 +983,7 @@ func (h *handler) UserPost(c *echo.Context) error {
 		CreatedBy: presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to create the user. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusCreated, presentationhttpresponse.IdResponse{Id: id.String()})
@@ -1004,11 +1004,11 @@ func (h *handler) UserPost(c *echo.Context) error {
 func (h *handler) UserGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	roleId, err := presentationhttputils.QueryUUID(c, "role_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	users, total, err := h.userUseCase.ReadByPagination(c.Request().Context(), domainusecasesadmin.ReadUsersByPaginationRequest{
@@ -1018,7 +1018,7 @@ func (h *handler) UserGetList(c *echo.Context) error {
 		RoleId: roleId,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load users right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.UserResponse]{
@@ -1044,15 +1044,15 @@ func (h *handler) UserGetList(c *echo.Context) error {
 func (h *handler) UserGetByUsername(c *echo.Context) error {
 	username, err := presentationhttputils.RequiredString(c.Param("username"), "username")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid username.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	user, err := h.userUseCase.ReadByUsername(c.Request().Context(), domainusecasesadmin.ReadUserByUsernameRequest{Username: username})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the user. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if user == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("user"), "The requested user could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("user"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.User(*user))
@@ -1075,15 +1075,15 @@ func (h *handler) UserGetByUsername(c *echo.Context) error {
 func (h *handler) UserGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The user ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	user, err := h.userUseCase.ReadById(c.Request().Context(), domainusecasesadmin.ReadUserByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the user. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if user == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("user"), "The requested user could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("user"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.User(*user))
@@ -1105,12 +1105,12 @@ func (h *handler) UserGetById(c *echo.Context) error {
 func (h *handler) UserPermissionsGet(c *echo.Context) error {
 	userId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The user ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	permissions, err := h.userUseCase.ReadPermissions(c.Request().Context(), domainusecasesadmin.ReadUserPermissionsRequest{UserId: userId})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load permissions for this user right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Permissions(permissions))
@@ -1136,7 +1136,7 @@ func (h *handler) UserPermissionsGet(c *echo.Context) error {
 func (h *handler) UserPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The user ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.UserPatchRequest
@@ -1145,7 +1145,7 @@ func (h *handler) UserPatch(c *echo.Context) error {
 	}
 	roleId, err := presentationhttputils.OptionalUUID(req.RoleId, "role_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The role ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.userUseCase.UpdateById(c.Request().Context(), domainusecasesadmin.UpdateUserRequest{
@@ -1156,7 +1156,7 @@ func (h *handler) UserPatch(c *echo.Context) error {
 		Username:  req.Username,
 		UpdatedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to update the user. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -1181,7 +1181,7 @@ func (h *handler) UserPatch(c *echo.Context) error {
 func (h *handler) UserPasswordPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The user ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.UserPasswordPatchRequest
@@ -1194,7 +1194,7 @@ func (h *handler) UserPasswordPatch(c *echo.Context) error {
 		Password:  req.Password,
 		UpdatedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to reset the password. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -1217,14 +1217,14 @@ func (h *handler) UserPasswordPatch(c *echo.Context) error {
 func (h *handler) UserDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The user ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.userUseCase.DeleteById(c.Request().Context(), domainusecasesadmin.DeleteUserRequest{
 		Id:        id,
 		DeletedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to delete the user. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)

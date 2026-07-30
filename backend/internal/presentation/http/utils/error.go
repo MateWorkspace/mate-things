@@ -18,66 +18,74 @@ func BadRequest(c *echo.Context, message string) error {
 	})
 }
 
-func Error(c *echo.Context, err error, message string) error {
+type errorMapping struct {
+	status  int
+	title   string
+	message string // non-empty: always used, overriding the domain error's own message
+}
+
+var errorMappings = []struct {
+	errType domainmodels.ErrorType
+	mapping errorMapping
+}{
+	{domainmodels.ErrTypeNotFound, errorMapping{http.StatusNotFound, "Not Found", ""}},
+	{domainmodels.ErrTypeUsernameExists, errorMapping{http.StatusConflict, "Already Exists", "This username is already taken."}},
+	{domainmodels.ErrTypeRoleNameExists, errorMapping{http.StatusConflict, "Already Exists", "A role with this name already exists."}},
+	{domainmodels.ErrTypePermissionNameExists, errorMapping{http.StatusConflict, "Already Exists", "A permission with this name already exists."}},
+	{domainmodels.ErrTypeActionNameExists, errorMapping{http.StatusConflict, "Already Exists", "An action with this name already exists."}},
+	{domainmodels.ErrTypeNodeClassNameExists, errorMapping{http.StatusConflict, "Already Exists", "A node class with this name already exists."}},
+	{domainmodels.ErrTypeFirmwareNameExists, errorMapping{http.StatusConflict, "Already Exists", "A firmware with this name already exists."}},
+	{domainmodels.ErrTypeNodeDeviceIdExists, errorMapping{http.StatusConflict, "Already Exists", "A node with this device ID is already registered."}},
+	{domainmodels.ErrTypePayloadSchemaVersionExists, errorMapping{http.StatusConflict, "Already Exists", "This payload schema name and version already exists."}},
+	{domainmodels.ErrTypeRolePermissionExists, errorMapping{http.StatusConflict, "Already Exists", "This permission is already assigned to the role."}},
+	{domainmodels.ErrTypeFirmwareConfigKeyExists, errorMapping{http.StatusConflict, "Already Exists", "This config key already exists for the firmware."}},
+	{domainmodels.ErrTypeNodeConfigKeyExists, errorMapping{http.StatusConflict, "Already Exists", "This config key already exists for the node."}},
+	{domainmodels.ErrTypeConflict, errorMapping{http.StatusConflict, "Already Exists", ""}},
+	{domainmodels.ErrTypeBadArgs, errorMapping{http.StatusBadRequest, "Invalid Format", ""}},
+	{domainmodels.ErrTypeValidation, errorMapping{http.StatusBadRequest, "Invalid Format", ""}},
+	{domainmodels.ErrTypeBadState, errorMapping{http.StatusPreconditionFailed, "Invalid State", ""}},
+	{domainmodels.ErrTypeForbidden, errorMapping{http.StatusForbidden, "Access Denied", ""}},
+	{domainmodels.ErrTypeUnauthorized, errorMapping{http.StatusUnauthorized, "Unauthorized", ""}},
+	{domainmodels.ErrTypeTokenExpired, errorMapping{http.StatusUnauthorized, "Session Expired", "Your session has expired. Please sign in again."}},
+	{domainmodels.ErrTypeTokenInvalid, errorMapping{http.StatusUnauthorized, "Invalid Token", "Your session is no longer valid. Please sign in again."}},
+	{domainmodels.ErrTypeTimeout, errorMapping{http.StatusGatewayTimeout, "Request Timeout", "The request took too long. Please try again."}},
+	{domainmodels.ErrTypeUnimplemented, errorMapping{http.StatusNotImplemented, "Not Implemented", "This feature isn't available yet."}},
+	{domainmodels.ErrTypeFailure, errorMapping{http.StatusInternalServerError, "Internal Server Error", "Something went wrong on our end. Please try again later."}},
+	{domainmodels.ErrTypeUnknown, errorMapping{http.StatusInternalServerError, "Internal Server Error", "Something went wrong on our end. Please try again later."}},
+}
+
+const genericServerErrorMessage = "Something went wrong on our end. Please try again later."
+
+func Error(c *echo.Context, err error) error {
 	if err == nil {
 		return nil
 	}
 
-	statusCode := http.StatusInternalServerError
-	title := "Internal Server Error"
-
-	switch {
-	case errors.Is(err, domainmodels.ErrTypeNotFound):
-		statusCode = http.StatusNotFound
-		title = "Not Found"
-	case errors.Is(err, domainmodels.ErrTypeConflict):
-		statusCode = http.StatusConflict
-		title = "Already Exists"
-	case errors.Is(err, domainmodels.ErrTypeBadArgs),
-		errors.Is(err, domainmodels.ErrTypeValidation):
-		statusCode = http.StatusBadRequest
-		title = "Invalid Format"
-	case errors.Is(err, domainmodels.ErrTypeBadState):
-		statusCode = http.StatusPreconditionFailed
-		title = "Invalid State"
-	case errors.Is(err, domainmodels.ErrTypeForbidden):
-		statusCode = http.StatusForbidden
-		title = "Access Denied"
-	case errors.Is(err, domainmodels.ErrTypeTokenExpired):
-		statusCode = http.StatusUnauthorized
-		title = "Session Expired"
-	case errors.Is(err, domainmodels.ErrTypeTokenInvalid):
-		statusCode = http.StatusUnauthorized
-		title = "Invalid Token"
-	case errors.Is(err, domainmodels.ErrTypeUnauthorized):
-		statusCode = http.StatusUnauthorized
-		title = "Unauthorized"
-	case errors.Is(err, domainmodels.ErrTypeTimeout):
-		statusCode = http.StatusGatewayTimeout
-		title = "Request Timeout"
-	case errors.Is(err, domainmodels.ErrTypeUnimplemented):
-		statusCode = http.StatusNotImplemented
-		title = "Not Implemented"
-	case errors.Is(err, domainmodels.ErrTypeFailure),
-		errors.Is(err, domainmodels.ErrTypeUnknown):
-		statusCode = http.StatusInternalServerError
-		title = "Internal Server Error"
+	for _, m := range errorMappings {
+		if errors.Is(err, m.errType) {
+			message := m.mapping.message
+			if message == "" {
+				message = domainMessage(err)
+			}
+			return c.JSON(m.mapping.status, presentationhttpresponse.ErrorResponse{
+				Error:   m.mapping.title,
+				Message: message,
+			})
+		}
 	}
 
-	return c.JSON(statusCode, presentationhttpresponse.ErrorResponse{
-		Error:   title,
-		Message: message,
-		Details: errorDetails(err),
+	return c.JSON(http.StatusInternalServerError, presentationhttpresponse.ErrorResponse{
+		Error:   "Internal Server Error",
+		Message: genericServerErrorMessage,
 	})
 }
 
-func errorDetails(err error) string {
+func domainMessage(err error) string {
 	var domainErr *domainmodels.Error
 	if errors.As(err, &domainErr) && strings.TrimSpace(domainErr.Message) != "" {
 		return domainErr.Message
 	}
-
-	return err.Error()
+	return genericServerErrorMessage
 }
 
 func MissingResponse(name string) error {

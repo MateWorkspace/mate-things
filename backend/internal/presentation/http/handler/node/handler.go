@@ -69,7 +69,7 @@ func (h *handler) NodeClassPost(c *echo.Context) error {
 		CreatedBy:   presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to create the node class. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusCreated, presentationhttpresponse.IdResponse{Id: id.String()})
@@ -90,7 +90,7 @@ func (h *handler) NodeClassPost(c *echo.Context) error {
 func (h *handler) NodeClassGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	nodeClasses, total, err := h.classUseCase.ReadByPagination(c.Request().Context(), domainusecasesnode.ReadNodeClassesByPaginationRequest{
@@ -99,7 +99,7 @@ func (h *handler) NodeClassGetList(c *echo.Context) error {
 		Search: page.Search,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load node classes right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.NodeClassResponse]{
@@ -125,15 +125,15 @@ func (h *handler) NodeClassGetList(c *echo.Context) error {
 func (h *handler) NodeClassGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid node class name.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	nodeClass, err := h.classUseCase.ReadByName(c.Request().Context(), domainusecasesnode.ReadNodeClassByNameRequest{Name: name})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the node class. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if nodeClass == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("node class"), "The requested node class could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("node class"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.NodeClass(*nodeClass))
@@ -156,15 +156,15 @@ func (h *handler) NodeClassGetByName(c *echo.Context) error {
 func (h *handler) NodeClassGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	nodeClass, err := h.classUseCase.ReadById(c.Request().Context(), domainusecasesnode.ReadNodeClassByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the node class. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if nodeClass == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("node class"), "The requested node class could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("node class"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.NodeClass(*nodeClass))
@@ -190,7 +190,7 @@ func (h *handler) NodeClassGetById(c *echo.Context) error {
 func (h *handler) NodeClassPatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.NodeClassPatchRequest
@@ -204,7 +204,7 @@ func (h *handler) NodeClassPatch(c *echo.Context) error {
 		Description: req.Description,
 		UpdatedBy:   presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to update the node class. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -227,14 +227,14 @@ func (h *handler) NodeClassPatch(c *echo.Context) error {
 func (h *handler) NodeClassDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.classUseCase.DeleteById(c.Request().Context(), domainusecasesnode.DeleteNodeClassRequest{
 		Id:        id,
 		DeletedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to delete the node class. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -255,15 +255,15 @@ func (h *handler) NodeClassDelete(c *echo.Context) error {
 func (h *handler) NodeGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	nodeClassId, err := presentationhttputils.QueryUUID(c, "node_class_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	firmwareId, err := presentationhttputils.QueryUUID(c, "firmware_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	nodes, total, err := h.deviceUseCase.ReadByPagination(c.Request().Context(), domainusecasesnode.ReadNodesByPaginationRequest{
@@ -274,7 +274,7 @@ func (h *handler) NodeGetList(c *echo.Context) error {
 		FirmwareId:  firmwareId,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load nodes right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.NodeResponse]{
@@ -300,15 +300,15 @@ func (h *handler) NodeGetList(c *echo.Context) error {
 func (h *handler) NodeGetByDeviceId(c *echo.Context) error {
 	deviceId, err := presentationhttputils.RequiredString(c.Param("device_id"), "device_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid device ID.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	node, err := h.deviceUseCase.ReadByDeviceId(c.Request().Context(), domainusecasesnode.ReadNodeByDeviceIdRequest{DeviceId: deviceId})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the node. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if node == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("node"), "The requested node could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("node"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Node(*node))
@@ -331,15 +331,15 @@ func (h *handler) NodeGetByDeviceId(c *echo.Context) error {
 func (h *handler) NodeGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	node, err := h.deviceUseCase.ReadById(c.Request().Context(), domainusecasesnode.ReadNodeByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the node. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if node == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("node"), "The requested node could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("node"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Node(*node))
@@ -365,7 +365,7 @@ func (h *handler) NodeGetById(c *echo.Context) error {
 func (h *handler) NodePatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.NodePatchRequest
@@ -374,11 +374,11 @@ func (h *handler) NodePatch(c *echo.Context) error {
 	}
 	nodeClassId, err := presentationhttputils.OptionalUUID(req.NodeClassId, "node_class_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	firmwareId, err := presentationhttputils.OptionalUUID(req.FirmwareId, "firmware_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.deviceUseCase.UpdateById(c.Request().Context(), domainusecasesnode.UpdateNodeRequest{
@@ -389,7 +389,7 @@ func (h *handler) NodePatch(c *echo.Context) error {
 		Description: req.Description,
 		UpdatedBy:   presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to update the node. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -414,7 +414,7 @@ func (h *handler) NodePatch(c *echo.Context) error {
 func (h *handler) NodeFirmwarePatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.NodeFirmwarePatchRequest
@@ -423,7 +423,7 @@ func (h *handler) NodeFirmwarePatch(c *echo.Context) error {
 	}
 	firmwareId, err := presentationhttputils.RequiredUUID(req.FirmwareId, "firmware_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please select a valid firmware.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.deviceUseCase.AssignFirmware(c.Request().Context(), domainusecasesnode.AssignNodeFirmwareRequest{
@@ -431,7 +431,7 @@ func (h *handler) NodeFirmwarePatch(c *echo.Context) error {
 		FirmwareId: firmwareId,
 		UpdatedBy:  presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to assign this firmware to the node. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -454,14 +454,14 @@ func (h *handler) NodeFirmwarePatch(c *echo.Context) error {
 func (h *handler) NodeDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.deviceUseCase.DeleteById(c.Request().Context(), domainusecasesnode.DeleteNodeRequest{
 		Id:        id,
 		DeletedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to delete the node. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -489,22 +489,22 @@ func (h *handler) NodeDelete(c *echo.Context) error {
 func (h *handler) FirmwarePost(c *echo.Context) error {
 	nodeClassId, err := presentationhttputils.RequiredUUID(c.FormValue("node_class_id"), "node_class_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please select a valid node class.")
+		return presentationhttputils.Error(c, err)
 	}
 	file, err := presentationhttputils.RequiredFormFile(c, "file")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "A firmware file is required.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	content, err := file.Open()
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to read the uploaded file. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	defer content.Close()
 
 	configSchema, err := parseConfigSchemaFormValue(c.FormValue("config_schema"))
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The config_schema field must be a valid JSON array of {key,value_type} objects.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	result, err := h.firmwareUseCase.Create(c.Request().Context(), domainusecasesnode.CreateFirmwareRequest{
@@ -515,7 +515,7 @@ func (h *handler) FirmwarePost(c *echo.Context) error {
 		CreatedBy:    presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to upload the firmware. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusCreated, presentationhttpresponse.FirmwareCreateResponse{
@@ -541,11 +541,11 @@ func (h *handler) FirmwarePost(c *echo.Context) error {
 func (h *handler) FirmwareGetList(c *echo.Context) error {
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	nodeClassId, err := presentationhttputils.QueryUUID(c, "node_class_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	firmwares, total, err := h.firmwareUseCase.ReadByPagination(c.Request().Context(), domainusecasesnode.ReadFirmwaresByPaginationRequest{
@@ -555,7 +555,7 @@ func (h *handler) FirmwareGetList(c *echo.Context) error {
 		NodeClassId: nodeClassId,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load firmwares right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.FirmwareResponse]{
@@ -581,11 +581,11 @@ func (h *handler) FirmwareGetList(c *echo.Context) error {
 func (h *handler) FirmwareGetByNodeClassId(c *echo.Context) error {
 	nodeClassId, err := presentationhttputils.RequiredUUID(c.Param("node_class_id"), "node_class_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	firmwares, total, err := h.firmwareUseCase.ReadByNodeClassIdAndPagination(c.Request().Context(), domainusecasesnode.ReadFirmwaresByNodeClassIdAndPaginationRequest{
@@ -595,7 +595,7 @@ func (h *handler) FirmwareGetByNodeClassId(c *echo.Context) error {
 		Search:      page.Search,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load firmwares right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.FirmwareResponse]{
@@ -621,11 +621,11 @@ func (h *handler) FirmwareGetByNodeClassId(c *echo.Context) error {
 func (h *handler) FirmwareGetAvailableByNodeId(c *echo.Context) error {
 	nodeId, err := presentationhttputils.RequiredUUID(c.Param("node_id"), "node_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	page, err := presentationhttputils.PageArgs(c)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The page or limit provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	firmwares, total, err := h.firmwareUseCase.ReadAvailableByNodeId(c.Request().Context(), domainusecasesnode.ReadAvailableFirmwaresByNodeIdRequest{
@@ -635,7 +635,7 @@ func (h *handler) FirmwareGetAvailableByNodeId(c *echo.Context) error {
 		Search: page.Search,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to load available firmwares right now. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.FirmwareResponse]{
@@ -661,15 +661,15 @@ func (h *handler) FirmwareGetAvailableByNodeId(c *echo.Context) error {
 func (h *handler) FirmwareGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid firmware name.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	firmware, err := h.firmwareUseCase.ReadByName(c.Request().Context(), domainusecasesnode.ReadFirmwareByNameRequest{Name: name})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the firmware. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if firmware == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("firmware"), "The requested firmware could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("firmware"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Firmware(*firmware))
@@ -692,15 +692,15 @@ func (h *handler) FirmwareGetByName(c *echo.Context) error {
 func (h *handler) FirmwareGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	firmware, err := h.firmwareUseCase.ReadById(c.Request().Context(), domainusecasesnode.ReadFirmwareByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the firmware. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	if firmware == nil {
-		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("firmware"), "The requested firmware could not be found.")
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("firmware"))
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.Firmware(*firmware))
@@ -726,7 +726,7 @@ func (h *handler) FirmwareGetById(c *echo.Context) error {
 func (h *handler) FirmwarePatch(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.FirmwarePatchRequest
@@ -735,7 +735,7 @@ func (h *handler) FirmwarePatch(c *echo.Context) error {
 	}
 	nodeClassId, err := presentationhttputils.OptionalUUID(req.NodeClassId, "node_class_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node class ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.firmwareUseCase.UpdateById(c.Request().Context(), domainusecasesnode.UpdateFirmwareRequest{
@@ -744,7 +744,7 @@ func (h *handler) FirmwarePatch(c *echo.Context) error {
 		Name:        req.Name,
 		UpdatedBy:   presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to update the firmware. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -770,22 +770,22 @@ func (h *handler) FirmwarePatch(c *echo.Context) error {
 func (h *handler) FirmwareBinaryPut(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 	file, err := presentationhttputils.RequiredFormFile(c, "file")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "A firmware file is required.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	content, err := file.Open()
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to read the uploaded file. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 	defer content.Close()
 
 	configSchema, err := parseConfigSchemaFormValue(c.FormValue("config_schema"))
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The config_schema field must be a valid JSON array of {key,value_type} objects.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	stat, err := h.firmwareUseCase.ReplaceBinaryById(c.Request().Context(), domainusecasesnode.ReplaceFirmwareBinaryByIdRequest{
@@ -795,7 +795,7 @@ func (h *handler) FirmwareBinaryPut(c *echo.Context) error {
 		UpdatedBy:    presentationhttputils.ActorId(c),
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to upload the firmware binary. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.FirmwareBinaryStatResponse{
@@ -822,12 +822,12 @@ func (h *handler) FirmwareBinaryPut(c *echo.Context) error {
 func (h *handler) FirmwareBinaryGetById(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	result, err := h.firmwareUseCase.DownloadUrlById(c.Request().Context(), domainusecasesnode.DownloadFirmwareBinaryByIdRequest{Id: id})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to generate a download link for this firmware. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.Redirect(http.StatusFound, result.DownloadUrl)
@@ -850,12 +850,12 @@ func (h *handler) FirmwareBinaryGetById(c *echo.Context) error {
 func (h *handler) FirmwareBinaryGetByName(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid firmware name.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	result, err := h.firmwareUseCase.DownloadUrlByName(c.Request().Context(), domainusecasesnode.DownloadFirmwareBinaryByNameRequest{Name: name})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to generate a download link for this firmware. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.Redirect(http.StatusFound, result.DownloadUrl)
@@ -878,12 +878,12 @@ func (h *handler) FirmwareBinaryGetByName(c *echo.Context) error {
 func (h *handler) FirmwareBinaryStatByNameGet(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid firmware name.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	stat, err := h.firmwareUseCase.StatBinaryByName(c.Request().Context(), domainusecasesnode.StatFirmwareBinaryByNameRequest{Name: name})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the firmware binary. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.FirmwareBinaryStatResponse{
@@ -910,12 +910,12 @@ func (h *handler) FirmwareBinaryStatByNameGet(c *echo.Context) error {
 func (h *handler) FirmwareBinaryStatByNameHead(c *echo.Context) error {
 	name, err := presentationhttputils.RequiredString(c.Param("name"), "name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid firmware name.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	stat, err := h.firmwareUseCase.StatBinaryByName(c.Request().Context(), domainusecasesnode.StatFirmwareBinaryByNameRequest{Name: name})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to look up the firmware binary. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	headers := c.Response().Header()
@@ -945,7 +945,7 @@ func (h *handler) FirmwareBinaryStatByNameHead(c *echo.Context) error {
 func (h *handler) FirmwareDelete(c *echo.Context) error {
 	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.FirmwareDeleteRequest
@@ -954,7 +954,7 @@ func (h *handler) FirmwareDelete(c *echo.Context) error {
 	}
 	expectedName, err := presentationhttputils.RequiredString(req.ExpectedName, "expected_name")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The firmware name confirmation is required.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.firmwareUseCase.DeleteById(c.Request().Context(), domainusecasesnode.DeleteFirmwareRequest{
@@ -962,7 +962,7 @@ func (h *handler) FirmwareDelete(c *echo.Context) error {
 		ExpectedName: expectedName,
 		DeletedBy:    presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to delete the firmware. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -988,7 +988,7 @@ func (h *handler) FirmwareDelete(c *echo.Context) error {
 func (h *handler) OtaDispatchByNodeIdPost(c *echo.Context) error {
 	nodeId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.OtaDispatchRequest
@@ -997,7 +997,7 @@ func (h *handler) OtaDispatchByNodeIdPost(c *echo.Context) error {
 	}
 	firmwareId, err := otaRequest(req)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please select a valid firmware.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.otaUseCase.DispatchByNodeId(c.Request().Context(), domainusecasesnode.DispatchOtaByNodeIdRequest{
@@ -1005,7 +1005,7 @@ func (h *handler) OtaDispatchByNodeIdPost(c *echo.Context) error {
 		FirmwareId: firmwareId,
 		ActorId:    presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to dispatch the firmware update. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -1031,7 +1031,7 @@ func (h *handler) OtaDispatchByNodeIdPost(c *echo.Context) error {
 func (h *handler) OtaDispatchByNodeDeviceIdPost(c *echo.Context) error {
 	deviceId, err := presentationhttputils.RequiredString(c.Param("device_id"), "device_id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a valid device ID.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.OtaDispatchRequest
@@ -1040,7 +1040,7 @@ func (h *handler) OtaDispatchByNodeDeviceIdPost(c *echo.Context) error {
 	}
 	firmwareId, err := otaRequest(req)
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please select a valid firmware.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	if err := h.otaUseCase.DispatchByNodeDeviceId(c.Request().Context(), domainusecasesnode.DispatchOtaByNodeDeviceIdRequest{
@@ -1048,7 +1048,7 @@ func (h *handler) OtaDispatchByNodeDeviceIdPost(c *echo.Context) error {
 		FirmwareId:   firmwareId,
 		ActorId:      presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to dispatch the firmware update. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -1101,14 +1101,14 @@ func parseConfigSchemaFormValue(raw string) ([]domainusecasesnode.ConfigParamete
 func (h *handler) FirmwareConfigParametersGet(c *echo.Context) error {
 	firmwareId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The firmware ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	params, err := h.configParameterUseCase.ReadByFirmwareId(c.Request().Context(), domainusecasesnode.ReadConfigParametersByFirmwareIdRequest{
 		FirmwareId: firmwareId,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to read the firmware's config parameters. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.FirmwareConfigParameters(params))
@@ -1131,14 +1131,14 @@ func (h *handler) FirmwareConfigParametersGet(c *echo.Context) error {
 func (h *handler) NodeConfigGet(c *echo.Context) error {
 	nodeId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	values, err := h.configValueUseCase.ReadByNodeId(c.Request().Context(), domainusecasesnode.ReadConfigValuesByNodeIdRequest{
 		NodeId: nodeId,
 	})
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Unable to read the node's config values. Please try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.NodeConfigValues(values))
@@ -1163,7 +1163,7 @@ func (h *handler) NodeConfigGet(c *echo.Context) error {
 func (h *handler) NodeConfigPut(c *echo.Context) error {
 	nodeId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "The node ID provided is invalid.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	var req presentationhttprequest.SetNodeConfigValueRequest
@@ -1173,13 +1173,12 @@ func (h *handler) NodeConfigPut(c *echo.Context) error {
 
 	key, err := presentationhttputils.RequiredString(req.Key, "key")
 	if err != nil {
-		return presentationhttputils.Error(c, err, "Please provide a config key.")
+		return presentationhttputils.Error(c, err)
 	}
 	if req.Value == nil {
 		return presentationhttputils.Error(
 			c,
 			domainmodels.NewError("value is required", domainmodels.ErrTypeValidation, nil),
-			"Please provide a config value.",
 		)
 	}
 
@@ -1189,7 +1188,7 @@ func (h *handler) NodeConfigPut(c *echo.Context) error {
 		Value:   *req.Value,
 		ActorId: presentationhttputils.ActorId(c),
 	}); err != nil {
-		return presentationhttputils.Error(c, err, "Unable to set the node's config value. Please check your input and try again.")
+		return presentationhttputils.Error(c, err)
 	}
 
 	return c.NoContent(http.StatusNoContent)

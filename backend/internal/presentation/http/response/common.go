@@ -18,7 +18,6 @@ type CountResponse struct {
 type ErrorResponse struct {
 	Error   string `json:"error" example:"Invalid Format"`
 	Message string `json:"message" example:"Please select a valid node class."`
-	Details string `json:"details" example:"node_class_id is required"`
 }
 
 type PageResponse struct {
