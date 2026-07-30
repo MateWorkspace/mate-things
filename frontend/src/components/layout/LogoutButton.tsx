@@ -1,6 +1,5 @@
 import Button from "@/components/ui/button";
-
-import { logoutAction } from "../_lib/actions";
+import { logoutAction } from "@/lib/api/session-actions";
 
 export default function LogoutButton() {
   return (
