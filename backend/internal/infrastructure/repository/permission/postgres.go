@@ -44,7 +44,10 @@ func (p *postgresImpl) Create(
 	}
 
 	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create permission", err)
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError(
+			"failed to create permission", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypePermissionNameExists},
+		)
 	}
 
 	return id, nil
@@ -131,7 +134,10 @@ func (p *postgresImpl) UpdateById(
 
 	commandTag, err := p.Dt.Exec(ctx, query, args...)
 	if err != nil {
-		return infrastructurerepositoryshared.MapPgxError("failed to update permission", err)
+		return infrastructurerepositoryshared.MapPgxError(
+			"failed to update permission", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypePermissionNameExists},
+		)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return infrastructurerepositoryshared.NotFound("permission not found", nil)

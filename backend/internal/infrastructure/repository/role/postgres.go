@@ -54,7 +54,10 @@ func (p *postgresImpl) Create(
 				return infrastructurerepositoryshared.QueryBuildError("failed to build create role query", err)
 			}
 			if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-				return infrastructurerepositoryshared.MapPgxError("failed to create role", err)
+				return infrastructurerepositoryshared.MapPgxError(
+					"failed to create role", err,
+					infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypeRoleNameExists},
+				)
 			}
 			return nil
 		})
@@ -69,7 +72,10 @@ func (p *postgresImpl) Create(
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create role query", err)
 	}
 	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create role", err)
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError(
+			"failed to create role", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypeRoleNameExists},
+		)
 	}
 
 	return id, nil
@@ -194,7 +200,10 @@ func (p *postgresImpl) UpdateById(
 		}
 		commandTag, err := p.Dt.Exec(ctx, query, args...)
 		if err != nil {
-			return infrastructurerepositoryshared.MapPgxError("failed to update role", err)
+			return infrastructurerepositoryshared.MapPgxError(
+				"failed to update role", err,
+				infrastructurerepositoryshared.ConflictMatch{Contains: "name", Type: domainmodels.ErrTypeRoleNameExists},
+			)
 		}
 		if commandTag.RowsAffected() == 0 {
 			return infrastructurerepositoryshared.NotFound("role not found", nil)

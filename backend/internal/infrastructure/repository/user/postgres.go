@@ -47,7 +47,10 @@ func (p *postgresImpl) Create(
 	}
 
 	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create user", err)
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError(
+			"failed to create user", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "username", Type: domainmodels.ErrTypeUsernameExists},
+		)
 	}
 
 	return id, nil
@@ -158,7 +161,10 @@ func (p *postgresImpl) UpdateById(
 
 	commandTag, err := p.Dt.Exec(ctx, query, args...)
 	if err != nil {
-		return infrastructurerepositoryshared.MapPgxError("failed to update user", err)
+		return infrastructurerepositoryshared.MapPgxError(
+			"failed to update user", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "username", Type: domainmodels.ErrTypeUsernameExists},
+		)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return infrastructurerepositoryshared.NotFound("user not found", nil)

@@ -48,7 +48,10 @@ func (p *postgresImpl) Create(
 	}
 
 	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create payload schema", err)
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError(
+			"failed to create payload schema", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name_version", Type: domainmodels.ErrTypePayloadSchemaVersionExists},
+		)
 	}
 
 	return id, nil
@@ -160,7 +163,10 @@ func (p *postgresImpl) UpdateById(
 
 	commandTag, err := p.Dt.Exec(ctx, query, args...)
 	if err != nil {
-		return infrastructurerepositoryshared.MapPgxError("failed to update payload schema", err)
+		return infrastructurerepositoryshared.MapPgxError(
+			"failed to update payload schema", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "name_version", Type: domainmodels.ErrTypePayloadSchemaVersionExists},
+		)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return infrastructurerepositoryshared.NotFound("payload schema not found", nil)

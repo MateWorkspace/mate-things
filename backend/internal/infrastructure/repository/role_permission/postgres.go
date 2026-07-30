@@ -43,7 +43,10 @@ func (p *postgresImpl) Create(
 	}
 
 	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
-		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create role permission", err)
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError(
+			"failed to create role permission", err,
+			infrastructurerepositoryshared.ConflictMatch{Contains: "role_id_permission_id", Type: domainmodels.ErrTypeRolePermissionExists},
+		)
 	}
 
 	return id, nil
