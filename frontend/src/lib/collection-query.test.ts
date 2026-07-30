@@ -20,4 +20,18 @@ describe("parsePageQuery", () => {
       search: undefined,
     });
   });
+
+  it("normalizes repeated page and limit values instead of selecting the first", () => {
+    expect(
+      parsePageQuery({
+        page: ["2", "3"],
+        limit: ["24", "48"],
+        search: ["sensor", "gateway"],
+      }),
+    ).toEqual({
+      page: 1,
+      limit: 12,
+      search: "sensor,gateway",
+    });
+  });
 });

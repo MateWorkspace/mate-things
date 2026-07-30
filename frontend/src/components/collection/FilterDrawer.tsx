@@ -20,12 +20,16 @@ export default function FilterDrawer({
 }: FilterDrawerProps) {
   return (
     <Dialog open={open} onClose={onClose} title={title} variant="sheet">
-      <div className="space-y-4">{children}</div>
-      <div className="border-border mt-6 flex justify-end border-t pt-4">
-        <Button type="button" variant="secondary" onClick={onClose}>
-          Close filters
-        </Button>
-      </div>
+      {open ? (
+        <>
+          <div className="space-y-4">{children}</div>
+          <div className="border-border mt-6 flex justify-end border-t pt-4">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Close filters
+            </Button>
+          </div>
+        </>
+      ) : null}
     </Dialog>
   );
 }

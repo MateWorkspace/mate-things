@@ -12,20 +12,24 @@ describe("CollectionToolbar", () => {
 
     render(
       <CollectionToolbar filterTitle="Filter devices">
-        <label>
-          Node class
-          <select defaultValue="all">
-            <option value="all">All classes</option>
-          </select>
-        </label>
+        <label htmlFor="node-class-filter">Node class</label>
+        <select id="node-class-filter" defaultValue="all">
+          <option value="all">All classes</option>
+        </select>
       </CollectionToolbar>,
     );
+
+    expect(document.querySelectorAll("#node-class-filter")).toHaveLength(1);
 
     await user.click(screen.getByRole("button", { name: "Open filters" }));
 
     const drawer = screen.getByRole("dialog", { name: "Filter devices" });
     expect(drawer).toBeInTheDocument();
-    expect(within(drawer).getByLabelText("Node class")).toBeInTheDocument();
+    expect(document.querySelectorAll("#node-class-filter")).toHaveLength(1);
+    expect(within(drawer).getByLabelText("Node class")).toHaveAttribute(
+      "id",
+      "node-class-filter",
+    );
 
     await user.click(screen.getByRole("button", { name: "Close filters" }));
 
