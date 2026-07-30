@@ -34,14 +34,23 @@ export default function ToastProvider({
   // Dialogs in this app use the native <dialog>.showModal(), which the
   // browser renders in the top layer - above every z-indexed element
   // regardless of stacking context. A plain fixed div can never paint over
-  // that, so the toast container has to be promoted into the top layer
-  // too, via the Popover API.
-  useEffect(() => {
+  // that, so the toast container has to be promoted into the top layer too,
+  // via the Popover API. A popover only moves to the top of the top-layer
+  // stack when it's (re-)shown, so it has to be re-shown on every toast -
+  // showing it once on mount would leave it permanently below any dialog
+  // opened afterward.
+  const bringToFront = useCallback(() => {
     const container = containerRef.current;
-    if (container && !container.matches(":popover-open")) {
-      container.showPopover();
+    if (!container) return;
+    if (container.matches(":popover-open")) {
+      container.hidePopover();
     }
+    container.showPopover();
   }, []);
+
+  useEffect(() => {
+    bringToFront();
+  }, [bringToFront]);
 
   const dismiss = useCallback((id: number) => {
     setToasts((current) =>
@@ -61,9 +70,10 @@ export default function ToastProvider({
         ...current,
         { id, variant, title, message, leaving: false },
       ]);
+      bringToFront();
       setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
     },
-    [dismiss],
+    [bringToFront, dismiss],
   );
 
   const value: ToastContextValue = {
@@ -77,7 +87,7 @@ export default function ToastProvider({
       <div
         ref={containerRef}
         popover="manual"
-        className="pointer-events-none fixed top-4 right-4 m-0 flex w-full max-w-sm flex-col gap-2 border-0 bg-transparent p-0 overflow-visible"
+        className="pointer-events-none fixed top-4 right-4 bottom-auto left-auto m-0 flex w-full max-w-sm flex-col gap-2 border-0 bg-transparent p-0 overflow-visible"
       >
         {toasts.map((toast) => (
           <Toast
