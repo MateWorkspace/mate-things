@@ -56,10 +56,10 @@ export default function AppBar({
 
       <button
         type="button"
-        className="hover:bg-muted focus-visible:ring-focus focus-visible:ring-offset-background flex min-h-11 min-w-0 items-center gap-2 rounded-xl px-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        className="hover:bg-muted focus-visible:ring-focus focus-visible:ring-offset-background flex min-h-11 max-w-[45vw] min-w-0 items-center gap-2 rounded-xl px-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         aria-label={`Open profile for ${user.name}`}
       >
-        <span className="hidden max-w-40 truncate sm:inline">{user.name}</span>
+        <span className="max-w-20 truncate sm:max-w-40">{user.name}</span>
         <span className="bg-surface text-primary flex size-9 shrink-0 items-center justify-center rounded-full">
           <UserRound aria-hidden="true" className="size-5" />
         </span>

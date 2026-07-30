@@ -77,4 +77,19 @@ describe("AppShell", () => {
       screen.getByRole("button", { name: "Expand sidebar" }),
     ).toBeVisible();
   });
+
+  it("keeps the profile name visible in the mobile trigger", () => {
+    render(
+      <AppShell user={USER} permissions={[]}>
+        <main>Page</main>
+      </AppShell>,
+    );
+
+    const profileTrigger = screen.getByRole("button", {
+      name: `Open profile for ${USER.name}`,
+    });
+    const profileName = within(profileTrigger).getByText(USER.name);
+
+    expect(profileName).not.toHaveClass("hidden");
+  });
 });
