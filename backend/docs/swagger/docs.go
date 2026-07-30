@@ -5826,10 +5826,6 @@ const docTemplate = `{
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse": {
             "type": "object",
             "properties": {
-                "details": {
-                    "type": "string",
-                    "example": "node_class_id is required"
-                },
                 "error": {
                     "type": "string",
                     "example": "Invalid Format"

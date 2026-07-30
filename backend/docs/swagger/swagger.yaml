@@ -392,9 +392,6 @@ definitions:
     type: object
   github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse:
     properties:
-      details:
-        example: node_class_id is required
-        type: string
       error:
         example: Invalid Format
         type: string
