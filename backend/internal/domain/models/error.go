@@ -21,6 +21,18 @@ var (
 	ErrTypeUnimplemented = errors.New("UNIMPLEMENTED")
 	ErrTypeFailure       = errors.New("FAILURE")
 	ErrTypeUnknown       = errors.New("UNKNOWN")
+
+	ErrTypeUsernameExists             = errors.New("USERNAME_EXISTS")
+	ErrTypeRoleNameExists             = errors.New("ROLE_NAME_EXISTS")
+	ErrTypePermissionNameExists       = errors.New("PERMISSION_NAME_EXISTS")
+	ErrTypeActionNameExists           = errors.New("ACTION_NAME_EXISTS")
+	ErrTypeNodeClassNameExists        = errors.New("NODE_CLASS_NAME_EXISTS")
+	ErrTypeFirmwareNameExists         = errors.New("FIRMWARE_NAME_EXISTS")
+	ErrTypeNodeDeviceIdExists         = errors.New("NODE_DEVICE_ID_EXISTS")
+	ErrTypePayloadSchemaVersionExists = errors.New("PAYLOAD_SCHEMA_VERSION_EXISTS")
+	ErrTypeRolePermissionExists       = errors.New("ROLE_PERMISSION_EXISTS")
+	ErrTypeFirmwareConfigKeyExists    = errors.New("FIRMWARE_CONFIG_KEY_EXISTS")
+	ErrTypeNodeConfigKeyExists        = errors.New("NODE_CONFIG_KEY_EXISTS")
 )
 
 type Error struct {
