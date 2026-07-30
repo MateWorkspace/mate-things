@@ -34,7 +34,7 @@ function failure(error: unknown): AccessActionState {
     title: error instanceof ApiError ? error.title : "Something went wrong",
     message:
       error instanceof ApiError
-        ? error.details?.trim() || error.message
+        ? error.message
         : "Please try again.",
   };
 }

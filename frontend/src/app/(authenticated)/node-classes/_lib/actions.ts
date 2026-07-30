@@ -31,9 +31,7 @@ function actionError(error: unknown): FormActionState {
     return {
       status: "error",
       title: error.title,
-      message:
-        (error.status === 400 ? error.details?.trim() : undefined) ||
-        error.message,
+      message: error.message,
     };
   }
 

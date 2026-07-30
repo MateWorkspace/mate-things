@@ -23,13 +23,10 @@ function permissionDenied(): FormActionState {
 
 function actionError(error: unknown): FormActionState {
   if (error instanceof ApiError) {
-    const validationDetails =
-      error.status === 400 ? error.details?.trim() : undefined;
-
     return {
       status: "error",
       title: error.title,
-      message: validationDetails || error.message,
+      message: error.message,
     };
   }
 

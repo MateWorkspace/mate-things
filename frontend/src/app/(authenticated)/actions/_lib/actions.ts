@@ -33,7 +33,7 @@ function failure(error: unknown): ActionFormState {
     return {
       status: "error",
       title: error.title,
-      message: error.details?.trim() || error.message,
+      message: error.message,
     };
   }
   return {

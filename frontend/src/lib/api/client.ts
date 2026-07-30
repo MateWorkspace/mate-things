@@ -12,19 +12,12 @@ const API_VERSION_PATH = "/api/v1";
 export class ApiError extends Error {
   readonly status: number;
   readonly title: string;
-  readonly details?: string;
 
-  constructor(
-    status: number,
-    title: string,
-    message: string,
-    details?: string,
-  ) {
+  constructor(status: number, title: string, message: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.title = title;
-    this.details = details;
   }
 }
 
@@ -141,7 +134,6 @@ export async function apiFetch<T>(
       response.status,
       errorBody?.error ?? "Something Went Wrong",
       errorBody?.message ?? response.statusText,
-      errorBody?.details,
     );
   }
 

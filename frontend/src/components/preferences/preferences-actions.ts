@@ -71,7 +71,7 @@ export async function savePreferencesAction(
       status: "error",
       message:
         error instanceof ApiError
-          ? error.details?.trim() || error.message
+          ? error.message
           : "Unable to save preferences. Please try again.",
     };
   }
