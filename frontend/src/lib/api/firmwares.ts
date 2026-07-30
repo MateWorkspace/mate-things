@@ -31,6 +31,11 @@ export interface FirmwareConfigParameterResponse {
   value_type: string;
 }
 
+export interface FirmwareConfigSchemaItem {
+  key: string;
+  value_type: string;
+}
+
 export interface UpdateFirmwareRequest {
   node_class_id?: string;
   name?: string;
@@ -84,11 +89,13 @@ export async function createFirmware(
   nodeClassId: string,
   name: string,
   file: File | Blob,
+  configSchema: FirmwareConfigSchemaItem[],
 ): Promise<FirmwareCreateResponse> {
   const body = new FormData();
   body.set("node_class_id", nodeClassId);
   body.set("name", name);
   body.set("file", file);
+  body.set("config_schema", JSON.stringify(configSchema));
 
   return apiFetch("/firmwares", { method: "POST", body });
 }
@@ -104,9 +111,11 @@ export async function updateFirmware(
 export async function replaceFirmwareBinary(
   id: string,
   file: File | Blob,
+  configSchema: FirmwareConfigSchemaItem[],
 ): Promise<FirmwareBinaryStatResponse> {
   const body = new FormData();
   body.set("file", file);
+  body.set("config_schema", JSON.stringify(configSchema));
 
   return apiFetch(`/firmwares/${id}/binary`, { method: "PUT", body });
 }

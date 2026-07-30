@@ -4,14 +4,19 @@ import { notFound } from "next/navigation";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { ApiError } from "@/lib/api/client";
-import { getFirmwareConfigParameters } from "@/lib/api/firmwares";
+import {
+  getFirmwareConfigParameters,
+  listAvailableFirmwaresByNodeId,
+} from "@/lib/api/firmwares";
 import { getNodeConfig } from "@/lib/api/node-config";
 import { getNodeById } from "@/lib/api/nodes";
+import { parsePageQuery } from "@/lib/collection-query";
 import { requirePermission } from "@/lib/session";
 
 import DeleteNodeDialog from "./_components/DeleteNodeDialog";
 import NodeConfigForm from "./_components/NodeConfigForm";
 import NodeEditForm from "./_components/NodeEditForm";
+import NodeFirmwareWorkspace from "./_components/NodeFirmwareWorkspace";
 import NodeOverview from "./_components/NodeOverview";
 import NodeTabs from "./_components/NodeTabs";
 import {
@@ -33,11 +38,6 @@ interface NodeDetailPageProps {
 
 function WorkspacePlaceholder({ tab }: { tab: string }) {
   const copy: Record<string, { title: string; description: string }> = {
-    firmware: {
-      title: "Firmware and OTA are not connected yet",
-      description:
-        "This workspace will show firmware assignment and OTA dispatch history when that fleet data is connected.",
-    },
     actions: {
       title: "Action data is not connected yet",
       description:
@@ -84,14 +84,19 @@ export default async function NodeDetailPage({
   const canReadConfig = permissions.has("node_config:get");
   const canReadFirmware = permissions.has("firmware:get");
   const showConfiguration = activeTab === "configuration";
+  const showFirmware = activeTab === "firmware";
+  const firmwareQuery = parsePageQuery(rawSearchParams);
   const canLoadConfiguration = showConfiguration && canReadConfig;
   const canLoadSchema =
     canLoadConfiguration && canReadFirmware && Boolean(node.firmware_id);
-  const [values, parameters] = await Promise.all([
+  const [values, parameters, availableFirmwares] = await Promise.all([
     canLoadConfiguration ? getNodeConfig(node.id) : Promise.resolve([]),
     canLoadSchema
       ? getFirmwareConfigParameters(node.firmware_id)
       : Promise.resolve([]),
+    showFirmware && canReadFirmware
+      ? listAvailableFirmwaresByNodeId(node.id, firmwareQuery)
+      : Promise.resolve(null),
   ]);
   const panelId = getNodeTabPanelId(node.id, activeTab);
 
@@ -151,7 +156,22 @@ export default async function NodeDetailPage({
             values={values}
           />
         ) : null}
-        {activeTab !== "overview" && activeTab !== "configuration" ? (
+        {showFirmware && !canReadFirmware ? (
+          <EmptyState
+            title="Firmware access required"
+            description="firmware:get permission is required to load firmware compatible with this node."
+          />
+        ) : null}
+        {showFirmware && availableFirmwares ? (
+          <NodeFirmwareWorkspace
+            availableFirmwares={availableFirmwares}
+            canDispatch={permissions.has("ota:dispatch")}
+            node={node}
+          />
+        ) : null}
+        {activeTab !== "overview" &&
+        activeTab !== "configuration" &&
+        activeTab !== "firmware" ? (
           <WorkspacePlaceholder tab={activeTab} />
         ) : null}
       </section>

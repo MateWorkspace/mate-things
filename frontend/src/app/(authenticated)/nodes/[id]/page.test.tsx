@@ -1,7 +1,10 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getFirmwareConfigParameters } from "@/lib/api/firmwares";
+import {
+  getFirmwareConfigParameters,
+  listAvailableFirmwaresByNodeId,
+} from "@/lib/api/firmwares";
 import { getNodeConfig } from "@/lib/api/node-config";
 import { getNodeById } from "@/lib/api/nodes";
 import { requirePermission } from "@/lib/session";
@@ -19,6 +22,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api/firmwares", () => ({
   getFirmwareConfigParameters: vi.fn(),
+  listAvailableFirmwaresByNodeId: vi.fn(),
 }));
 
 vi.mock("@/lib/api/node-config", () => ({
@@ -60,6 +64,21 @@ describe("NodeDetailPage", () => {
     vi.mocked(getNodeById).mockResolvedValue(nodeFixture());
     vi.mocked(getNodeConfig).mockResolvedValue([]);
     vi.mocked(getFirmwareConfigParameters).mockResolvedValue([]);
+    vi.mocked(listAvailableFirmwaresByNodeId).mockResolvedValue({
+      data: [
+        {
+          id: "firmware-2",
+          node_class_id: "class-1",
+          name: "freezer-v2",
+          size: 2048,
+          checksum: "checksum",
+          binary_path: "firmware/freezer-v2.bin",
+          preferences: {},
+          created_at: "2026-07-30T00:00:00Z",
+        },
+      ],
+      page: { page: 1, limit: 12, total_items: 1 },
+    });
   });
 
   afterEach(cleanup);
@@ -98,5 +117,28 @@ describe("NodeDetailPage", () => {
     expect(screen.getByText(/action data is not connected yet/i)).toBeVisible();
     expect(getNodeConfig).not.toHaveBeenCalled();
     expect(getFirmwareConfigParameters).not.toHaveBeenCalled();
+  });
+
+  it("loads only node-compatible firmware on the active firmware tab", async () => {
+    await renderPage("firmware", ["firmware:get", "ota:dispatch"]);
+
+    expect(listAvailableFirmwaresByNodeId).toHaveBeenCalledWith("node-1", {
+      page: 1,
+      limit: 12,
+    });
+    expect(
+      screen.getByRole("button", {
+        name: "Dispatch OTA to Cold Storage Sensor 07",
+      }),
+    ).toBeVisible();
+  });
+
+  it("never exposes OTA without ota:dispatch", async () => {
+    await renderPage("firmware", ["firmware:get"]);
+
+    expect(listAvailableFirmwaresByNodeId).toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: /dispatch ota/i }),
+    ).not.toBeInTheDocument();
   });
 });
