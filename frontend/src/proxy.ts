@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { API_BASE_URL, IS_PRODUCTION } from "@/config/env";
+import { API_BASE_URL, COOKIE_SECURE } from "@/config/env";
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -64,14 +64,14 @@ function setSessionCookies(
 ): void {
   response.cookies.set(ACCESS_TOKEN_COOKIE, tokens.access_token, {
     httpOnly: true,
-    secure: IS_PRODUCTION,
+    secure: COOKIE_SECURE,
     sameSite: "lax",
     path: "/",
     expires: decodeJwtExpiry(tokens.access_token) ?? undefined,
   });
   response.cookies.set(REFRESH_TOKEN_COOKIE, tokens.refresh_token, {
     httpOnly: true,
-    secure: IS_PRODUCTION,
+    secure: COOKIE_SECURE,
     sameSite: "lax",
     path: "/",
     expires: decodeJwtExpiry(tokens.refresh_token) ?? undefined,
@@ -109,7 +109,11 @@ export async function proxy(request: NextRequest) {
   } else if (AUTH_ONLY_ROUTES.includes(pathname) && hasSession) {
     response = NextResponse.redirect(new URL("/dashboard", request.nextUrl));
   } else {
-    response = NextResponse.next();
+    if (refreshedTokens) {
+      request.cookies.set(ACCESS_TOKEN_COOKIE, refreshedTokens.access_token);
+      request.cookies.set(REFRESH_TOKEN_COOKIE, refreshedTokens.refresh_token);
+    }
+    response = NextResponse.next({ request });
   }
 
   if (refreshedTokens) {

@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 
-import { IS_PRODUCTION } from "@/config/env";
+import { COOKIE_SECURE } from "@/config/env";
 import { apiFetch } from "@/lib/api/client";
 import type { PermissionResponse } from "@/lib/api/permissions";
 import type { RoleResponse } from "@/lib/api/roles";
@@ -43,14 +43,14 @@ async function persistSession(session: LoginResponse): Promise<void> {
 
   cookieStore.set(ACCESS_TOKEN_COOKIE, session.access_token, {
     httpOnly: true,
-    secure: IS_PRODUCTION,
+    secure: COOKIE_SECURE,
     sameSite: "lax",
     path: "/",
     expires: accessExpires,
   });
   cookieStore.set(REFRESH_TOKEN_COOKIE, session.refresh_token, {
     httpOnly: true,
-    secure: IS_PRODUCTION,
+    secure: COOKIE_SECURE,
     sameSite: "lax",
     path: "/",
     expires: refreshExpires,
