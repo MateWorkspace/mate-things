@@ -122,6 +122,29 @@ describe("SchemaFieldList", () => {
     expect(screen.getByText("manual")).toBeInTheDocument();
   });
 
+  it("clears stale constraint values when a row's type changes", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.type(screen.getByPlaceholderText("variable_name"), "name{Enter}");
+    await user.type(screen.getByLabelText("Min length"), "3");
+    expect(screen.getByLabelText("Min length")).toHaveValue(3);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "name type" }),
+      "boolean",
+    );
+
+    expect(screen.queryByLabelText("Min length")).not.toBeInTheDocument();
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "name type" }),
+      "integer",
+    );
+
+    expect(screen.getByLabelText("Min")).toHaveValue(null);
+  });
+
   it("toggles the Required checkbox for a row", async () => {
     const user = userEvent.setup();
     render(<Harness />);

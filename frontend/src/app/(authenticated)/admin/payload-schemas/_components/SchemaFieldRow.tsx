@@ -173,9 +173,22 @@ export default function SchemaFieldRow({
         <select
           aria-label={`${row.name} type`}
           value={row.type}
-          onChange={(event) =>
-            onChange({ ...row, type: event.target.value as FieldType })
-          }
+          onChange={(event) => {
+            const nextType = event.target.value as FieldType;
+            if (nextType === row.type) return;
+            onChange({
+              ...row,
+              type: nextType,
+              minimum: "",
+              maximum: "",
+              minimumLength: "",
+              maximumLength: "",
+              minimumItem: "",
+              maximumItem: "",
+              unit: "",
+              options: [],
+            });
+          }}
           className="border-control-border bg-background rounded-lg border px-2.5 py-1.5 text-sm"
         >
           {FIELD_TYPES.map((option) => (
