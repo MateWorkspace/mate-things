@@ -9,11 +9,7 @@ import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
-import {
-  getLatestPayloadSchema,
-  getPayloadSchemaByNameAndVersion,
-  listPayloadSchemas,
-} from "@/lib/api/payload-schemas";
+import { listPayloadSchemas } from "@/lib/api/payload-schemas";
 import {
   getOutOfRangePageRedirect,
   parsePageQuery,
@@ -35,23 +31,9 @@ export default async function PayloadSchemasPage({
     requirePermission("payload_schema:get"),
     searchParams,
   ]);
-  const lookupName = String(raw.lookup_name ?? "").trim();
-  const lookupVersion = String(raw.lookup_version ?? "").trim();
-  if (lookupName) {
-    const found = lookupVersion
-      ? await getPayloadSchemaByNameAndVersion(
-          lookupName,
-          Number(lookupVersion),
-        )
-      : await getLatestPayloadSchema(lookupName);
-    redirect(`/admin/payload-schemas/${found.id}`);
-  }
   const base = parsePageQuery(raw);
-  const rawValidAt = String(raw.valid_at ?? "").trim();
-  const validAt =
-    rawValidAt && !Number.isNaN(new Date(rawValidAt).valueOf())
-      ? new Date(rawValidAt).toISOString()
-      : undefined;
+  const stillValid = String(raw.still_valid ?? "") === "1";
+  const validAt = stillValid ? new Date().toISOString() : undefined;
   const result = await listPayloadSchemas({ ...base, valid_at: validAt });
   const target = getOutOfRangePageRedirect(
     "/admin/payload-schemas",
@@ -73,7 +55,7 @@ export default async function PayloadSchemasPage({
       <CollectionToolbar filterTitle="Filter payload schemas">
         <form
           action="/admin/payload-schemas"
-          className="grid gap-3 md:grid-cols-[1fr_1fr_auto]"
+          className="flex flex-wrap items-center gap-3"
         >
           <Input
             name="search"
@@ -81,37 +63,21 @@ export default async function PayloadSchemasPage({
             defaultValue={base.search}
             placeholder="Search schema names"
             aria-label="Search schemas"
+            className="min-w-0 flex-1"
           />
-          <Input
-            name="valid_at"
-            type="datetime-local"
-            defaultValue={rawValidAt}
-            aria-label="Valid at"
-          />
+          <label className="flex items-center gap-1.5 text-sm whitespace-nowrap">
+            <input
+              type="checkbox"
+              name="still_valid"
+              value="1"
+              defaultChecked={stillValid}
+              className="accent-primary size-4"
+            />
+            Still valid
+          </label>
           <Button type="submit" className="gap-2">
             <Search className="size-4" aria-hidden="true" />
             Filter
-          </Button>
-        </form>
-        <form
-          action="/admin/payload-schemas"
-          className="border-border mt-4 grid gap-3 border-t pt-4 md:grid-cols-[1fr_10rem_auto]"
-        >
-          <Input
-            name="lookup_name"
-            placeholder="Exact schema name"
-            aria-label="Schema lookup name"
-            required
-          />
-          <Input
-            name="lookup_version"
-            type="number"
-            min={1}
-            placeholder="Latest"
-            aria-label="Schema version"
-          />
-          <Button type="submit" variant="secondary">
-            Open exact/latest
           </Button>
         </form>
       </CollectionToolbar>
@@ -127,17 +93,17 @@ export default async function PayloadSchemasPage({
       ) : (
         <EmptyState
           title={
-            base.search || validAt
+            base.search || stillValid
               ? "No matching schemas"
               : "No payload schemas yet"
           }
           description={
-            base.search || validAt
+            base.search || stillValid
               ? "No schema version matches these filters."
               : "Create a versioned schema for validated action payloads."
           }
           action={
-            base.search || validAt ? (
+            base.search || stillValid ? (
               <Link
                 href="/admin/payload-schemas"
                 className="text-primary font-semibold"
@@ -154,7 +120,7 @@ export default async function PayloadSchemasPage({
         searchParams={{
           limit: String(base.limit),
           search: base.search,
-          valid_at: rawValidAt || undefined,
+          still_valid: stillValid ? "1" : undefined,
         }}
       />
     </main>
