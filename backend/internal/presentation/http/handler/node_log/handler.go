@@ -24,6 +24,10 @@ func NewHandler(queryUseCase domainusecasesnodelog.Query) *handler {
 // @Tags Node Log
 // @Produce json
 // @Security BearerAuth
+// @Param logged_at_start query string false "RFC3339 timestamp"
+// @Param logged_at_end query string false "RFC3339 timestamp"
+// @Param node_device_id query string false "node device id"
+// @Param level query string false "NONE, ERROR, WARN, INFO, or DEBUG"
 // @Success 200 {object} presentationhttpresponse.CountDataResponse[presentationhttpresponse.NodeLogResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -53,6 +57,10 @@ func (h *handler) NodeLogGetList(c *echo.Context) error {
 // @Tags Node Log
 // @Produce json
 // @Security BearerAuth
+// @Param logged_at_start query string false "RFC3339 timestamp"
+// @Param logged_at_end query string false "RFC3339 timestamp"
+// @Param node_device_id query string false "node device id"
+// @Param level query string false "NONE, ERROR, WARN, INFO, or DEBUG"
 // @Success 200 {object} presentationhttpresponse.CountResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"

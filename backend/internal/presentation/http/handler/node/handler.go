@@ -81,6 +81,9 @@ func (h *handler) NodeClassPost(c *echo.Context) error {
 // @Tags Node Classes
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.NodeClassResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -246,6 +249,11 @@ func (h *handler) NodeClassDelete(c *echo.Context) error {
 // @Tags Nodes
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
+// @Param node_class_id query string false "node class id"
+// @Param firmware_id query string false "firmware id"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.NodeResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -532,6 +540,10 @@ func (h *handler) FirmwarePost(c *echo.Context) error {
 // @Tags Firmwares
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
+// @Param node_class_id query string false "node class id"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.FirmwareResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -571,6 +583,9 @@ func (h *handler) FirmwareGetList(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param node_class_id path string true "node_class_id"
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.FirmwareResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -611,6 +626,9 @@ func (h *handler) FirmwareGetByNodeClassId(c *echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param node_id path string true "node_id"
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.FirmwareResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"

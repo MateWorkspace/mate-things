@@ -23,6 +23,12 @@ func NewHandler(queryUseCase domainusecasestelemetry.Query) *handler {
 // @Tags Telemetry
 // @Produce json
 // @Security BearerAuth
+// @Param recorded_at_start query string false "RFC3339 timestamp"
+// @Param recorded_at_end query string false "RFC3339 timestamp"
+// @Param node_device_id query string false "node device id"
+// @Param metric_name query string false "metric name"
+// @Param payload_schema_name query string false "payload schema name"
+// @Param payload_schema_version query int false "payload schema version"
 // @Success 200 {object} presentationhttpresponse.CountDataResponse[presentationhttpresponse.TelemetryRecordResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -52,6 +58,12 @@ func (h *handler) TelemetryRecordGetList(c *echo.Context) error {
 // @Tags Telemetry
 // @Produce json
 // @Security BearerAuth
+// @Param recorded_at_start query string false "RFC3339 timestamp"
+// @Param recorded_at_end query string false "RFC3339 timestamp"
+// @Param node_device_id query string false "node device id"
+// @Param metric_name query string false "metric name"
+// @Param payload_schema_name query string false "payload schema name"
+// @Param payload_schema_version query int false "payload schema version"
 // @Success 200 {object} presentationhttpresponse.CountResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"

@@ -77,6 +77,12 @@ func (h *handler) ActionPost(c *echo.Context) error {
 // @Tags Actions
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
+// @Param node_class_id query string false "node class id"
+// @Param payload_schema_name query string false "payload schema name"
+// @Param payload_schema_version query int false "payload schema version"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.ActionResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -318,6 +324,10 @@ func (h *handler) ActionDispatchPost(c *echo.Context) error {
 // @Tags Action Logs
 // @Produce json
 // @Security BearerAuth
+// @Param executed_at_start query string false "RFC3339 timestamp"
+// @Param executed_at_end query string false "RFC3339 timestamp"
+// @Param action_id query string false "action id"
+// @Param node_id query string false "node id"
 // @Success 200 {object} presentationhttpresponse.CountDataResponse[presentationhttpresponse.ActionLogResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -347,6 +357,10 @@ func (h *handler) ActionLogGetList(c *echo.Context) error {
 // @Tags Action Logs
 // @Produce json
 // @Security BearerAuth
+// @Param executed_at_start query string false "RFC3339 timestamp"
+// @Param executed_at_end query string false "RFC3339 timestamp"
+// @Param action_id query string false "action id"
+// @Param node_id query string false "node id"
 // @Success 200 {object} presentationhttpresponse.CountResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"

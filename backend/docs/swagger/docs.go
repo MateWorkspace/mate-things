@@ -29,6 +29,32 @@ const docTemplate = `{
                     "Action Logs"
                 ],
                 "summary": "Action Log List",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "executed_at_start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "executed_at_end",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "action id",
+                        "name": "action_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node id",
+                        "name": "node_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -75,6 +101,32 @@ const docTemplate = `{
                     "Action Logs"
                 ],
                 "summary": "Action Log Delete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "executed_at_start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "executed_at_end",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "action id",
+                        "name": "action_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node id",
+                        "name": "node_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -123,6 +175,44 @@ const docTemplate = `{
                     "Actions"
                 ],
                 "summary": "Action List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node class id",
+                        "name": "node_class_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "payload schema name",
+                        "name": "payload_schema_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "payload schema version",
+                        "name": "payload_schema_version",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -584,6 +674,32 @@ const docTemplate = `{
                     "Admin - Payload Schemas"
                 ],
                 "summary": "Payload Schema List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "valid_at",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -698,6 +814,22 @@ const docTemplate = `{
                     "Admin - Payload Schemas"
                 ],
                 "summary": "Payload Schema Get By Name And Version",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "payload schema name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "payload schema version",
+                        "name": "version",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -752,6 +884,15 @@ const docTemplate = `{
                     "Admin - Payload Schemas"
                 ],
                 "summary": "Payload Schema Get Latest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "payload schema name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1003,6 +1144,26 @@ const docTemplate = `{
                     "Admin - Permissions"
                 ],
                 "summary": "Permission List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1377,6 +1538,32 @@ const docTemplate = `{
                     "Admin - Role Permissions"
                 ],
                 "summary": "Role Permission List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "role id",
+                        "name": "role_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "permission id",
+                        "name": "permission_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1425,6 +1612,22 @@ const docTemplate = `{
                     "Admin - Role Permissions"
                 ],
                 "summary": "Role Permission Get By Pair",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "role id",
+                        "name": "role_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "permission id",
+                        "name": "permission_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1542,6 +1745,26 @@ const docTemplate = `{
                     "Admin - Roles"
                 ],
                 "summary": "Role List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2219,6 +2442,32 @@ const docTemplate = `{
                     "Admin - Users"
                 ],
                 "summary": "User List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "role id",
+                        "name": "role_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2843,6 +3092,32 @@ const docTemplate = `{
                     "Firmwares"
                 ],
                 "summary": "Firmware List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node class id",
+                        "name": "node_class_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3631,6 +3906,26 @@ const docTemplate = `{
                     "Node Classes"
                 ],
                 "summary": "Node Class List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4012,6 +4307,24 @@ const docTemplate = `{
                         "name": "node_class_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -4068,6 +4381,32 @@ const docTemplate = `{
                     "Node Log"
                 ],
                 "summary": "Node Log List",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "logged_at_start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "logged_at_end",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node device id",
+                        "name": "node_device_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "NONE, ERROR, WARN, INFO, or DEBUG",
+                        "name": "level",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4114,6 +4453,32 @@ const docTemplate = `{
                     "Node Log"
                 ],
                 "summary": "Node Log Delete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "logged_at_start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "logged_at_end",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node device id",
+                        "name": "node_device_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "NONE, ERROR, WARN, INFO, or DEBUG",
+                        "name": "level",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4162,6 +4527,38 @@ const docTemplate = `{
                     "Nodes"
                 ],
                 "summary": "Node List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node class id",
+                        "name": "node_class_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "firmware id",
+                        "name": "firmware_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4841,6 +5238,24 @@ const docTemplate = `{
                         "name": "node_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search term",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -5185,6 +5600,44 @@ const docTemplate = `{
                     "Telemetry"
                 ],
                 "summary": "Telemetry Record List",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "recorded_at_start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "recorded_at_end",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node device id",
+                        "name": "node_device_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "metric name",
+                        "name": "metric_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "payload schema name",
+                        "name": "payload_schema_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "payload schema version",
+                        "name": "payload_schema_version",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -5231,6 +5684,44 @@ const docTemplate = `{
                     "Telemetry"
                 ],
                 "summary": "Telemetry Record Delete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "recorded_at_start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp",
+                        "name": "recorded_at_end",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node device id",
+                        "name": "node_device_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "metric name",
+                        "name": "metric_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "payload schema name",
+                        "name": "payload_schema_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "payload schema version",
+                        "name": "payload_schema_version",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

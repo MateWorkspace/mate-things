@@ -71,6 +71,9 @@ func (h *handler) PermissionPost(c *echo.Context) error {
 // @Tags Admin - Permissions
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.PermissionResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -269,6 +272,9 @@ func (h *handler) RolePost(c *echo.Context) error {
 // @Tags Admin - Roles
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.RoleResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -579,6 +585,10 @@ func (h *handler) RolePermissionDeleteByPair(c *echo.Context) error {
 // @Tags Admin - Role Permissions
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param role_id query string false "role id"
+// @Param permission_id query string false "permission id"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.RolePermissionDetailResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -652,6 +662,8 @@ func (h *handler) RolePermissionGetById(c *echo.Context) error {
 // @Tags Admin - Role Permissions
 // @Produce json
 // @Security BearerAuth
+// @Param role_id query string true "role id"
+// @Param permission_id query string true "permission id"
 // @Success 200 {object} presentationhttpresponse.RolePermissionDetailResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -742,6 +754,10 @@ func (h *handler) PayloadSchemaPost(c *echo.Context) error {
 // @Tags Admin - Payload Schemas
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
+// @Param valid_at query string false "RFC3339 timestamp"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.PayloadSchemaResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -780,6 +796,7 @@ func (h *handler) PayloadSchemaGetList(c *echo.Context) error {
 // @Tags Admin - Payload Schemas
 // @Produce json
 // @Security BearerAuth
+// @Param name query string true "payload schema name"
 // @Success 200 {object} presentationhttpresponse.PayloadSchemaResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -810,6 +827,8 @@ func (h *handler) PayloadSchemaGetLatest(c *echo.Context) error {
 // @Tags Admin - Payload Schemas
 // @Produce json
 // @Security BearerAuth
+// @Param name query string true "payload schema name"
+// @Param version query int true "payload schema version"
 // @Success 200 {object} presentationhttpresponse.PayloadSchemaResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -995,6 +1014,10 @@ func (h *handler) UserPost(c *echo.Context) error {
 // @Tags Admin - Users
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param search query string false "search term"
+// @Param role_id query string false "role id"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.UserResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"

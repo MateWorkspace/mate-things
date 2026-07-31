@@ -915,6 +915,23 @@ info:
 paths:
   /v1/action-logs:
     delete:
+      parameters:
+      - description: RFC3339 timestamp
+        in: query
+        name: executed_at_start
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: executed_at_end
+        type: string
+      - description: action id
+        in: query
+        name: action_id
+        type: string
+      - description: node id
+        in: query
+        name: node_id
+        type: string
       produces:
       - application/json
       responses:
@@ -944,6 +961,23 @@ paths:
       tags:
       - Action Logs
     get:
+      parameters:
+      - description: RFC3339 timestamp
+        in: query
+        name: executed_at_start
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: executed_at_end
+        type: string
+      - description: action id
+        in: query
+        name: action_id
+        type: string
+      - description: node id
+        in: query
+        name: node_id
+        type: string
       produces:
       - application/json
       responses:
@@ -974,6 +1008,31 @@ paths:
       - Action Logs
   /v1/actions:
     get:
+      parameters:
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
+      - description: node class id
+        in: query
+        name: node_class_id
+        type: string
+      - description: payload schema name
+        in: query
+        name: payload_schema_name
+        type: string
+      - description: payload schema version
+        in: query
+        name: payload_schema_version
+        type: integer
       produces:
       - application/json
       responses:
@@ -1268,6 +1327,23 @@ paths:
       - Actions
   /v1/admin/payload-schemas:
     get:
+      parameters:
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: valid_at
+        type: string
       produces:
       - application/json
       responses:
@@ -1466,6 +1542,17 @@ paths:
       - Admin - Payload Schemas
   /v1/admin/payload-schemas/by-name-version:
     get:
+      parameters:
+      - description: payload schema name
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: payload schema version
+        in: query
+        name: version
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1500,6 +1587,12 @@ paths:
       - Admin - Payload Schemas
   /v1/admin/payload-schemas/latest:
     get:
+      parameters:
+      - description: payload schema name
+        in: query
+        name: name
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1534,6 +1627,19 @@ paths:
       - Admin - Payload Schemas
   /v1/admin/permissions:
     get:
+      parameters:
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -1772,6 +1878,23 @@ paths:
       - Admin - Permissions
   /v1/admin/role-permissions:
     get:
+      parameters:
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: role id
+        in: query
+        name: role_id
+        type: string
+      - description: permission id
+        in: query
+        name: permission_id
+        type: string
       produces:
       - application/json
       responses:
@@ -1842,6 +1965,17 @@ paths:
       - Admin - Role Permissions
   /v1/admin/role-permissions/by-pair:
     get:
+      parameters:
+      - description: role id
+        in: query
+        name: role_id
+        required: true
+        type: string
+      - description: permission id
+        in: query
+        name: permission_id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1876,6 +2010,19 @@ paths:
       - Admin - Role Permissions
   /v1/admin/roles:
     get:
+      parameters:
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -2307,6 +2454,23 @@ paths:
       - Admin - Roles
   /v1/admin/users:
     get:
+      parameters:
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
+      - description: role id
+        in: query
+        name: role_id
+        type: string
       produces:
       - application/json
       responses:
@@ -2703,6 +2867,23 @@ paths:
       - Auth
   /v1/firmwares:
     get:
+      parameters:
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
+      - description: node class id
+        in: query
+        name: node_class_id
+        type: string
       produces:
       - application/json
       responses:
@@ -3207,6 +3388,19 @@ paths:
       - Firmwares
   /v1/node-classes:
     get:
+      parameters:
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -3411,6 +3605,18 @@ paths:
         name: node_class_id
         required: true
         type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -3485,6 +3691,23 @@ paths:
       - Node Classes
   /v1/node-logs:
     delete:
+      parameters:
+      - description: RFC3339 timestamp
+        in: query
+        name: logged_at_start
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: logged_at_end
+        type: string
+      - description: node device id
+        in: query
+        name: node_device_id
+        type: string
+      - description: NONE, ERROR, WARN, INFO, or DEBUG
+        in: query
+        name: level
+        type: string
       produces:
       - application/json
       responses:
@@ -3514,6 +3737,23 @@ paths:
       tags:
       - Node Log
     get:
+      parameters:
+      - description: RFC3339 timestamp
+        in: query
+        name: logged_at_start
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: logged_at_end
+        type: string
+      - description: node device id
+        in: query
+        name: node_device_id
+        type: string
+      - description: NONE, ERROR, WARN, INFO, or DEBUG
+        in: query
+        name: level
+        type: string
       produces:
       - application/json
       responses:
@@ -3544,6 +3784,27 @@ paths:
       - Node Log
   /v1/nodes:
     get:
+      parameters:
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
+      - description: node class id
+        in: query
+        name: node_class_id
+        type: string
+      - description: firmware id
+        in: query
+        name: firmware_id
+        type: string
       produces:
       - application/json
       responses:
@@ -3889,6 +4150,18 @@ paths:
         name: node_id
         required: true
         type: string
+      - description: page number
+        in: query
+        name: page
+        type: integer
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: search term
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -4195,6 +4468,31 @@ paths:
       - Profile
   /v1/telemetry-records:
     delete:
+      parameters:
+      - description: RFC3339 timestamp
+        in: query
+        name: recorded_at_start
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: recorded_at_end
+        type: string
+      - description: node device id
+        in: query
+        name: node_device_id
+        type: string
+      - description: metric name
+        in: query
+        name: metric_name
+        type: string
+      - description: payload schema name
+        in: query
+        name: payload_schema_name
+        type: string
+      - description: payload schema version
+        in: query
+        name: payload_schema_version
+        type: integer
       produces:
       - application/json
       responses:
@@ -4224,6 +4522,31 @@ paths:
       tags:
       - Telemetry
     get:
+      parameters:
+      - description: RFC3339 timestamp
+        in: query
+        name: recorded_at_start
+        type: string
+      - description: RFC3339 timestamp
+        in: query
+        name: recorded_at_end
+        type: string
+      - description: node device id
+        in: query
+        name: node_device_id
+        type: string
+      - description: metric name
+        in: query
+        name: metric_name
+        type: string
+      - description: payload schema name
+        in: query
+        name: payload_schema_name
+        type: string
+      - description: payload schema version
+        in: query
+        name: payload_schema_version
+        type: integer
       produces:
       - application/json
       responses:
