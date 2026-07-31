@@ -237,7 +237,8 @@ export function canRepresentDefinition(value: unknown): value is RawDefinition {
 
   const type = def.type as FieldType;
 
-  if (isEnumType(type) && def.options !== undefined && def.options !== null) {
+  if (def.options !== undefined && def.options !== null) {
+    if (!isEnumType(type)) return false;
     if (
       !Array.isArray(def.options) ||
       def.options.some((option) => typeof option !== "string")
@@ -246,25 +247,45 @@ export function canRepresentDefinition(value: unknown): value is RawDefinition {
     }
   }
 
-  if (isObjectType(type)) {
-    if (def.properties !== undefined && def.properties !== null) {
-      if (typeof def.properties !== "object" || Array.isArray(def.properties)) {
-        return false;
-      }
-      for (const child of Object.values(
-        def.properties as Record<string, unknown>,
-      )) {
-        if (!canRepresentDefinition(child)) return false;
-      }
+  if (def.properties !== undefined && def.properties !== null) {
+    if (!isObjectType(type)) return false;
+    if (typeof def.properties !== "object" || Array.isArray(def.properties)) {
+      return false;
     }
-    if (def.required !== undefined && def.required !== null) {
-      if (
-        !Array.isArray(def.required) ||
-        def.required.some((requiredName) => typeof requiredName !== "string")
-      ) {
-        return false;
-      }
+    for (const child of Object.values(
+      def.properties as Record<string, unknown>,
+    )) {
+      if (!canRepresentDefinition(child)) return false;
     }
+  }
+
+  if (def.required !== undefined && def.required !== null) {
+    if (!isObjectType(type)) return false;
+    if (
+      !Array.isArray(def.required) ||
+      def.required.some((requiredName) => typeof requiredName !== "string")
+    ) {
+      return false;
+    }
+  }
+
+  const numericFields = [
+    "minimum",
+    "maximum",
+    "minimum_length",
+    "maximum_length",
+    "minimum_item",
+    "maximum_item",
+  ] as const;
+  for (const field of numericFields) {
+    const fieldValue = def[field];
+    if (fieldValue !== undefined && fieldValue !== null) {
+      if (typeof fieldValue !== "number") return false;
+    }
+  }
+
+  if (def.unit !== undefined && def.unit !== null) {
+    if (typeof def.unit !== "string") return false;
   }
 
   return true;

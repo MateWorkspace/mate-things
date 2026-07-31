@@ -64,6 +64,25 @@ describe("canRepresentDefinition", () => {
     };
     expect(canRepresentDefinition(def)).toBe(false);
   });
+
+  it("rejects a non-enum type carrying a spurious options array", () => {
+    const def = { type: "string", options: ["a", "b"] };
+    expect(canRepresentDefinition(def)).toBe(false);
+  });
+
+  it("rejects a non-object type carrying spurious properties or required", () => {
+    expect(
+      canRepresentDefinition({ type: "string", properties: {} }),
+    ).toBe(false);
+    expect(
+      canRepresentDefinition({ type: "string", required: ["name"] }),
+    ).toBe(false);
+  });
+
+  it("rejects a definition with a non-numeric minimum", () => {
+    const def = { type: "float", minimum: "0" };
+    expect(canRepresentDefinition(def)).toBe(false);
+  });
 });
 
 describe("rowsFromRootDefinition / rootDefinitionFromRows round trip", () => {
