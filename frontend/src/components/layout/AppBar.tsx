@@ -12,6 +12,7 @@ import type { UserResponse } from "@/lib/api/users";
 interface AppBarProps {
   user: UserResponse;
   permissions: readonly string[];
+  roleName?: string;
   sidebarCollapsed?: boolean;
   onDesktopSidebarToggle?: () => void;
   onMobileNavigationOpen?: () => void;
@@ -20,6 +21,7 @@ interface AppBarProps {
 export default function AppBar({
   user,
   permissions,
+  roleName,
   sidebarCollapsed = false,
   onDesktopSidebarToggle = () => undefined,
   onMobileNavigationOpen = () => undefined,
@@ -83,6 +85,7 @@ export default function AppBar({
         open={profileOpen}
         user={user}
         permissions={permissions}
+        roleName={roleName}
         onClose={() => setProfileOpen(false)}
       />
     </>

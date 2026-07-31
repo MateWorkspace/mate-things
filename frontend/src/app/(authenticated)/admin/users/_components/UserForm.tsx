@@ -47,29 +47,41 @@ export default function UserForm({
   currentUserId,
 }: UserFormProps) {
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorGeneration, setEditorGeneration] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteGeneration, setDeleteGeneration] = useState(0);
   return (
     <div className="flex flex-wrap gap-2">
       {!user || canEdit ? (
         <Button
           type="button"
           variant={user ? "secondary" : "primary"}
-          onClick={() => setEditorOpen(true)}
+          onClick={() => {
+            setEditorGeneration((generation) => generation + 1);
+            setEditorOpen(true);
+          }}
         >
           {user ? "Edit user" : "Create user"}
         </Button>
       ) : null}
       {user && canDelete ? (
-        <button
+        <Button
           type="button"
-          className="border-critical text-critical focus-visible:ring-critical rounded-xl border px-4 py-2.5 text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none"
-          onClick={() => setDeleteOpen(true)}
+          variant="critical"
+          onClick={() => {
+            setDeleteGeneration((generation) => generation + 1);
+            setDeleteOpen(true);
+          }}
         >
           Delete user
-        </button>
+        </Button>
       ) : null}
+      {/* Keyed on a generation counter bumped only when opening, not on
+          editorOpen/deleteOpen themselves - remounting on close would
+          unmount a still-open native <dialog>, dropping it from the
+          browser's top layer without a clean close() call. */}
       <EditorDialog
-        key={`${editorOpen}-${user?.id ?? "new"}`}
+        key={`${editorGeneration}-${user?.id ?? "new"}`}
         open={editorOpen}
         onClose={() => setEditorOpen(false)}
         roles={roles}
@@ -77,7 +89,7 @@ export default function UserForm({
       />
       {user ? (
         <DeleteDialog
-          key={`${deleteOpen}-${user.id}`}
+          key={`${deleteGeneration}-${user.id}`}
           open={deleteOpen}
           onClose={() => setDeleteOpen(false)}
           user={user}
@@ -104,10 +116,28 @@ function EditorDialog({
     EMPTY_USER_STATE,
   );
   useActionToast(state);
+  useEffect(() => {
+    if (state.status === "success") {
+      onClose();
+    }
+  }, [state, onClose]);
   const id = useId();
+
+  // Controlled, not defaultValue: React resets a <form action={...}> to its
+  // defaults after every submission (success or rejected), which would wipe
+  // whatever the user typed on a validation/conflict error. Driving these
+  // from state survives that reset.
+  const [name, setName] = useState(user?.name ?? "");
+  const [username, setUsername] = useState(user?.username ?? "");
+  const [bio, setBio] = useState(user?.bio ?? "");
+  const [password, setPassword] = useState("");
+  const [roleId, setRoleId] = useState(
+    user?.role_id ?? roles.find((role) => role.is_default)?.id ?? "",
+  );
+
   return (
     <Dialog
-      open={open && state.status !== "success"}
+      open={open}
       onClose={onClose}
       title={user ? `Edit ${user.name}` : "Create user"}
       variant="sheet"
@@ -118,14 +148,16 @@ function EditorDialog({
           id={`${id}-name`}
           label="Name"
           name="name"
-          value={user?.name}
+          value={name}
+          onChange={setName}
           error={state.fieldErrors?.name}
         />
         <Field
           id={`${id}-username`}
           label="Username"
           name="username"
-          value={user?.username}
+          value={username}
+          onChange={setUsername}
           error={state.fieldErrors?.username}
           autoComplete="off"
         />
@@ -134,9 +166,8 @@ function EditorDialog({
           <select
             id={`${id}-role`}
             name="role_id"
-            defaultValue={
-              user?.role_id ?? roles.find((role) => role.is_default)?.id ?? ""
-            }
+            value={roleId}
+            onChange={(event) => setRoleId(event.target.value)}
             required
             className="border-control-border bg-background w-full rounded-xl border px-3.5 py-2.5 text-sm"
           >
@@ -154,7 +185,8 @@ function EditorDialog({
           <textarea
             id={`${id}-bio`}
             name="bio"
-            defaultValue={user?.bio}
+            value={bio}
+            onChange={(event) => setBio(event.target.value)}
             rows={3}
             className="border-control-border bg-background w-full rounded-xl border px-3.5 py-2.5 text-sm"
           />
@@ -165,6 +197,8 @@ function EditorDialog({
             label="Initial password"
             name="password"
             type="password"
+            value={password}
+            onChange={setPassword}
             error={state.fieldErrors?.password}
             autoComplete="new-password"
           />
@@ -251,6 +285,7 @@ function Field({
   label,
   name,
   value,
+  onChange,
   error,
   type = "text",
   autoComplete,
@@ -258,7 +293,8 @@ function Field({
   id: string;
   label: string;
   name: string;
-  value?: string;
+  value: string;
+  onChange: (value: string) => void;
   error?: string;
   type?: string;
   autoComplete?: string;
@@ -270,7 +306,8 @@ function Field({
         id={id}
         name={name}
         type={type}
-        defaultValue={value}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         required
         aria-invalid={Boolean(error)}
         autoComplete={autoComplete}

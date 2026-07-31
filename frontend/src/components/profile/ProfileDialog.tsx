@@ -16,6 +16,7 @@ interface ProfileDialogProps {
   open: boolean;
   user: UserResponse;
   permissions: readonly string[];
+  roleName?: string;
   onClose?: () => void;
 }
 
@@ -35,6 +36,7 @@ export default function ProfileDialog({
   open,
   user,
   permissions,
+  roleName,
   onClose = () => undefined,
 }: ProfileDialogProps) {
   const canEditProfile = permissions.includes("profile:set");
@@ -90,7 +92,7 @@ export default function ProfileDialog({
           ) : (
             <ProfileView
               user={user}
-              permissions={permissions}
+              roleName={roleName}
               canEdit={canEditProfile}
               onEdit={() => setEditing(true)}
             />

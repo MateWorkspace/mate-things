@@ -5,11 +5,12 @@ import { redirect } from "next/navigation";
 
 import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
+import RoleSearchCombobox from "@/components/roles/RoleSearchCombobox";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
-import { listRoles } from "@/lib/api/roles";
+import { getRoleById, listRoles } from "@/lib/api/roles";
 import { listUsers } from "@/lib/api/users";
 import {
   getOutOfRangePageRedirect,
@@ -33,10 +34,13 @@ export default async function UsersPage({
     searchParams,
   ]);
   const query = parsePageQuery(raw);
-  const [users, rolesResult] = await Promise.all([
-    listUsers(query),
-    permissions.has("role:get")
-      ? listRoles({ limit: 48 })
+  const canReadRoles = permissions.has("role:get");
+  const roleId = String(raw.role_id ?? "").trim() || undefined;
+  const [users, rolesResult, selectedRole] = await Promise.all([
+    listUsers({ ...query, role_id: roleId }),
+    canReadRoles ? listRoles({ limit: 48 }) : Promise.resolve(null),
+    canReadRoles && roleId
+      ? getRoleById(roleId).catch(() => null)
       : Promise.resolve(null),
   ]);
   const target = getOutOfRangePageRedirect("/admin/users", raw, users.page);
@@ -54,15 +58,32 @@ export default async function UsersPage({
         }
       />
       <CollectionToolbar filterTitle="Filter users">
-        <form action="/admin/users" className="flex flex-col gap-3 sm:flex-row">
+        <form
+          action="/admin/users"
+          className="flex flex-col gap-3 sm:flex-row sm:items-end"
+        >
           <input type="hidden" name="limit" value={query.limit} />
-          <Input
-            name="search"
-            type="search"
-            defaultValue={query.search}
-            placeholder="Search name or username"
-            aria-label="Search users"
-          />
+          <label className="flex-1">
+            <span className="text-foreground/70 mb-1.5 block text-xs font-semibold sm:hidden">
+              Search
+            </span>
+            <Input
+              name="search"
+              type="search"
+              defaultValue={query.search}
+              placeholder="Search name or username"
+              aria-label="Search users"
+            />
+          </label>
+          {canReadRoles ? (
+            <div className="sm:w-56">
+              <RoleSearchCombobox
+                name="role_id"
+                defaultRoleId={roleId}
+                defaultRoleName={selectedRole?.name}
+              />
+            </div>
+          ) : null}
           <Button type="submit" className="gap-2">
             <Search className="size-4" aria-hidden="true" />
             Search
@@ -87,16 +108,18 @@ export default async function UsersPage({
         </section>
       ) : (
         <EmptyState
-          title={query.search ? "No matching users" : "No users yet"}
+          title={
+            query.search || roleId ? "No matching users" : "No users yet"
+          }
           description={
-            query.search
-              ? "No accounts match the current search."
+            query.search || roleId
+              ? "No accounts match the current filters."
               : "Create the first managed account when a role is available."
           }
           action={
-            query.search ? (
+            query.search || roleId ? (
               <Link href="/admin/users" className="text-primary font-semibold">
-                Clear search
+                Clear filters
               </Link>
             ) : undefined
           }
@@ -105,7 +128,11 @@ export default async function UsersPage({
       <Pagination
         page={users.page}
         pathname="/admin/users"
-        searchParams={{ limit: String(query.limit), search: query.search }}
+        searchParams={{
+          limit: String(query.limit),
+          search: query.search,
+          role_id: roleId,
+        }}
       />
     </main>
   );

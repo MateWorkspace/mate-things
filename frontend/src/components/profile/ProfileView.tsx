@@ -5,14 +5,14 @@ import type { UserResponse } from "@/lib/api/users";
 
 interface ProfileViewProps {
   user: UserResponse;
-  permissions: readonly string[];
+  roleName?: string;
   canEdit: boolean;
   onEdit: () => void;
 }
 
 export default function ProfileView({
   user,
-  permissions,
+  roleName,
   canEdit,
   onEdit,
 }: ProfileViewProps) {
@@ -55,32 +55,9 @@ export default function ProfileView({
         </div>
         <div className="sm:col-span-2">
           <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-            Role identifier
+            Role
           </dt>
-          <dd className="mt-1 text-sm break-all">{user.role_id}</dd>
-        </div>
-        <div className="sm:col-span-2">
-          <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-            Effective permissions
-          </dt>
-          <dd className="mt-2">
-            {permissions.length > 0 ? (
-              <ul className="flex flex-wrap gap-2">
-                {permissions.map((permission) => (
-                  <li
-                    key={permission}
-                    className="bg-muted text-foreground rounded-lg px-2.5 py-1 text-xs"
-                  >
-                    {permission}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <span className="text-muted-foreground text-sm">
-                No effective permissions.
-              </span>
-            )}
-          </dd>
+          <dd className="mt-1 text-sm">{roleName ?? "Unavailable"}</dd>
         </div>
       </dl>
 

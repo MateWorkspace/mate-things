@@ -14,6 +14,7 @@ import Sidebar from "./Sidebar";
 interface AppShellProps {
   user: UserResponse;
   permissions: readonly string[];
+  roleName?: string;
   children: ReactNode;
   initialSidebarCollapsed?: boolean;
 }
@@ -21,6 +22,7 @@ interface AppShellProps {
 export default function AppShell({
   user,
   permissions,
+  roleName,
   children,
   initialSidebarCollapsed = false,
 }: AppShellProps) {
@@ -55,6 +57,7 @@ export default function AppShell({
       <AppBar
         user={user}
         permissions={permissions}
+        roleName={roleName}
         sidebarCollapsed={sidebarCollapsed}
         onDesktopSidebarToggle={toggleDesktopSidebar}
         onMobileNavigationOpen={() => setMobileNavigationOpen(true)}

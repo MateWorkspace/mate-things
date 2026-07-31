@@ -33,8 +33,12 @@ export interface UpdateUserRequest {
   username?: string;
 }
 
+export interface ListUsersQuery extends PageQuery {
+  role_id?: string;
+}
+
 export async function listUsers(
-  query: PageQuery = {},
+  query: ListUsersQuery = {},
 ): Promise<PageDataResponse<UserResponse>> {
   return apiFetch(`/admin/users${buildQuery(query)}`);
 }
