@@ -1,9 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 
-import JsonEditor from "@/components/json/JsonEditor";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
@@ -16,6 +15,8 @@ import {
   updatePayloadSchemaAction,
 } from "../_lib/actions";
 import { EMPTY_SCHEMA_STATE } from "../_lib/state";
+import { parseDefinitionFieldError } from "./schema-definition-errors";
+import SchemaDefinitionBuilder from "./SchemaDefinitionBuilder";
 
 function localDate(value?: string): string {
   if (!value) return "";
@@ -92,6 +93,12 @@ function SchemaEditor({
       router.refresh();
     }
   }, [state, router]);
+  const definitionErrors = useMemo(() => {
+    if (state.status !== "error" || !state.message) return {};
+    const parsed = parseDefinitionFieldError(state.message);
+    return parsed ? { [parsed.path.join(".")]: parsed.message } : {};
+  }, [state]);
+  const [definitionRepresentable, setDefinitionRepresentable] = useState(true);
   return (
     <Dialog
       open={open && state.status !== "success"}
@@ -107,65 +114,71 @@ function SchemaEditor({
         {schema ? (
           <input type="hidden" name="payload_schema_id" value={schema.id} />
         ) : null}
-        <div>
-          <Label htmlFor="schema-name">Name</Label>
-          <Input
-            id="schema-name"
-            name="name"
-            defaultValue={schema?.name}
-            required
-          />
-          {state.fieldErrors?.name ? (
-            <p className="text-critical text-sm">{state.fieldErrors.name}</p>
-          ) : null}
-        </div>
-        <div>
-          <Label htmlFor="schema-version">Version</Label>
-          <Input
-            id="schema-version"
-            name="version"
-            type="number"
-            min={1}
-            step={1}
-            defaultValue={schema?.version ?? 1}
-            required
-          />
-          {state.fieldErrors?.version ? (
-            <p className="text-critical text-sm">{state.fieldErrors.version}</p>
-          ) : null}
-        </div>
-        <JsonEditor
-          name="definition"
-          label="Definition"
-          defaultValue={
-            schema?.definition ?? { type: "object", properties: {} }
-          }
-        />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <fieldset disabled={!definitionRepresentable} className="space-y-4">
           <div>
-            <Label htmlFor="schema-valid-from">Valid from</Label>
+            <Label htmlFor="schema-name">Name</Label>
             <Input
-              id="schema-valid-from"
-              name="valid_from"
-              type="datetime-local"
-              defaultValue={localDate(schema?.valid_from)}
+              id="schema-name"
+              name="name"
+              defaultValue={schema?.name}
+              required
             />
+            {state.fieldErrors?.name ? (
+              <p className="text-critical text-sm">{state.fieldErrors.name}</p>
+            ) : null}
           </div>
           <div>
-            <Label htmlFor="schema-valid-to">Valid to</Label>
+            <Label htmlFor="schema-version">Version</Label>
             <Input
-              id="schema-valid-to"
-              name="valid_to"
-              type="datetime-local"
-              defaultValue={localDate(schema?.valid_to)}
+              id="schema-version"
+              name="version"
+              type="number"
+              min={1}
+              step={1}
+              defaultValue={schema?.version ?? 1}
+              required
             />
-            {state.fieldErrors?.valid_to ? (
+            {state.fieldErrors?.version ? (
               <p className="text-critical text-sm">
-                {state.fieldErrors.valid_to}
+                {state.fieldErrors.version}
               </p>
             ) : null}
           </div>
-        </div>
+          <div>
+            <Label>Definition</Label>
+            <SchemaDefinitionBuilder
+              name="definition"
+              defaultValue={schema?.definition}
+              errors={definitionErrors}
+              onRepresentableChange={setDefinitionRepresentable}
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="schema-valid-from">Valid from</Label>
+              <Input
+                id="schema-valid-from"
+                name="valid_from"
+                type="datetime-local"
+                defaultValue={localDate(schema?.valid_from)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="schema-valid-to">Valid to</Label>
+              <Input
+                id="schema-valid-to"
+                name="valid_to"
+                type="datetime-local"
+                defaultValue={localDate(schema?.valid_to)}
+              />
+              {state.fieldErrors?.valid_to ? (
+                <p className="text-critical text-sm">
+                  {state.fieldErrors.valid_to}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </fieldset>
         <p
           aria-live="polite"
           className={
@@ -180,7 +193,7 @@ function SchemaEditor({
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending || !definitionRepresentable}>
             {pending ? "Saving…" : "Save schema"}
           </Button>
         </div>
