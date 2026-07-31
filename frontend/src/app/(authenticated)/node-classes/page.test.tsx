@@ -27,6 +27,7 @@ vi.mock("@/lib/session", () => ({
 
 vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
+  useRouter: vi.fn(() => ({ refresh: vi.fn() })),
 }));
 
 const NODE_CLASS: NodeClassResponse = {

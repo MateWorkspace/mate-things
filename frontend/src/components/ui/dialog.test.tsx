@@ -57,6 +57,10 @@ describe("Dialog", () => {
     );
 
     expect(trigger).toHaveFocus();
-    expect(onClose).not.toHaveBeenCalled();
+    // A programmatic close (open -> false via props) still closes the
+    // native <dialog>, which fires its native "close" event; onClose is
+    // called unconditionally from that handler so the parent always stays
+    // in sync with the dialog's actual open state (see dialog.tsx).
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

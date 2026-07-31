@@ -10,6 +10,10 @@ vi.mock("../_lib/actions", () => ({
   saveNodeAction: vi.fn(),
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(() => ({ refresh: vi.fn() })),
+}));
+
 describe("NodeEditForm", () => {
   afterEach(cleanup);
 
