@@ -64,7 +64,7 @@ export default async function UsersPage({
         >
           <input type="hidden" name="limit" value={query.limit} />
           <label className="flex-1">
-            <span className="text-foreground/70 mb-1.5 block text-xs font-semibold sm:hidden">
+            <span className="text-foreground/70 mb-1.5 block text-xs font-semibold">
               Search
             </span>
             <Input

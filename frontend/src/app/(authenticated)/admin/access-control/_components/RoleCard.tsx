@@ -23,11 +23,6 @@ export default function RoleCard({
       <p className="text-foreground/70 line-clamp-3 min-h-15">
         {role.description || "No role description."}
       </p>
-      <p className="text-muted-foreground mt-4 text-sm">
-        {permissionCount === undefined
-          ? "Assignments require role_permission:get"
-          : `${permissionCount} assigned permissions`}
-      </p>
       <Link
         href={`/admin/access-control?tab=roles&role=${role.id}`}
         className="bg-primary text-surface mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold"
