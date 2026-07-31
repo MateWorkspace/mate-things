@@ -1,6 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
@@ -91,7 +90,6 @@ export async function createActionFormAction(
       payload_schema_name: input.schemaName,
       payload_schema_version: input.schemaVersion,
     });
-    refresh();
     return {
       status: "success",
       title: "Action created",
@@ -126,7 +124,6 @@ export async function updateActionFormAction(
       payload_schema_name: input.schemaName,
       payload_schema_version: input.schemaVersion,
     });
-    refresh();
     return {
       status: "success",
       title: "Action updated",
@@ -208,7 +205,6 @@ export async function dispatchActionFormAction(
       payload,
       executed_at: executedAtIso,
     });
-    refresh();
     return {
       status: "success",
       title: "Action dispatched",

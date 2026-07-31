@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useId, useState } from "react";
 
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
@@ -50,7 +51,7 @@ export default function ActionForm({
       {action && canDelete ? (
         <button
           type="button"
-          className="border-critical text-critical focus-visible:ring-critical rounded-xl border px-4 py-2.5 text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none"
+          className="border-critical text-critical hover:bg-critical/10 active:bg-critical/15 focus-visible:ring-critical rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
           onClick={() => setDeleteOpen(true)}
         >
           Delete action
@@ -90,6 +91,12 @@ function EditorDialog({
     action ? updateActionFormAction : createActionFormAction,
     EMPTY_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   const id = useId();
   return (
     <Dialog
@@ -264,7 +271,7 @@ function DeleteDialog({
           <button
             type="submit"
             disabled={pending || confirmation !== action.name}
-            className="bg-critical text-background rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="bg-critical text-background hover:opacity-90 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pending ? "Deleting…" : "Delete action"}
           </button>

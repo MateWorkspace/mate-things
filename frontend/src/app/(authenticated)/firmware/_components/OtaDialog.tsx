@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import Button from "@/components/ui/button";
@@ -26,6 +27,7 @@ export default function OtaDialog({
   const [confirmed, setConfirmed] = useState(false);
   const [state, setState] = useState<FormActionState>(INITIAL_STATE);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   if (availableFirmwares.length === 0) {
     return (
@@ -80,6 +82,7 @@ export default function OtaDialog({
                 setFirmwareId("");
                 setConfirmed(false);
                 setOpen(false);
+                router.refresh();
               }
             });
           }}

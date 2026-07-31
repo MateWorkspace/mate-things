@@ -1,7 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
-
 import type { ScopedDeleteState } from "@/components/records/ScopedDeleteDialog";
 import { ApiError } from "@/lib/api/client";
 import {
@@ -42,7 +40,6 @@ export async function deleteTelemetryAction(
     return { status: "error", message: `Type ${expected} to confirm.` };
   try {
     const result = await deleteTelemetryRecords(query);
-    refresh();
     return {
       status: "success",
       count: result.count,

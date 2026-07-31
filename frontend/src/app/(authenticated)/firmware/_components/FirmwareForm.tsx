@@ -1,6 +1,13 @@
 "use client";
 
-import { useActionState, useId, useState, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
+import {
+  useActionState,
+  useEffect,
+  useId,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import Button from "@/components/ui/button";
@@ -224,6 +231,12 @@ function UploadDialog({
     createFirmwareAction,
     INITIAL_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -297,6 +310,12 @@ function EditDialog({
     updateFirmwareAction,
     INITIAL_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -359,6 +378,12 @@ function ReplaceDialog({
     replaceFirmwareBinaryAction,
     INITIAL_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();

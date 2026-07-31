@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 
 import JsonEditor from "@/components/json/JsonEditor";
 import Button from "@/components/ui/button";
@@ -30,6 +31,12 @@ export default function PreferencesDialog({
     savePreferencesAction,
     EMPTY_PREFERENCES_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
 
   if (!permissions.includes("preferences:set")) return null;
 

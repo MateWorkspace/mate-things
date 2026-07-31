@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
@@ -63,7 +62,6 @@ export async function createUserAction(
   }
   try {
     await createUser({ role_id: roleId, name, bio, username, password });
-    revalidatePath("/admin/users");
     return {
       status: "success",
       title: "User created",
@@ -101,8 +99,6 @@ export async function updateUserAction(
   }
   try {
     await updateUser(userId, { role_id: roleId, name, bio, username });
-    revalidatePath(`/admin/users/${userId}`);
-    revalidatePath("/admin/users");
     return {
       status: "success",
       title: "User updated",

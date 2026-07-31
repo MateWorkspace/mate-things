@@ -1,6 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
@@ -108,7 +107,6 @@ async function saveSchema(
         valid_from: validFrom,
         valid_to: validTo,
       });
-    refresh();
     return {
       status: "success",
       title: id ? "Schema updated" : "Schema created",

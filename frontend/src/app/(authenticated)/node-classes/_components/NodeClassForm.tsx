@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   useActionState,
   useContext,
@@ -33,6 +34,7 @@ interface NodeClassFormProps {
 
 function useActionToast(state: FormActionState): void {
   const toast = useContext(ToastContext);
+  const router = useRouter();
   const lastShown = useRef<FormActionState | null>(null);
 
   useEffect(() => {
@@ -49,10 +51,11 @@ function useActionToast(state: FormActionState): void {
 
     if (state.status === "success") {
       toast?.success(state.title, message);
+      router.refresh();
     } else {
       toast?.error(state.title, message);
     }
-  }, [state, toast]);
+  }, [state, toast, router]);
 }
 
 export default function NodeClassForm({

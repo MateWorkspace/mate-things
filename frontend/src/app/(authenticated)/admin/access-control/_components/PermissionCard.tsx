@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import ResourceCard from "@/components/collection/ResourceCard";
@@ -48,7 +49,7 @@ export default function PermissionCard({
       </p>
       {allowed.has("permission:remove") ? (
         <button
-          className="text-critical mt-4 text-sm font-semibold"
+          className="text-critical focus-visible:ring-critical mt-4 rounded text-sm font-semibold underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
           onClick={() => setDeleteOpen(true)}
         >
           Delete permission
@@ -84,6 +85,12 @@ export function PermissionDialog({
     savePermissionAction,
     EMPTY_ACCESS_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   return (
     <Dialog
       open={open && state.status !== "success"}
@@ -150,6 +157,12 @@ function DeletePermissionDialog({
     removePermissionAction,
     EMPTY_ACCESS_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   return (
     <Dialog
       open={open && state.status !== "success"}

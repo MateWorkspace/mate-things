@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useId, useState } from "react";
 
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
@@ -32,6 +33,12 @@ export default function ScopedDeleteDialog({
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [state, formAction, pending] = useActionState(action, INITIAL_STATE);
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   const id = useId();
   const phrase = filters.length ? "DELETE" : "DELETE ALL";
 
@@ -39,7 +46,7 @@ export default function ScopedDeleteDialog({
     <>
       <button
         type="button"
-        className="border-critical text-critical focus-visible:ring-critical rounded-xl border px-4 py-2.5 text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none"
+        className="border-critical text-critical hover:bg-critical/10 active:bg-critical/15 focus-visible:ring-critical rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
         onClick={() => setOpen(true)}
       >
         Delete filtered {label}
@@ -108,7 +115,7 @@ export default function ScopedDeleteDialog({
               <button
                 type="submit"
                 disabled={pending || confirmation !== phrase}
-                className="bg-critical text-background rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+                className="bg-critical text-background hover:opacity-90 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {pending ? "Deleting…" : "Permanently delete"}
               </button>

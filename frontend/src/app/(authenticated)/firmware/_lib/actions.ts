@@ -1,6 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
@@ -161,7 +160,6 @@ export async function createFirmwareAction(
       fileResult.file,
       schemaResult.schema,
     );
-    refresh();
   } catch (error) {
     return actionError(error);
   }
@@ -205,7 +203,6 @@ export async function updateFirmwareAction(
       node_class_id: nodeClassId,
       name,
     });
-    refresh();
   } catch (error) {
     return actionError(error);
   }
@@ -257,7 +254,6 @@ export async function replaceFirmwareBinaryAction(
       fileResult.file,
       schemaResult.schema,
     );
-    refresh();
   } catch (error) {
     return actionError(error);
   }
@@ -337,7 +333,6 @@ export async function dispatchOtaAction(
     await dispatchOtaByNodeId(nodeId, {
       firmware_id: firmwareId,
     });
-    refresh();
   } catch (error) {
     return actionError(error);
   }

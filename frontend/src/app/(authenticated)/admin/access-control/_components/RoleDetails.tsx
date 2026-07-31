@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Button from "@/components/ui/button";
@@ -62,7 +63,7 @@ export default function RoleDetails({
             ) : null}
             {allowed.has("role:remove") ? (
               <button
-                className="border-critical text-critical rounded-xl border px-4 text-sm font-semibold"
+                className="border-critical text-critical hover:bg-critical/10 active:bg-critical/15 rounded-xl border px-4 text-sm font-semibold transition-colors"
                 onClick={() => setDeleteOpen(true)}
               >
                 Delete role
@@ -160,6 +161,12 @@ export function RoleDialog({
     action,
     EMPTY_ACCESS_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   return (
     <Dialog
       open={open && state.status !== "success"}
@@ -231,6 +238,12 @@ function ConfirmRoleDialog({
     action,
     EMPTY_ACCESS_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   return (
     <Dialog
       open={open && state.status !== "success"}

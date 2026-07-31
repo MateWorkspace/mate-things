@@ -1,4 +1,3 @@
-import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,10 +15,6 @@ import {
 } from "./actions";
 
 vi.mock("server-only", () => ({}));
-
-vi.mock("next/cache", () => ({
-  refresh: vi.fn(),
-}));
 
 vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
@@ -82,7 +77,6 @@ describe("node workspace actions", () => {
     );
 
     expect(setNodeConfig).toHaveBeenCalledWith("node-1", "sample_rate", "30");
-    expect(refresh).toHaveBeenCalledOnce();
     expect(result.status).toBe("success");
   });
 
@@ -190,7 +184,6 @@ describe("node workspace actions", () => {
       name: "Freezer 07",
       description: "Cold room",
     });
-    expect(refresh).toHaveBeenCalledOnce();
     expect(result.status).toBe("success");
   });
 

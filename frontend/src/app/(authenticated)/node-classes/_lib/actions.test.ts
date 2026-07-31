@@ -1,4 +1,3 @@
-import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -20,10 +19,6 @@ import {
 } from "./actions";
 
 vi.mock("server-only", () => ({}));
-
-vi.mock("next/cache", () => ({
-  refresh: vi.fn(),
-}));
 
 vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
@@ -102,7 +97,6 @@ describe("node class actions", () => {
       name: "Cold Storage",
       description: "Temperature nodes",
     });
-    expect(refresh).toHaveBeenCalledOnce();
     expect(state.status).toBe("success");
   });
 
@@ -141,7 +135,6 @@ describe("node class actions", () => {
       name: "Cold Storage",
       description: "Temperature nodes",
     });
-    expect(refresh).toHaveBeenCalledOnce();
     expect(state.status).toBe("success");
   });
 

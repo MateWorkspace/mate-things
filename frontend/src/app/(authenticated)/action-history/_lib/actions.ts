@@ -1,7 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
-
 import type { ScopedDeleteState } from "@/components/records/ScopedDeleteDialog";
 import {
   deleteActionLogs,
@@ -38,7 +36,6 @@ export async function deleteActionHistoryAction(
   }
   try {
     const result = await deleteActionLogs(filters);
-    refresh();
     return {
       status: "success",
       count: result.count,

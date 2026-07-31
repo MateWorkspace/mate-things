@@ -24,7 +24,6 @@ export default function Dialog({
 }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const closingFromPropRef = useRef(false);
   const titleId = useId();
 
   const restoreFocus = () => {
@@ -59,12 +58,8 @@ export default function Dialog({
     }
 
     if (dialog.open) {
-      closingFromPropRef.current = true;
       dialog.close();
-      closingFromPropRef.current = false;
     }
-
-    restoreFocus();
   }, [open]);
 
   useEffect(() => {
@@ -99,10 +94,8 @@ export default function Dialog({
         }
       }}
       onClose={() => {
-        if (!closingFromPropRef.current) {
-          restoreFocus();
-          onClose();
-        }
+        restoreFocus();
+        onClose();
       }}
       className={
         variant === "drawer"

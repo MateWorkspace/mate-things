@@ -1,6 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
@@ -100,7 +99,6 @@ export async function saveNodeConfigAction(
 
   try {
     await setNodeConfig(nodeId, key, value);
-    refresh();
   } catch (error) {
     return actionError(error);
   }
@@ -143,7 +141,6 @@ export async function saveNodeAction(
       name,
       description,
     });
-    refresh();
   } catch (error) {
     return actionError(error);
   }

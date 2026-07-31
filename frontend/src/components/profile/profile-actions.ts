@@ -1,7 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
-
 import { ApiError } from "@/lib/api/client";
 import { updateProfile, updateProfilePassword } from "@/lib/api/profile";
 import { requireSessionContext } from "@/lib/session";
@@ -68,7 +66,6 @@ export async function saveProfileAction(
 
   try {
     await updateProfile({ name, username, bio });
-    refresh();
   } catch (error) {
     return actionError(error);
   }

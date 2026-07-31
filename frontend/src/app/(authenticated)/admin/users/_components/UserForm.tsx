@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 
 import Button from "@/components/ui/button";
@@ -116,11 +117,13 @@ function EditorDialog({
     EMPTY_USER_STATE,
   );
   useActionToast(state);
+  const router = useRouter();
   useEffect(() => {
     if (state.status === "success") {
       onClose();
+      router.refresh();
     }
-  }, [state, onClose]);
+  }, [state, onClose, router]);
   const id = useId();
 
   // Controlled, not defaultValue: React resets a <form action={...}> to its
@@ -270,7 +273,7 @@ function DeleteDialog({
           <button
             type="submit"
             disabled={pending || confirmation !== user.username}
-            className="bg-critical text-background rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="bg-critical text-background hover:opacity-90 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pending ? "Deleting…" : "Delete account"}
           </button>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 
 import JsonEditor from "@/components/json/JsonEditor";
 import Button from "@/components/ui/button";
@@ -49,7 +50,7 @@ export default function PayloadSchemaForm({
         <button
           type="button"
           onClick={() => setDeleteOpen(true)}
-          className="border-critical text-critical rounded-xl border px-4 py-2.5 text-sm font-semibold"
+          className="border-critical text-critical hover:bg-critical/10 active:bg-critical/15 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors"
         >
           Delete schema
         </button>
@@ -85,6 +86,12 @@ function SchemaEditor({
     schema ? updatePayloadSchemaAction : createPayloadSchemaAction,
     EMPTY_SCHEMA_STATE,
   );
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [state, router]);
   return (
     <Dialog
       open={open && state.status !== "success"}

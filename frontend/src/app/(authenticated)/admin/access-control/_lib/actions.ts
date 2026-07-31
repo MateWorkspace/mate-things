@@ -1,7 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
-
 import { ApiError } from "@/lib/api/client";
 import {
   createPermission,
@@ -62,7 +60,6 @@ export async function saveRoleAction(
   try {
     if (id) await updateRole(id, { name, description });
     else await createRole({ name, description });
-    refresh();
     return {
       status: "success",
       title: id ? "Role updated" : "Role created",
@@ -90,7 +87,6 @@ export async function removeRoleAction(
     };
   try {
     await deleteRole(id);
-    refresh();
     return {
       status: "success",
       title: "Role deleted",
@@ -118,7 +114,6 @@ export async function setDefaultRoleAction(
     };
   try {
     await setDefaultRole(id);
-    refresh();
     return {
       status: "success",
       title: "Default role updated",
@@ -149,7 +144,6 @@ export async function savePermissionAction(
   try {
     if (id) await updatePermission(id, { name, description });
     else await createPermission({ name, description });
-    refresh();
     return {
       status: "success",
       title: id ? "Permission updated" : "Permission created",
@@ -178,7 +172,6 @@ export async function removePermissionAction(
     };
   try {
     await deletePermission(id);
-    refresh();
     return {
       status: "success",
       title: "Permission deleted",
@@ -215,7 +208,6 @@ export async function updateRoleAssignmentsAction(
   const failures = results.filter(
     (result) => result.status === "rejected",
   ).length;
-  refresh();
   if (failures) {
     return {
       status: "error",

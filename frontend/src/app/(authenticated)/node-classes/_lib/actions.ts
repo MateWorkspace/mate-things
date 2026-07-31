@@ -1,6 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
@@ -76,7 +75,6 @@ export async function createNodeClassAction(
 
   try {
     await createNodeClass({ name, description });
-    refresh();
   } catch (error) {
     return actionError(error);
   }
@@ -116,7 +114,6 @@ export async function updateNodeClassAction(
 
   try {
     await updateNodeClass(nodeClassId, { name, description });
-    refresh();
   } catch (error) {
     return actionError(error);
   }

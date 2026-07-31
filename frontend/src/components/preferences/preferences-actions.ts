@@ -1,7 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
-
 import { ApiError } from "@/lib/api/client";
 import {
   updatePreferences,
@@ -64,7 +62,6 @@ export async function savePreferencesAction(
 
   try {
     await updatePreferences(resource, id, preferences);
-    refresh();
     return { status: "success", message: "Preferences saved." };
   } catch (error) {
     return {

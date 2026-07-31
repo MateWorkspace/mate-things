@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useActionState, useContext, useEffect, useRef, useState } from "react";
 
 import Button from "@/components/ui/button";
@@ -56,6 +57,7 @@ function NodeEditDialog({ node, onClose }: NodeEditDialogProps) {
     INITIAL_STATE,
   );
   const toast = useContext(ToastContext);
+  const router = useRouter();
   const lastShown = useRef<NodeActionState | null>(null);
 
   useEffect(() => {
@@ -72,10 +74,11 @@ function NodeEditDialog({ node, onClose }: NodeEditDialogProps) {
 
     if (state.status === "success") {
       toast?.success(state.title, message);
+      router.refresh();
     } else {
       toast?.error(state.title, message);
     }
-  }, [state, toast]);
+  }, [state, toast, router]);
 
   return (
     <Dialog
