@@ -1,11 +1,19 @@
 Project nusapala_things {
     database_type: 'PostgreSQL'
-    Note: 'Migration-backed schema. Requires pgcrypto, timescaledb, and pg_trgm extensions. telemetry_records and action_logs are TimescaleDB hypertables with 7 day chunks.'
+    Note: 'Migration-backed schema. Requires pgcrypto, timescaledb, and pg_trgm extensions. telemetry_records, action_logs, and node_logs are TimescaleDB hypertables with 7 day chunks.'
+}
+
+Enum node_log_level {
+    NONE
+    ERROR
+    WARN
+    INFO
+    DEBUG
 }
 
 Table permissions {
     id          UUID        [pk, default: `gen_random_uuid()`]
-    name        TEXT        [not null, unique]
+    name        TEXT        [not null]
     description TEXT        [not null, default: '']
     preferences JSONB       [not null, default: `'{}'::jsonb`]
     created_at  TIMESTAMPTZ [not null, default: `NOW()`]
@@ -16,6 +24,7 @@ Table permissions {
     deleted_by  UUID
 
     Indexes {
+        name [unique, name: 'uq_permissions_name', note: 'Partial unique index: WHERE deleted_at IS NULL']
         name [type: gin, name: 'idx_permissions_name_trgm', note: 'gin_trgm_ops']
         deleted_at [name: 'idx_permissions_deleted_at']
     }
@@ -23,7 +32,7 @@ Table permissions {
 
 Table roles {
     id          UUID        [pk, default: `gen_random_uuid()`]
-    name        TEXT        [not null, unique]
+    name        TEXT        [not null]
     description TEXT        [not null, default: '']
     is_default  BOOLEAN     [not null, default: false]
     preferences JSONB       [not null, default: `'{}'::jsonb`]
@@ -35,6 +44,7 @@ Table roles {
     deleted_by  UUID
 
     Indexes {
+        name [unique, name: 'uq_roles_name', note: 'Partial unique index: WHERE deleted_at IS NULL']
         name [type: gin, name: 'idx_roles_name_trgm', note: 'gin_trgm_ops']
         is_default [unique, name: 'uq_roles_is_default_true', note: 'Partial unique index: WHERE is_default = TRUE']
         deleted_at [name: 'idx_roles_deleted_at']
@@ -60,7 +70,7 @@ Table users {
     role_id         UUID        [not null]
     name            TEXT        [not null]
     bio             TEXT        [not null, default: '']
-    username        TEXT        [not null, unique]
+    username        TEXT        [not null]
     password_hash   TEXT        [not null]
     preferences     JSONB       [not null, default: `'{}'::jsonb`]
     created_at      TIMESTAMPTZ [not null, default: `NOW()`]
@@ -72,6 +82,7 @@ Table users {
 
     Indexes {
         role_id [name: 'idx_users_role_id']
+        username [unique, name: 'uq_users_username', note: 'Partial unique index: WHERE deleted_at IS NULL']
         name [type: gin, name: 'idx_users_name_trgm', note: 'gin_trgm_ops']
         username [type: gin, name: 'idx_users_username_trgm', note: 'gin_trgm_ops']
         deleted_at [name: 'idx_users_deleted_at']
@@ -80,7 +91,7 @@ Table users {
 
 Table node_classes {
     id          UUID        [pk, default: `gen_random_uuid()`]
-    name        TEXT        [not null, unique]
+    name        TEXT        [not null]
     description TEXT        [not null, default: '']
     preferences JSONB       [not null, default: `'{}'::jsonb`]
     created_at  TIMESTAMPTZ [not null, default: `NOW()`]
@@ -91,6 +102,7 @@ Table node_classes {
     deleted_by  UUID
 
     Indexes {
+        name [unique, name: 'uq_node_classes_name', note: 'Partial unique index: WHERE deleted_at IS NULL']
         name [type: gin, name: 'idx_node_classes_name_trgm', note: 'gin_trgm_ops']
         deleted_at [name: 'idx_node_classes_deleted_at']
     }
@@ -99,7 +111,7 @@ Table node_classes {
 Table firmwares {
     id              UUID        [pk, default: `gen_random_uuid()`]
     node_class_id   UUID        [not null]
-    name            TEXT        [not null, unique]
+    name            TEXT        [not null]
     size            INT         [not null]
     checksum        TEXT        [not null]
     binary_path     TEXT        [not null]
@@ -113,9 +125,30 @@ Table firmwares {
 
     Indexes {
         node_class_id [name: 'idx_firmwares_node_class_id']
+        name [unique, name: 'uq_firmwares_name', note: 'Partial unique index: WHERE deleted_at IS NULL']
         name [type: gin, name: 'idx_firmwares_name_trgm', note: 'gin_trgm_ops']
         binary_path [type: gin, name: 'idx_firmwares_binary_path_trgm', note: 'gin_trgm_ops']
         deleted_at [name: 'idx_firmwares_deleted_at']
+    }
+}
+
+Table firmware_config_parameters {
+    id          UUID        [pk, default: `gen_random_uuid()`]
+    firmware_id UUID        [not null]
+    key         TEXT        [not null]
+    value_type  TEXT        [not null]
+    preferences JSONB       [not null, default: `'{}'::jsonb`]
+    created_at  TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at  TIMESTAMPTZ
+    deleted_at  TIMESTAMPTZ
+    created_by  UUID
+    updated_by  UUID
+    deleted_by  UUID
+
+    Indexes {
+        (firmware_id, key) [unique, name: 'uq_firmware_config_parameters_firmware_id_key']
+        firmware_id [name: 'idx_firmware_config_parameters_firmware_id']
+        deleted_at [name: 'idx_firmware_config_parameters_deleted_at']
     }
 }
 
@@ -140,6 +173,28 @@ Table nodes {
         name [type: gin, name: 'idx_nodes_name_trgm', note: 'gin_trgm_ops']
         firmware_name [name: 'idx_nodes_firmware_name']
         deleted_at [name: 'idx_nodes_deleted_at']
+    }
+}
+
+Table node_config_values {
+    id          UUID        [pk, default: `gen_random_uuid()`]
+    node_id     UUID        [not null]
+    firmware_id UUID        [not null]
+    key         TEXT        [not null]
+    value       TEXT        [not null]
+    preferences JSONB       [not null, default: `'{}'::jsonb`]
+    created_at  TIMESTAMPTZ [not null, default: `NOW()`]
+    updated_at  TIMESTAMPTZ
+    deleted_at  TIMESTAMPTZ
+    created_by  UUID
+    updated_by  UUID
+    deleted_by  UUID
+
+    Indexes {
+        (node_id, key) [unique, name: 'uq_node_config_values_node_id_key']
+        node_id [name: 'idx_node_config_values_node_id']
+        firmware_id [name: 'idx_node_config_values_firmware_id']
+        deleted_at [name: 'idx_node_config_values_deleted_at']
     }
 }
 
@@ -191,10 +246,31 @@ Table telemetry_records {
     Note: 'TimescaleDB hypertable on recorded_at with chunk_time_interval = 7 days.'
 }
 
+Table node_logs {
+    id              BIGINT      [increment]
+    node_device_id  TEXT        [not null]
+    level           node_log_level [not null, default: 'NONE']
+    tag             TEXT        [not null, default: '']
+    message         TEXT        [not null]
+    logged_at       TIMESTAMPTZ [not null]
+    created_at      TIMESTAMPTZ [not null, default: `NOW()`]
+
+    Indexes {
+        (id, logged_at) [pk]
+        node_device_id [name: 'idx_node_logs_node_device_id']
+        level [name: 'idx_node_logs_level']
+        logged_at [name: 'idx_node_logs_logged_at_desc', note: 'DESC']
+        (node_device_id, logged_at) [name: 'idx_node_logs_node_logged_at_desc', note: 'logged_at DESC']
+        (level, logged_at) [name: 'idx_node_logs_level_logged_at_desc', note: 'logged_at DESC']
+    }
+
+    Note: 'TimescaleDB hypertable on logged_at with chunk_time_interval = 7 days, compressed (segmentby node_device_id, orderby logged_at DESC) with a 1 week compression policy.'
+}
+
 Table actions {
     id                  UUID        [pk, default: `gen_random_uuid()`]
     node_class_id       UUID        [not null]
-    name                TEXT        [not null, unique]
+    name                TEXT        [not null]
     description         TEXT        [not null, default: '']
     payload_schema_name TEXT        [not null]
     payload_schema_version INT      [not null, default: 1]
@@ -208,6 +284,7 @@ Table actions {
 
     Indexes {
         node_class_id [name: 'idx_actions_node_class_id']
+        name [unique, name: 'uq_actions_name', note: 'Partial unique index: WHERE deleted_at IS NULL']
         name [type: gin, name: 'idx_actions_name_trgm', note: 'gin_trgm_ops']
         (payload_schema_name, payload_schema_version) [name: 'idx_actions_payload_schema_name_version']
         deleted_at [name: 'idx_actions_deleted_at']
@@ -241,8 +318,12 @@ Ref: users.role_id > roles.id
 Ref: firmwares.node_class_id > node_classes.id
 Ref: nodes.node_class_id > node_classes.id
 Ref: nodes.firmware_name > firmwares.name
+Ref: firmware_config_parameters.firmware_id > firmwares.id
+Ref: node_config_values.node_id > nodes.id
+Ref: node_config_values.firmware_id > firmwares.id
 Ref: telemetry_records.node_device_id > nodes.device_id
 Ref: telemetry_records.(payload_schema_name, payload_schema_version) > payload_schemas.(name, version)
+Ref: node_logs.node_device_id > nodes.device_id
 Ref: actions.node_class_id > node_classes.id
 Ref: actions.(payload_schema_name, payload_schema_version) > payload_schemas.(name, version)
 Ref: action_logs.action_id > actions.id
