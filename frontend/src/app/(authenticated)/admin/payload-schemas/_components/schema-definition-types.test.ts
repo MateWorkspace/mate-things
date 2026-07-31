@@ -1,0 +1,137 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  canRepresentDefinition,
+  isValidFieldName,
+  rootDefinitionFromRows,
+  rowsFromRootDefinition,
+  type RawDefinition,
+} from "./schema-definition-types";
+
+describe("isValidFieldName", () => {
+  it("accepts lowercase snake_case names", () => {
+    expect(isValidFieldName("sample_rate")).toBe(true);
+    expect(isValidFieldName("a")).toBe(true);
+  });
+
+  it("rejects empty, uppercase, leading-digit-only-ok, and malformed names", () => {
+    expect(isValidFieldName("")).toBe(false);
+    expect(isValidFieldName("SampleRate")).toBe(false);
+    expect(isValidFieldName("sample__rate")).toBe(false);
+    expect(isValidFieldName("_sample")).toBe(false);
+    expect(isValidFieldName("sample_")).toBe(false);
+  });
+});
+
+describe("canRepresentDefinition", () => {
+  it("accepts a plain object root with no properties", () => {
+    expect(canRepresentDefinition({ type: "object", properties: {} })).toBe(
+      true,
+    );
+  });
+
+  it("rejects an unknown type string", () => {
+    expect(canRepresentDefinition({ type: "date", properties: {} })).toBe(
+      false,
+    );
+  });
+
+  it("rejects any definition (at any depth) that carries a distinct items schema", () => {
+    const def = {
+      type: "object",
+      properties: {
+        readings: { type: "[]float", items: { type: "float" } },
+      },
+    };
+    expect(canRepresentDefinition(def)).toBe(false);
+  });
+
+  it("rejects a non-object value", () => {
+    expect(canRepresentDefinition(null)).toBe(false);
+    expect(canRepresentDefinition([])).toBe(false);
+    expect(canRepresentDefinition("object")).toBe(false);
+  });
+
+  it("recurses into nested object properties", () => {
+    const def = {
+      type: "object",
+      properties: {
+        location: {
+          type: "object",
+          properties: { lat: { type: "not_a_real_type" } },
+        },
+      },
+    };
+    expect(canRepresentDefinition(def)).toBe(false);
+  });
+});
+
+describe("rowsFromRootDefinition / rootDefinitionFromRows round trip", () => {
+  it("round-trips a definition with scalar, enum, nested object, and array-of-object fields", () => {
+    const original: RawDefinition = {
+      type: "object",
+      required: ["sample_rate"],
+      properties: {
+        sample_rate: {
+          type: "float",
+          minimum: 0,
+          maximum: 1000,
+          unit: "Hz",
+        },
+        mode: {
+          type: "enum",
+          options: ["auto", "manual"],
+        },
+        location: {
+          type: "object",
+          properties: {
+            lat: { type: "float" },
+            lon: { type: "float" },
+          },
+        },
+        readings: {
+          type: "[]object",
+          minimum_item: 1,
+          properties: {
+            value: { type: "float" },
+          },
+        },
+      },
+    };
+
+    const rows = rowsFromRootDefinition(original);
+    const rebuilt = rootDefinitionFromRows(rows);
+
+    expect(rebuilt).toEqual(original);
+  });
+
+  it("omits unset optional numeric fields entirely rather than writing null", () => {
+    const original: RawDefinition = {
+      type: "object",
+      properties: { name: { type: "string" } },
+    };
+
+    const rebuilt = rootDefinitionFromRows(rowsFromRootDefinition(original));
+
+    expect(rebuilt.properties?.name).toEqual({ type: "string" });
+    expect(Object.keys(rebuilt.properties?.name ?? {})).toEqual(["type"]);
+  });
+
+  it("marks a row required based on the parent's required list, not a stored flag", () => {
+    const original: RawDefinition = {
+      type: "object",
+      required: ["name"],
+      properties: {
+        name: { type: "string" },
+        bio: { type: "string" },
+      },
+    };
+
+    const rows = rowsFromRootDefinition(original);
+    const name = rows.find((row) => row.name === "name");
+    const bio = rows.find((row) => row.name === "bio");
+
+    expect(name?.required).toBe(true);
+    expect(bio?.required).toBe(false);
+  });
+});
