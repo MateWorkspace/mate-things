@@ -27,3 +27,18 @@ type ActionLog struct {
 	ExecutedAt    time.Time       `db:"executed_at" json:"executed_at"`
 	CreatedAt     time.Time       `db:"created_at" json:"created_at"`
 }
+
+// ActionLogListItem is the read model ReadByFilter returns - it embeds the
+// table-mapped ActionLog (used as-is by Create and the single-dispatch
+// response) plus the human-readable names joined in from actions/nodes,
+// so the frontend's Action History table doesn't have to resolve UUIDs
+// to names itself. NodeDeviceId/NodeName are pointers because node_id
+// itself is nullable (an action log can predate/lack a resolved node);
+// ActionName is a plain string because action_id is NOT NULL and actions
+// are soft-deleted (never hard-deleted), so the join always matches.
+type ActionLogListItem struct {
+	ActionLog
+	ActionName   string
+	NodeDeviceId *string
+	NodeName     *string
+}

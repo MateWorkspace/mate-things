@@ -34,7 +34,10 @@ type ActionLog interface {
 		executedAtEnd *time.Time,
 		actionId *uuid.UUID,
 		nodeId *uuid.UUID,
-	) (actionLogs []domainmodels.ActionLog, total int, err error)
+		actionStatus *domainmodels.ActionStatus,
+		page int,
+		limit int,
+	) (actionLogs []domainmodels.ActionLogListItem, total int, err error)
 
 	DeleteByFilter(
 		ctx context.Context,
@@ -42,5 +45,6 @@ type ActionLog interface {
 		executedAtEnd *time.Time,
 		actionId *uuid.UUID,
 		nodeId *uuid.UUID,
+		actionStatus *domainmodels.ActionStatus,
 	) (total int, err error)
 }
