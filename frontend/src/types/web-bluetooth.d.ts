@@ -18,8 +18,8 @@ declare global {
     readonly uuid: string;
     readonly value?: DataView;
     readValue(): Promise<DataView>;
-    writeValueWithResponse(value: BufferSource): Promise<void>;
-    writeValueWithoutResponse(value: BufferSource): Promise<void>;
+    writeValueWithResponse(value: Uint8Array | ArrayBuffer): Promise<void>;
+    writeValueWithoutResponse(value: Uint8Array | ArrayBuffer): Promise<void>;
     startNotifications(): Promise<BluetoothRemoteGATTCharacteristic>;
     stopNotifications(): Promise<BluetoothRemoteGATTCharacteristic>;
     addEventListener(
