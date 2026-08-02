@@ -121,7 +121,7 @@ function numberToText(value: number | null | undefined): string {
   return value === undefined || value === null ? "" : String(value);
 }
 
-export function textToNumber(value: string): number | undefined {
+function textToNumber(value: string): number | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
   const parsed = Number(trimmed);
@@ -217,13 +217,6 @@ export function rootDefinitionFromRows(rows: readonly FieldRow[]): RawDefinition
   return def;
 }
 
-/**
- * Whether the guided builder can fully represent `value` without dropping
- * or reshaping anything. Rejects unknown type strings and any use of a
- * distinct `items` sub-schema (the builder only ever emits array item
- * constraints as the array node's own fields, per arrayItemSchema() in the
- * Go validator).
- */
 const MIN_MAX_MESSAGE = "Min must not exceed Max.";
 
 function minMaxError(minText: string, maxText: string): string | undefined {
@@ -266,10 +259,19 @@ function hasFieldGroupError(row: FieldRow): boolean {
 
 export function isRowTreeValid(rows: readonly FieldRow[]): boolean {
   return rows.every(
-    (row) => !hasFieldGroupError(row) && isRowTreeValid(row.children),
+    (row) =>
+      !hasFieldGroupError(row) &&
+      (!isObjectType(row.type) || isRowTreeValid(row.children)),
   );
 }
 
+/**
+ * Whether the guided builder can fully represent `value` without dropping
+ * or reshaping anything. Rejects unknown type strings and any use of a
+ * distinct `items` sub-schema (the builder only ever emits array item
+ * constraints as the array node's own fields, per arrayItemSchema() in the
+ * Go validator).
+ */
 export function canRepresentDefinition(value: unknown): value is RawDefinition {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;

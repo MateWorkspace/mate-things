@@ -196,4 +196,14 @@ describe("isRowTreeValid", () => {
     };
     expect(isRowTreeValid([parent])).toBe(false);
   });
+
+  it("ignores stale children left behind after a row is switched away from object", () => {
+    const invalidChild = { ...createEmptyRow("mode"), type: "enum" as const };
+    const row = {
+      ...createEmptyRow("location"),
+      type: "string" as const,
+      children: [invalidChild],
+    };
+    expect(isRowTreeValid([row])).toBe(true);
+  });
 });

@@ -68,10 +68,18 @@ export default function Dialog({
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
+      if (event.key !== "Escape") {
+        return;
       }
+      const target = event.target;
+      event.preventDefault();
+      if (
+        target instanceof Element &&
+        target.closest("[data-escape-local]")
+      ) {
+        return;
+      }
+      onClose();
     };
 
     window.addEventListener("keydown", handleKeyDown, true);

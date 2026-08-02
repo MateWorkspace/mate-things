@@ -26,6 +26,22 @@ describe("Dialog", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it("does not close when Escape is pressed inside a data-escape-local element", async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <Dialog open onClose={onClose} title="Edit profile">
+        <input data-escape-local aria-label="Field name" defaultValue="foo" />
+      </Dialog>,
+    );
+
+    await user.click(screen.getByLabelText("Field name"));
+    await user.keyboard("{Escape}");
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("restores focus to the trigger after a controlled close", () => {
     const onClose = vi.fn();
     const { rerender } = render(

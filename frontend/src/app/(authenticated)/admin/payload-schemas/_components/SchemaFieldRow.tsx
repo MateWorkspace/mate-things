@@ -155,6 +155,7 @@ export default function SchemaFieldRow({
         {renaming ? (
           <Input
             autoFocus
+            data-escape-local
             value={nameDraft}
             onChange={(event) =>
               setNameDraft(event.target.value.replace(/ +/g, "_"))
