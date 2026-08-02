@@ -1,17 +1,25 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
+import Pagination from "@/components/collection/Pagination";
 import ScopedDeleteDialog from "@/components/records/ScopedDeleteDialog";
-import RecordWindow from "@/components/records/RecordWindow";
 import RefreshBoundary from "@/components/refresh/RefreshBoundary";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
+import { getActionById } from "@/lib/api/actions";
 import { listActionLogs } from "@/lib/api/action-logs";
-import { activeFilterEntries, parseRecordFilters } from "@/lib/record-filters";
+import { getNodeById } from "@/lib/api/nodes";
+import {
+  getOutOfRangePageRedirect,
+  parsePageQuery,
+} from "@/lib/collection-query";
+import { activeFilterEntries } from "@/lib/record-filters";
 import { requirePermission } from "@/lib/session";
 
-import ActionLogCard from "./_components/ActionLogCard";
+import ActionHistoryTable from "./_components/ActionHistoryTable";
 import ActionLogFilters from "./_components/ActionLogFilters";
 import { deleteActionHistoryAction } from "./_lib/actions";
+import { parseActionHistoryFilters } from "./_lib/filters";
 
 export const metadata: Metadata = { title: "Action History — Mate Things" };
 type RawSearchParams = Record<string, string | string[] | undefined>;
@@ -25,16 +33,44 @@ export default async function ActionHistoryPage({
     searchParams,
     requirePermission("action_log:get"),
   ]);
-  const parsed = parseRecordFilters(raw);
-  const query = {
-    executed_at_start: parsed.filters.start,
-    executed_at_end: parsed.filters.end,
-    action_id: parsed.filters.actionId,
-    node_id: parsed.filters.nodeId,
-  };
+  const pageQuery = parsePageQuery(raw);
+  const parsed = parseActionHistoryFilters(raw);
+
+  const [actionDefault, nodeDefault] = await Promise.all([
+    parsed.filters.actionId
+      ? getActionById(parsed.filters.actionId).catch(() => null)
+      : Promise.resolve(null),
+    parsed.filters.nodeId
+      ? getNodeById(parsed.filters.nodeId).catch(() => null)
+      : Promise.resolve(null),
+  ]);
+
   const result = parsed.error
-    ? { data: [], total_items: 0 }
-    : await listActionLogs(query);
+    ? {
+        data: [],
+        page: { page: pageQuery.page, limit: pageQuery.limit, total_items: 0 },
+      }
+    : await listActionLogs({
+        page: pageQuery.page,
+        limit: pageQuery.limit,
+        executed_at_start: parsed.filters.start,
+        executed_at_end: parsed.filters.end,
+        action_id: parsed.filters.actionId,
+        node_id: parsed.filters.nodeId,
+        status: parsed.filters.status,
+      });
+
+  if (!parsed.error) {
+    const redirectTarget = getOutOfRangePageRedirect(
+      "/action-history",
+      raw,
+      result.page,
+    );
+    if (redirectTarget) {
+      redirect(redirectTarget);
+    }
+  }
+
   const records = parsed.filters.executionId
     ? result.data.filter(
         (log) => log.execution_id === parsed.filters.executionId,
@@ -45,6 +81,7 @@ export default async function ActionHistoryPage({
     end: parsed.filters.end,
     action_id: parsed.filters.actionId,
     node_id: parsed.filters.nodeId,
+    status: parsed.filters.status,
   });
   const latest = records[0]?.created_at;
 
@@ -68,8 +105,10 @@ export default async function ActionHistoryPage({
         start={parsed.filters.start}
         end={parsed.filters.end}
         actionId={parsed.filters.actionId}
+        actionName={actionDefault?.name}
         nodeId={parsed.filters.nodeId}
-        executionId={parsed.filters.executionId}
+        nodeName={nodeDefault?.name}
+        status={parsed.filters.status}
       />
       {parsed.error ? (
         <EmptyState title="Check the time range" description={parsed.error} />
@@ -80,7 +119,7 @@ export default async function ActionHistoryPage({
               <strong>
                 {parsed.filters.executionId
                   ? records.length
-                  : result.total_items}
+                  : result.page.total_items}
               </strong>{" "}
               records
             </p>
@@ -90,11 +129,7 @@ export default async function ActionHistoryPage({
           </div>
           <RefreshBoundary updatedAt={latest}>
             {records.length ? (
-              <RecordWindow>
-                {records.map((record) => (
-                  <ActionLogCard key={record.id} log={record} />
-                ))}
-              </RecordWindow>
+              <ActionHistoryTable records={records} />
             ) : (
               <EmptyState
                 title="No action history found"
@@ -102,6 +137,15 @@ export default async function ActionHistoryPage({
               />
             )}
           </RefreshBoundary>
+          {!parsed.filters.executionId ? (
+            <div className="border-border border-t pt-5">
+              <Pagination
+                page={result.page}
+                pathname="/action-history"
+                searchParams={raw}
+              />
+            </div>
+          ) : null}
         </>
       )}
     </main>

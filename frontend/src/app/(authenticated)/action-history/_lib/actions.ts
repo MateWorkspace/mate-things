@@ -6,8 +6,9 @@ import {
   type ActionLogFilterQuery,
 } from "@/lib/api/action-logs";
 import { ApiError } from "@/lib/api/client";
-import { parseRecordFilters } from "@/lib/record-filters";
 import { requireSessionContext } from "@/lib/session";
+
+import { parseActionHistoryFilters } from "./filters";
 
 export async function deleteActionHistoryAction(
   _state: ScopedDeleteState,
@@ -21,13 +22,14 @@ export async function deleteActionHistoryAction(
     };
   }
   const raw = Object.fromEntries(formData.entries()) as Record<string, string>;
-  const parsed = parseRecordFilters(raw);
+  const parsed = parseActionHistoryFilters(raw);
   if (parsed.error) return { status: "error", message: parsed.error };
   const filters: ActionLogFilterQuery = {
     executed_at_start: parsed.filters.start,
     executed_at_end: parsed.filters.end,
     action_id: parsed.filters.actionId,
     node_id: parsed.filters.nodeId,
+    status: parsed.filters.status,
   };
   const active = Object.values(filters).some(Boolean);
   const expected = active ? "DELETE" : "DELETE ALL";
