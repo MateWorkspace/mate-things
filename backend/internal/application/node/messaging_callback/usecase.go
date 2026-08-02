@@ -15,29 +15,35 @@ import (
 const resubscribePageLimit = 100
 
 type usecase struct {
-	node          domainusecasesrepocache.Node
-	actionLog     domaincontractsrepository.ActionLog
-	nodeLog       domaincontractsrepository.NodeLog
-	publisher     domaincontractsnode.Publish
-	subscriptions domaincontractsnode.Subscriptions
-	logger        domaincontractslogger.Leveled
+	node                 domainusecasesrepocache.Node
+	actionLog            domaincontractsrepository.ActionLog
+	nodeLog              domaincontractsrepository.NodeLog
+	firmwareConfigParams domaincontractsrepository.FirmwareConfigParameter
+	nodeConfigValues     domaincontractsrepository.NodeConfigValue
+	publisher            domaincontractsnode.Publish
+	subscriptions        domaincontractsnode.Subscriptions
+	logger               domaincontractslogger.Leveled
 }
 
 func NewUsecaseImpl(
 	node domainusecasesrepocache.Node,
 	actionLog domaincontractsrepository.ActionLog,
 	nodeLog domaincontractsrepository.NodeLog,
+	firmwareConfigParams domaincontractsrepository.FirmwareConfigParameter,
+	nodeConfigValues domaincontractsrepository.NodeConfigValue,
 	publisher domaincontractsnode.Publish,
 	subscriptions domaincontractsnode.Subscriptions,
 	logger domaincontractslogger.Leveled,
 ) domainusecasesnode.MessagingCallback {
 	return &usecase{
-		node:          node,
-		actionLog:     actionLog,
-		nodeLog:       nodeLog,
-		publisher:     publisher,
-		subscriptions: subscriptions,
-		logger:        logger,
+		node:                 node,
+		actionLog:            actionLog,
+		nodeLog:              nodeLog,
+		firmwareConfigParams: firmwareConfigParams,
+		nodeConfigValues:     nodeConfigValues,
+		publisher:            publisher,
+		subscriptions:        subscriptions,
+		logger:               logger,
 	}
 }
 
@@ -59,6 +65,16 @@ func (u *usecase) Register(ctx context.Context, request domainusecasesnode.Regis
 			"err":           err,
 			"device_id":     request.DeviceId,
 			"firmware_name": request.FirmwareName,
+		})
+		return err
+	}
+
+	if err := u.syncReportedConfig(ctx, node, request.Config); err != nil {
+		u.logger.Error(ctx, tag, "failed to sync reported node config", domainmodels.LoggerMeta{
+			"err":         err,
+			"device_id":   node.DeviceId,
+			"node_id":     node.Id,
+			"firmware_id": node.FirmwareId,
 		})
 		return err
 	}
@@ -216,5 +232,62 @@ func (u *usecase) subscribeNode(ctx context.Context, deviceId string) error {
 	if err := u.subscriptions.Log(ctx, deviceId); err != nil {
 		return err
 	}
+	return nil
+}
+
+// syncReportedConfig upserts node_config_values from what the device itself
+// reported at registration - the device is the source of truth for its own
+// live config, so this runs on every registration (not just first-time
+// creation), keeping the DB from drifting away from a value set out-of-band
+// (e.g. via BLE) since the node's last reconnect. A key the current
+// firmware's schema doesn't recognize, or a value that fails the schema's
+// declared value_type, is logged and skipped - never a reason to fail the
+// whole registration, matching the firmware's own MQTT config handler's
+// "unknown key" behavior.
+func (u *usecase) syncReportedConfig(ctx context.Context, node *domainmodels.Node, reported map[string]string) error {
+	const tag = "node/messaging_callback/syncReportedConfig"
+
+	if len(reported) == 0 {
+		return nil
+	}
+
+	params, err := u.firmwareConfigParams.ReadByFirmwareId(ctx, node.FirmwareId)
+	if err != nil {
+		return err
+	}
+
+	valueTypes := make(map[string]string, len(params))
+	for _, param := range params {
+		valueTypes[param.Key] = param.ValueType
+	}
+
+	for key, value := range reported {
+		valueType, known := valueTypes[key]
+		if !known {
+			u.logger.Warn(ctx, tag, "registration reported a config key not in the node's current firmware schema", domainmodels.LoggerMeta{
+				"device_id":   node.DeviceId,
+				"node_id":     node.Id,
+				"firmware_id": node.FirmwareId,
+				"key":         key,
+			})
+			continue
+		}
+
+		if err := applicationshared.ValidateConfigValue(value, valueType); err != nil {
+			u.logger.Warn(ctx, tag, "registration reported an invalid config value for its type, skipping", domainmodels.LoggerMeta{
+				"err":        err,
+				"device_id":  node.DeviceId,
+				"node_id":    node.Id,
+				"key":        key,
+				"value_type": valueType,
+			})
+			continue
+		}
+
+		if err := u.nodeConfigValues.Upsert(ctx, node.Id, node.FirmwareId, key, value, nil); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

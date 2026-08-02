@@ -161,6 +161,8 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		nodeRepoCache,
 		l.infra.actionLogRepository,
 		l.infra.nodeLogRepository,
+		l.infra.firmwareConfigParameterRepository,
+		l.infra.nodeConfigValueRepository,
 		l.infra.nodePublisher,
 		l.infra.nodeSubscriptions,
 		l.infra.logger,
