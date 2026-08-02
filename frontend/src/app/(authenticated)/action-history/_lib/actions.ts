@@ -29,6 +29,7 @@ export async function deleteActionHistoryAction(
     executed_at_end: parsed.filters.end,
     action_id: parsed.filters.actionId,
     node_id: parsed.filters.nodeId,
+    execution_id: parsed.filters.executionId,
     status: parsed.filters.status,
   };
   const active = Object.values(filters).some(Boolean);

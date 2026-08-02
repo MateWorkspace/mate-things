@@ -48,15 +48,19 @@ export default function ActionHistoryTable({
             const nodeLabel =
               record.node_name || record.node_device_id || "Not assigned";
 
+            const detailId = `action-log-detail-${record.id}`;
+
             return (
               <Fragment key={record.id}>
-                <tr
-                  onClick={() => setExpandedId(expanded ? null : record.id)}
-                  aria-expanded={expanded}
-                  className="hover:bg-highlight/20 cursor-pointer transition-colors"
-                >
+                <tr className="hover:bg-highlight/20 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(expanded ? null : record.id)}
+                      aria-expanded={expanded}
+                      aria-controls={detailId}
+                      className="flex items-center gap-2"
+                    >
                       <ChevronRight
                         aria-hidden="true"
                         className={`size-3.5 shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`}
@@ -64,10 +68,10 @@ export default function ActionHistoryTable({
                       <time dateTime={record.executed_at}>
                         {DATE_FORMATTER.format(new Date(record.executed_at))}
                       </time>
-                    </div>
+                    </button>
                   </td>
                   <td className="px-4 py-3" title={record.action_id}>
-                    {record.action_name}
+                    {record.action_name ?? record.action_id}
                   </td>
                   <td className="px-4 py-3" title={record.node_id ?? undefined}>
                     {nodeLabel}
@@ -79,7 +83,7 @@ export default function ActionHistoryTable({
                   </td>
                 </tr>
                 {expanded ? (
-                  <tr>
+                  <tr id={detailId}>
                     <td colSpan={4} className="bg-muted/50 px-4 py-4">
                       {record.action_message ? (
                         <p className="mb-3 text-sm whitespace-pre-wrap">

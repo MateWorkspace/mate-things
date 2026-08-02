@@ -129,14 +129,20 @@ export default function NodeSearchCombobox({
             />
           </div>
 
-          <ul className="mt-2 max-h-56 space-y-0.5 overflow-y-auto" role="listbox">
+          <ul
+            className="mt-2 max-h-56 space-y-0.5 overflow-y-auto"
+            role="listbox"
+          >
             <li>
               <button
                 type="button"
                 onClick={() => select(null)}
                 className="hover:bg-highlight/40 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
               >
-                <X aria-hidden="true" className="text-muted-foreground size-3.5" />
+                <X
+                  aria-hidden="true"
+                  className="text-muted-foreground size-3.5"
+                />
                 Any node
               </button>
             </li>
@@ -153,7 +159,9 @@ export default function NodeSearchCombobox({
                     aria-selected={node.id === selectedId}
                     onClick={() => select(node)}
                     className={`hover:bg-highlight/40 w-full rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                      node.id === selectedId ? "bg-highlight/40 font-semibold" : ""
+                      node.id === selectedId
+                        ? "bg-highlight/40 font-semibold"
+                        : ""
                     }`}
                   >
                     {node.name || node.device_id}
@@ -168,7 +176,10 @@ export default function NodeSearchCombobox({
           </ul>
 
           <div className="border-border mt-2 flex items-center justify-between border-t pt-2">
-            <span id={`${id}-page-info`} className="text-muted-foreground text-xs">
+            <span
+              id={`${id}-page-info`}
+              className="text-muted-foreground text-xs"
+            >
               Page {page} of {totalPages}
             </span>
             <div className="flex gap-1">
@@ -185,7 +196,9 @@ export default function NodeSearchCombobox({
                 type="button"
                 aria-label="Next nodes"
                 disabled={page >= totalPages || loading}
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                onClick={() =>
+                  setPage((current) => Math.min(totalPages, current + 1))
+                }
                 className="hover:bg-highlight/40 flex size-7 items-center justify-center rounded-lg transition-colors disabled:opacity-40"
               >
                 <ChevronRight aria-hidden="true" className="size-4" />

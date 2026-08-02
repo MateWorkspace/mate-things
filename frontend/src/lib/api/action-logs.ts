@@ -1,7 +1,11 @@
 "use server";
 
 import { apiFetch, buildQuery } from "@/lib/api/client";
-import type { CountResponse, PageDataResponse, PageQuery } from "@/lib/api/types";
+import type {
+  CountResponse,
+  PageDataResponse,
+  PageQuery,
+} from "@/lib/api/types";
 
 export type ActionStatus = "UNEXECUTED" | "UNRESPONDED" | "FAILED" | "SUCCESS";
 
@@ -9,7 +13,7 @@ export interface ActionLogResponse {
   id: number;
   execution_id: string;
   action_id: string;
-  action_name: string;
+  action_name?: string;
   node_id?: string;
   node_device_id?: string;
   node_name?: string;
@@ -20,17 +24,20 @@ export interface ActionLogResponse {
   created_at: string;
 }
 
-export interface ActionLogFilterQuery extends PageQuery {
+export interface ActionLogFilterQuery {
   /** ISO 8601 timestamps. */
   executed_at_start?: string;
   executed_at_end?: string;
   action_id?: string;
   node_id?: string;
+  execution_id?: string;
   status?: ActionStatus;
 }
 
+export interface ActionLogListQuery extends ActionLogFilterQuery, PageQuery {}
+
 export async function listActionLogs(
-  query: ActionLogFilterQuery = {},
+  query: ActionLogListQuery = {},
 ): Promise<PageDataResponse<ActionLogResponse>> {
   return apiFetch(`/action-logs${buildQuery(query)}`);
 }

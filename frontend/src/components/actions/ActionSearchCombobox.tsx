@@ -129,14 +129,20 @@ export default function ActionSearchCombobox({
             />
           </div>
 
-          <ul className="mt-2 max-h-56 space-y-0.5 overflow-y-auto" role="listbox">
+          <ul
+            className="mt-2 max-h-56 space-y-0.5 overflow-y-auto"
+            role="listbox"
+          >
             <li>
               <button
                 type="button"
                 onClick={() => select(null)}
                 className="hover:bg-highlight/40 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
               >
-                <X aria-hidden="true" className="text-muted-foreground size-3.5" />
+                <X
+                  aria-hidden="true"
+                  className="text-muted-foreground size-3.5"
+                />
                 Any action
               </button>
             </li>
@@ -153,7 +159,9 @@ export default function ActionSearchCombobox({
                     aria-selected={action.id === selectedId}
                     onClick={() => select(action)}
                     className={`hover:bg-highlight/40 w-full rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                      action.id === selectedId ? "bg-highlight/40 font-semibold" : ""
+                      action.id === selectedId
+                        ? "bg-highlight/40 font-semibold"
+                        : ""
                     }`}
                   >
                     {action.name}
@@ -168,7 +176,10 @@ export default function ActionSearchCombobox({
           </ul>
 
           <div className="border-border mt-2 flex items-center justify-between border-t pt-2">
-            <span id={`${id}-page-info`} className="text-muted-foreground text-xs">
+            <span
+              id={`${id}-page-info`}
+              className="text-muted-foreground text-xs"
+            >
               Page {page} of {totalPages}
             </span>
             <div className="flex gap-1">
@@ -185,7 +196,9 @@ export default function ActionSearchCombobox({
                 type="button"
                 aria-label="Next actions"
                 disabled={page >= totalPages || loading}
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                onClick={() =>
+                  setPage((current) => Math.min(totalPages, current + 1))
+                }
                 className="hover:bg-highlight/40 flex size-7 items-center justify-center rounded-lg transition-colors disabled:opacity-40"
               >
                 <ChevronRight aria-hidden="true" className="size-4" />

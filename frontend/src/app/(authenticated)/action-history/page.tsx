@@ -36,14 +36,16 @@ export default async function ActionHistoryPage({
   const pageQuery = parsePageQuery(raw);
   const parsed = parseActionHistoryFilters(raw);
 
-  const [actionDefault, nodeDefault] = await Promise.all([
-    parsed.filters.actionId
-      ? getActionById(parsed.filters.actionId).catch(() => null)
-      : Promise.resolve(null),
-    parsed.filters.nodeId
-      ? getNodeById(parsed.filters.nodeId).catch(() => null)
-      : Promise.resolve(null),
-  ]);
+  const [actionDefault, nodeDefault] = parsed.error
+    ? [null, null]
+    : await Promise.all([
+        parsed.filters.actionId
+          ? getActionById(parsed.filters.actionId).catch(() => null)
+          : Promise.resolve(null),
+        parsed.filters.nodeId
+          ? getNodeById(parsed.filters.nodeId).catch(() => null)
+          : Promise.resolve(null),
+      ]);
 
   const result = parsed.error
     ? {
@@ -57,6 +59,7 @@ export default async function ActionHistoryPage({
         executed_at_end: parsed.filters.end,
         action_id: parsed.filters.actionId,
         node_id: parsed.filters.nodeId,
+        execution_id: parsed.filters.executionId,
         status: parsed.filters.status,
       });
 
@@ -71,11 +74,7 @@ export default async function ActionHistoryPage({
     }
   }
 
-  const records = parsed.filters.executionId
-    ? result.data.filter(
-        (log) => log.execution_id === parsed.filters.executionId,
-      )
-    : result.data;
+  const records = result.data;
   const deletionFilters = activeFilterEntries({
     start: parsed.filters.start,
     end: parsed.filters.end,
@@ -111,17 +110,15 @@ export default async function ActionHistoryPage({
         status={parsed.filters.status}
       />
       {parsed.error ? (
-        <EmptyState title="Check the time range" description={parsed.error} />
+        <EmptyState
+          title="Check the active filters"
+          description={parsed.error}
+        />
       ) : (
         <>
           <div className="flex flex-wrap justify-between gap-3 text-sm">
             <p>
-              <strong>
-                {parsed.filters.executionId
-                  ? records.length
-                  : result.page.total_items}
-              </strong>{" "}
-              records
+              <strong>{result.page.total_items}</strong> records
             </p>
             <p className="text-muted-foreground">
               Use a bounded time range for faster operational review.
@@ -137,15 +134,13 @@ export default async function ActionHistoryPage({
               />
             )}
           </RefreshBoundary>
-          {!parsed.filters.executionId ? (
-            <div className="border-border border-t pt-5">
-              <Pagination
-                page={result.page}
-                pathname="/action-history"
-                searchParams={raw}
-              />
-            </div>
-          ) : null}
+          <div className="border-border border-t pt-5">
+            <Pagination
+              page={result.page}
+              pathname="/action-history"
+              searchParams={raw}
+            />
+          </div>
         </>
       )}
     </main>

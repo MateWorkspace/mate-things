@@ -1,5 +1,7 @@
 import type { ActionStatus } from "@/lib/api/action-logs";
 
+import { ACTION_STATUS_LABELS } from "./status";
+
 export interface ActionHistoryFilters {
   start?: string;
   end?: string;
@@ -16,21 +18,13 @@ export interface ParsedActionHistoryFilters {
 
 type RawActionHistoryParams = Record<string, string | string[] | undefined>;
 
-const VALID_STATUSES: readonly ActionStatus[] = [
-  "UNEXECUTED",
-  "UNRESPONDED",
-  "FAILED",
-  "SUCCESS",
-];
+const VALID_STATUSES = Object.keys(ACTION_STATUS_LABELS) as ActionStatus[];
 
 function first(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : (value ?? "")).trim();
 }
 
-function iso(
-  value: string,
-  field: string,
-): { value?: string; error?: string } {
+function iso(value: string, field: string): { value?: string; error?: string } {
   if (!value) return {};
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
