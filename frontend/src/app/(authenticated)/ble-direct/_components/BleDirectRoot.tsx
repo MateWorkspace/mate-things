@@ -1,6 +1,7 @@
 "use client";
 
 import ConnectionBanner from "./ConnectionBanner";
+import LogBlock from "./blocks/LogBlock";
 import SettingsBlock from "./blocks/SettingsBlock/SettingsBlock";
 import SystemInfoBlock from "./blocks/SystemInfoBlock";
 import WifiManagerBlock from "./blocks/WifiManagerBlock";
@@ -11,10 +12,12 @@ export default function BleDirectRoot() {
     state,
     connect,
     disconnect,
-    writeWifiConnect,
-    sendWifiCommand,
     writeSettingsUpdate,
     restartDevice,
+    writeWifiConnect,
+    sendWifiCommand,
+    setLogEnabled,
+    clearLog,
   } = useBleConnection();
 
   const data =
@@ -45,6 +48,12 @@ export default function BleDirectRoot() {
             restartRequired={data.restartRequired}
             onSave={writeSettingsUpdate}
             onRestart={() => restartDevice(0)}
+          />
+          <LogBlock
+            lines={data.logLines}
+            enabled={data.logEnabled}
+            onToggle={setLogEnabled}
+            onClear={clearLog}
           />
         </div>
       ) : state.status === "disconnected" ? (
