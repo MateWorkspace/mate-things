@@ -66,21 +66,6 @@ export async function listAllPayloadSchemas(): Promise<
   }
 }
 
-export async function getLatestPayloadSchema(
-  name: string,
-): Promise<PayloadSchemaResponse> {
-  return apiFetch(`/admin/payload-schemas/latest${buildQuery({ name })}`);
-}
-
-export async function getPayloadSchemaByNameAndVersion(
-  name: string,
-  version: number,
-): Promise<PayloadSchemaResponse> {
-  return apiFetch(
-    `/admin/payload-schemas/by-name-version${buildQuery({ name, version })}`,
-  );
-}
-
 export async function getPayloadSchemaById(
   id: string,
 ): Promise<PayloadSchemaResponse> {

@@ -93,9 +93,10 @@ an ordered list of **field rows**, plus one trailing plain text input for
 adding the next field, always present at the end of the list.
 
 To add a field: type a snake_case name into that trailing input and press
-**Enter or Space**. Typing a space auto-converts it to `_` as you type (so
-`sample rate` becomes `sample_rate` mid-typing — it reads as "finishing a
-word"). On commit, that input becomes a **field block**:
+**Enter** to commit it. Typing a space character auto-converts it to `_`
+inline as you type (so `sample rate` becomes `sample_rate` mid-typing — it
+reads as "finishing a word"); the space itself does not commit the row. On
+commit, that input becomes a **field block**:
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -198,7 +199,7 @@ Server-side (submit time): `saveSchema` in
 `frontend/src/app/(authenticated)/admin/payload-schemas/_lib/actions.ts`
 already returns `fieldErrors: Record<string, string>`. Backend structural
 validation errors reference dotted paths like
-`definition.readings.items.sample_rate` — the action's error handling is
+`definition.readings.sample_rate` — the action's error handling is
 extended to walk that path and highlight/scroll to the exact matching row,
 falling back to a top-of-form banner if the path doesn't resolve to a
 mounted row (defensive; client-side validation should already catch anything
