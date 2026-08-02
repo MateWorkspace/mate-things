@@ -43,7 +43,7 @@ export default function AppBar({
             aria-label={
               sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
             }
-            className="hidden lg:inline-flex"
+            className="!hidden lg:!inline-flex"
             onClick={onDesktopSidebarToggle}
           >
             {sidebarCollapsed ? (
