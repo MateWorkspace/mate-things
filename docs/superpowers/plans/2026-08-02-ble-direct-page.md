@@ -2139,7 +2139,7 @@ Create `frontend/src/app/(authenticated)/ble-direct/_components/blocks/SettingsB
 ```tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
@@ -2186,10 +2186,18 @@ export default function SettingsBlock({
   const [restartError, setRestartError] = useState<string>();
   const [restartPending, setRestartPending] = useState(false);
 
-  useEffect(() => {
+  // Reset the form whenever the device gives us a fresh snapshot (after a
+  // successful save or a reconnect) - adjusting state during render per
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes,
+  // not in an effect (eslint's react-hooks/set-state-in-effect rejects
+  // synchronous setState-in-effect, and this avoids the extra render pass
+  // anyway).
+  const [syncedSnapshot, setSyncedSnapshot] = useState(snapshot);
+  if (snapshot !== syncedSnapshot) {
+    setSyncedSnapshot(snapshot);
     setValues(initialValues(schema, snapshot));
     setTouched({});
-  }, [schema, snapshot]);
+  }
 
   const fieldErrors = useMemo(() => {
     const errors: Record<string, string> = {};
