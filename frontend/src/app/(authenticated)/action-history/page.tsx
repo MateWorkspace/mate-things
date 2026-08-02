@@ -120,9 +120,6 @@ export default async function ActionHistoryPage({
             <p>
               <strong>{result.page.total_items}</strong> records
             </p>
-            <p className="text-muted-foreground">
-              Use a bounded time range for faster operational review.
-            </p>
           </div>
           <RefreshBoundary updatedAt={latest}>
             {records.length ? (

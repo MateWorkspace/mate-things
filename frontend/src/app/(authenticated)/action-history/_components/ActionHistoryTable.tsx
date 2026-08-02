@@ -90,7 +90,7 @@ export default function ActionHistoryTable({
                           {record.action_message}
                         </p>
                       ) : null}
-                      <JsonPayload value={record.payload} />
+                      <JsonPayload value={record.payload} hideToggle />
                     </td>
                   </tr>
                 ) : null}
