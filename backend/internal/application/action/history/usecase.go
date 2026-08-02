@@ -36,6 +36,7 @@ func (u *usecase) ReadByFilter(
 		request.ExecutedAtEnd,
 		request.ActionId,
 		request.NodeId,
+		request.ExecutionId,
 		request.ActionStatus,
 		request.Page,
 		request.Limit,
@@ -64,6 +65,7 @@ func (u *usecase) DeleteByFilter(
 		request.ExecutedAtEnd,
 		request.ActionId,
 		request.NodeId,
+		request.ExecutionId,
 		request.ActionStatus,
 	)
 	if err != nil {

@@ -294,34 +294,6 @@ func ScanPgxTelemetryRecords(rows pgx.Rows) ([]domainmodels.TelemetryRecord, err
 	return items, rows.Err()
 }
 
-func ScanPgxActionLog(row pgx.Row) (domainmodels.ActionLog, error) {
-	var item domainmodels.ActionLog
-	err := row.Scan(
-		&item.Id,
-		&item.ExecutionId,
-		&item.ActionId,
-		&item.NodeId,
-		&item.ActionStatus,
-		&item.ActionMessage,
-		&item.Payload,
-		&item.ExecutedAt,
-		&item.CreatedAt,
-	)
-	return item, err
-}
-
-func ScanPgxActionLogs(rows pgx.Rows) ([]domainmodels.ActionLog, error) {
-	items := make([]domainmodels.ActionLog, 0)
-	for rows.Next() {
-		item, err := ScanPgxActionLog(rows)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, item)
-	}
-	return items, rows.Err()
-}
-
 func ScanPgxActionLogListItem(row pgx.Row) (domainmodels.ActionLogListItem, error) {
 	var item domainmodels.ActionLogListItem
 	err := row.Scan(

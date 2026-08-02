@@ -331,6 +331,7 @@ func (h *handler) ActionDispatchPost(c *echo.Context) error {
 // @Param executed_at_end query string false "RFC3339 timestamp"
 // @Param action_id query string false "action id"
 // @Param node_id query string false "node id"
+// @Param execution_id query string false "execution id"
 // @Param status query string false "action status (UNEXECUTED, UNRESPONDED, FAILED, SUCCESS)"
 // @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.ActionLogResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
@@ -372,6 +373,7 @@ func (h *handler) ActionLogGetList(c *echo.Context) error {
 // @Param executed_at_end query string false "RFC3339 timestamp"
 // @Param action_id query string false "action id"
 // @Param node_id query string false "node id"
+// @Param execution_id query string false "execution id"
 // @Param status query string false "action status (UNEXECUTED, UNRESPONDED, FAILED, SUCCESS)"
 // @Success 200 {object} presentationhttpresponse.CountResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
@@ -410,6 +412,10 @@ func (h *handler) actionLogFilter(c *echo.Context) (domainusecasesaction.ReadAct
 	if err != nil {
 		return domainusecasesaction.ReadActionLogsByFilterRequest{}, err
 	}
+	executionId, err := presentationhttputils.QueryUUID(c, "execution_id")
+	if err != nil {
+		return domainusecasesaction.ReadActionLogsByFilterRequest{}, err
+	}
 	actionStatus, err := actionLogStatus(presentationhttputils.QueryString(c, "status"))
 	if err != nil {
 		return domainusecasesaction.ReadActionLogsByFilterRequest{}, err
@@ -420,6 +426,7 @@ func (h *handler) actionLogFilter(c *echo.Context) (domainusecasesaction.ReadAct
 		ExecutedAtEnd:   executedAtEnd,
 		ActionId:        actionId,
 		NodeId:          nodeId,
+		ExecutionId:     executionId,
 		ActionStatus:    actionStatus,
 	}, nil
 }
@@ -435,6 +442,7 @@ func (h *handler) actionLogDeleteFilter(c *echo.Context) (domainusecasesaction.D
 		ExecutedAtEnd:   filter.ExecutedAtEnd,
 		ActionId:        filter.ActionId,
 		NodeId:          filter.NodeId,
+		ExecutionId:     filter.ExecutionId,
 		ActionStatus:    filter.ActionStatus,
 	}, nil
 }

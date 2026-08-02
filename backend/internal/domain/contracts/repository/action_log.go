@@ -34,6 +34,7 @@ type ActionLog interface {
 		executedAtEnd *time.Time,
 		actionId *uuid.UUID,
 		nodeId *uuid.UUID,
+		executionId *uuid.UUID,
 		actionStatus *domainmodels.ActionStatus,
 		page int,
 		limit int,
@@ -45,6 +46,7 @@ type ActionLog interface {
 		executedAtEnd *time.Time,
 		actionId *uuid.UUID,
 		nodeId *uuid.UUID,
+		executionId *uuid.UUID,
 		actionStatus *domainmodels.ActionStatus,
 	) (total int, err error)
 }

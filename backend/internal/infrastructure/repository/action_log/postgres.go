@@ -81,11 +81,12 @@ func (p *postgresImpl) ReadByFilter(
 	executedAtEnd *time.Time,
 	actionId *uuid.UUID,
 	nodeId *uuid.UUID,
+	executionId *uuid.UUID,
 	actionStatus *domainmodels.ActionStatus,
 	page int,
 	limit int,
 ) (actionLogs []domainmodels.ActionLogListItem, total int, err error) {
-	totalQuery, totalArgs, query, queryArgs, err := p.queryReadByFilter(executedAtStart, executedAtEnd, actionId, nodeId, actionStatus, page, limit)
+	totalQuery, totalArgs, query, queryArgs, err := p.queryReadByFilter(executedAtStart, executedAtEnd, actionId, nodeId, executionId, actionStatus, page, limit)
 	if err != nil {
 		return nil, 0, infrastructurerepositoryshared.QueryBuildError("failed to build read action logs query", err)
 	}
@@ -117,9 +118,10 @@ func (p *postgresImpl) DeleteByFilter(
 	executedAtEnd *time.Time,
 	actionId *uuid.UUID,
 	nodeId *uuid.UUID,
+	executionId *uuid.UUID,
 	actionStatus *domainmodels.ActionStatus,
 ) (total int, err error) {
-	query, args, err := p.queryDeleteByFilter(executedAtStart, executedAtEnd, actionId, nodeId, actionStatus)
+	query, args, err := p.queryDeleteByFilter(executedAtStart, executedAtEnd, actionId, nodeId, executionId, actionStatus)
 	if err != nil {
 		return 0, infrastructurerepositoryshared.QueryBuildError("failed to build delete action logs query", err)
 	}

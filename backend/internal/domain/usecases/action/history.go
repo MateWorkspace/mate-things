@@ -18,6 +18,7 @@ type ReadActionLogsByFilterRequest struct {
 	ExecutedAtEnd   *time.Time
 	ActionId        *uuid.UUID
 	NodeId          *uuid.UUID
+	ExecutionId     *uuid.UUID
 	ActionStatus    *domainmodels.ActionStatus
 	Page            int
 	Limit           int
@@ -28,5 +29,6 @@ type DeleteActionLogsByFilterRequest struct {
 	ExecutedAtEnd   *time.Time
 	ActionId        *uuid.UUID
 	NodeId          *uuid.UUID
+	ExecutionId     *uuid.UUID
 	ActionStatus    *domainmodels.ActionStatus
 }

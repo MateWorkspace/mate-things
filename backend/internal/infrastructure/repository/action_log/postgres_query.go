@@ -54,6 +54,7 @@ func (p *postgresImpl) queryReadByFilter(
 	executedAtEnd *time.Time,
 	actionId *uuid.UUID,
 	nodeId *uuid.UUID,
+	executionId *uuid.UUID,
 	actionStatus *domainmodels.ActionStatus,
 	page int,
 	limit int,
@@ -78,7 +79,7 @@ func (p *postgresImpl) queryReadByFilter(
 	totalQ := p.SqrD.Select("COUNT(*)").
 		From("action_logs")
 
-	baseQ, totalQ = applyActionLogFilters(baseQ, totalQ, executedAtStart, executedAtEnd, actionId, nodeId, actionStatus)
+	baseQ, totalQ = applyActionLogFilters(baseQ, totalQ, executedAtStart, executedAtEnd, actionId, nodeId, executionId, actionStatus)
 
 	totalQuery, totalArgs, err = totalQ.ToSql()
 	if err != nil {
@@ -98,6 +99,7 @@ func (p *postgresImpl) queryDeleteByFilter(
 	executedAtEnd *time.Time,
 	actionId *uuid.UUID,
 	nodeId *uuid.UUID,
+	executionId *uuid.UUID,
 	actionStatus *domainmodels.ActionStatus,
 ) (query string, args []any, err error) {
 	q := p.SqrD.Delete("action_logs")
@@ -114,6 +116,9 @@ func (p *postgresImpl) queryDeleteByFilter(
 	if nodeId != nil {
 		q = q.Where(squirrel.Eq{"node_id": *nodeId})
 	}
+	if executionId != nil {
+		q = q.Where(squirrel.Eq{"execution_id": *executionId})
+	}
 	if actionStatus != nil {
 		q = q.Where(squirrel.Eq{"action_status": string(*actionStatus)})
 	}
@@ -128,6 +133,7 @@ func applyActionLogFilters(
 	executedAtEnd *time.Time,
 	actionId *uuid.UUID,
 	nodeId *uuid.UUID,
+	executionId *uuid.UUID,
 	actionStatus *domainmodels.ActionStatus,
 ) (squirrel.SelectBuilder, squirrel.SelectBuilder) {
 	if executedAtStart != nil {
@@ -147,6 +153,11 @@ func applyActionLogFilters(
 	}
 	if nodeId != nil {
 		condition := squirrel.Eq{"node_id": *nodeId}
+		baseQ = baseQ.Where(condition)
+		totalQ = totalQ.Where(condition)
+	}
+	if executionId != nil {
+		condition := squirrel.Eq{"execution_id": *executionId}
 		baseQ = baseQ.Where(condition)
 		totalQ = totalQ.Where(condition)
 	}
