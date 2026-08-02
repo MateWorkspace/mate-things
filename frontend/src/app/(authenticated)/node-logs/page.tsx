@@ -97,11 +97,11 @@ export default async function NodeLogsPage({
             intervalMs={15_000}
           >
             {result.data.length ? (
-              <RecordWindow
-                records={result.data}
-                getKey={(log) => log.id}
-                renderRecord={(log) => <NodeLogCard log={log} />}
-              />
+              <RecordWindow>
+                {result.data.map((log) => (
+                  <NodeLogCard key={log.id} log={log} />
+                ))}
+              </RecordWindow>
             ) : (
               <EmptyState
                 title="No node logs found"

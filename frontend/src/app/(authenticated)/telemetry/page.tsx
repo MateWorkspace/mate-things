@@ -83,11 +83,11 @@ export default async function TelemetryPage({
           </div>
           <RefreshBoundary updatedAt={result.data[0]?.created_at}>
             {result.data.length ? (
-              <RecordWindow
-                records={result.data}
-                getKey={(record) => record.id}
-                renderRecord={(record) => <TelemetryCard record={record} />}
-              />
+              <RecordWindow>
+                {result.data.map((record) => (
+                  <TelemetryCard key={record.id} record={record} />
+                ))}
+              </RecordWindow>
             ) : (
               <EmptyState
                 title="No telemetry found"

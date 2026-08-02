@@ -90,11 +90,11 @@ export default async function ActionHistoryPage({
           </div>
           <RefreshBoundary updatedAt={latest}>
             {records.length ? (
-              <RecordWindow
-                records={records}
-                getKey={(record) => record.id}
-                renderRecord={(record) => <ActionLogCard log={record} />}
-              />
+              <RecordWindow>
+                {records.map((record) => (
+                  <ActionLogCard key={record.id} log={record} />
+                ))}
+              </RecordWindow>
             ) : (
               <EmptyState
                 title="No action history found"
