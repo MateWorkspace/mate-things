@@ -412,6 +412,30 @@ func RequiredDeviceId(value string, field string) (string, error) {
 	return value, nil
 }
 
+// ValidateConfigValue checks a config value string against the value_type
+// declared for its key in the owning firmware's config schema (string,
+// uint32, or bool) - shared by any usecase that accepts a
+// (key, value, value_type) config write, whether that write comes from an
+// HTTP request or a device's own MQTT registration report.
+func ValidateConfigValue(value string, valueType string) error {
+	switch valueType {
+	case "uint32":
+		if _, err := strconv.ParseUint(value, 10, 32); err != nil {
+			return domainmodels.NewError("config value must be a valid uint32", domainmodels.ErrTypeValidation, err)
+		}
+	case "bool":
+		if value != "true" && value != "false" {
+			return domainmodels.NewError("config value must be \"true\" or \"false\"", domainmodels.ErrTypeValidation, nil)
+		}
+	case "string":
+		// any string value is acceptable
+	default:
+		return domainmodels.NewError("unrecognized config value_type", domainmodels.ErrTypeFailure, nil)
+	}
+
+	return nil
+}
+
 // esp32ImageMagicByte is the fixed first byte of every ESP-IDF app/bootloader
 // image (esp_image_header_t.magic). Firmware uploads are checked against it
 // so an admin uploading the wrong file is rejected at upload time instead of

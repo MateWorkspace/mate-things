@@ -2,8 +2,8 @@ package applicationnodeconfigvalue
 
 import (
 	"context"
-	"strconv"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
 	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
@@ -123,7 +123,7 @@ func (u *usecase) SetByNodeId(ctx context.Context, request domainusecasesnode.Se
 		return domainmodels.NewError("config key does not exist on the node's current firmware", domainmodels.ErrTypeNotFound, nil)
 	}
 
-	if err := validateConfigValue(request.Value, valueType); err != nil {
+	if err := applicationshared.ValidateConfigValue(request.Value, valueType); err != nil {
 		return err
 	}
 
@@ -143,25 +143,6 @@ func (u *usecase) SetByNodeId(ctx context.Context, request domainusecasesnode.Se
 			"key":       request.Key,
 		})
 		return err
-	}
-
-	return nil
-}
-
-func validateConfigValue(value string, valueType string) error {
-	switch valueType {
-	case "uint32":
-		if _, err := strconv.ParseUint(value, 10, 32); err != nil {
-			return domainmodels.NewError("config value must be a valid uint32", domainmodels.ErrTypeValidation, err)
-		}
-	case "bool":
-		if value != "true" && value != "false" {
-			return domainmodels.NewError("config value must be \"true\" or \"false\"", domainmodels.ErrTypeValidation, nil)
-		}
-	case "string":
-		// any string value is acceptable
-	default:
-		return domainmodels.NewError("unrecognized config value_type", domainmodels.ErrTypeFailure, nil)
 	}
 
 	return nil

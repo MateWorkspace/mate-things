@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 )
 
@@ -24,13 +25,13 @@ func TestValidateConfigValuePreservesStringDomainAndRejectsInvalidTypedValues(t 
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := validateConfigValue(test.value, test.valueType)
+			err := applicationshared.ValidateConfigValue(test.value, test.valueType)
 
 			if test.wantError && !errors.Is(err, domainmodels.ErrTypeValidation) {
-				t.Fatalf("validateConfigValue() error = %v, want validation error", err)
+				t.Fatalf("ValidateConfigValue() error = %v, want validation error", err)
 			}
 			if !test.wantError && err != nil {
-				t.Fatalf("validateConfigValue() error = %v, want nil", err)
+				t.Fatalf("ValidateConfigValue() error = %v, want nil", err)
 			}
 		})
 	}
