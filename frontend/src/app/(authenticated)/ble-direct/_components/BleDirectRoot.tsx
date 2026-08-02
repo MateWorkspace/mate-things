@@ -2,10 +2,12 @@
 
 import ConnectionBanner from "./ConnectionBanner";
 import SystemInfoBlock from "./blocks/SystemInfoBlock";
+import WifiManagerBlock from "./blocks/WifiManagerBlock";
 import { useBleConnection } from "../_lib/useBleConnection";
 
 export default function BleDirectRoot() {
-  const { state, connect, disconnect } = useBleConnection();
+  const { state, connect, disconnect, writeWifiConnect, sendWifiCommand } =
+    useBleConnection();
 
   const data =
     state.status === "connected" || state.status === "reconnecting"
@@ -23,6 +25,12 @@ export default function BleDirectRoot() {
           }
         >
           <SystemInfoBlock info={data.systemInfo} />
+          <WifiManagerBlock
+            status={data.wifiStatus}
+            stored={data.wifiStoredCredential}
+            onConnect={writeWifiConnect}
+            onCommand={sendWifiCommand}
+          />
         </div>
       ) : state.status === "disconnected" ? (
         <div className="border-control-border bg-muted rounded-2xl border border-dashed p-8 text-center">
