@@ -51,6 +51,11 @@ export const NAVIGATION_GROUPS: readonly NavigationGroup[] = [
         href: "/action-history",
         requiredPermissions: ["action_log:get"],
       },
+      {
+        label: "BLE Direct",
+        href: "/ble-direct",
+        requiredPermissions: [],
+      },
     ],
   },
   {
