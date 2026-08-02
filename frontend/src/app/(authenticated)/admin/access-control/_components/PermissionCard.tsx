@@ -25,36 +25,29 @@ export default function PermissionCard({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   return (
-    <ResourceCard
-      title={permission.name}
-      actions={
-        <div className="flex gap-2">
-          {allowed.has("permission:set") ? (
-            <Button variant="secondary" onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
-          ) : null}
-          <PreferencesDialog
-            resource="permission"
-            id={permission.id}
-            preferences={permission.preferences}
-            permissions={grants}
-            label="Preferences"
-          />
-        </div>
-      }
-    >
+    <ResourceCard title={permission.name}>
       <p className="text-foreground/70 min-h-15">
         {permission.description || "No description."}
       </p>
-      {allowed.has("permission:remove") ? (
-        <button
-          className="text-critical focus-visible:ring-critical mt-4 rounded text-sm font-semibold underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
-          onClick={() => setDeleteOpen(true)}
-        >
-          Delete permission
-        </button>
-      ) : null}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {allowed.has("permission:set") ? (
+          <Button variant="secondary" onClick={() => setEditOpen(true)}>
+            Edit
+          </Button>
+        ) : null}
+        <PreferencesDialog
+          resource="permission"
+          id={permission.id}
+          preferences={permission.preferences}
+          permissions={grants}
+          label="Preferences"
+        />
+        {allowed.has("permission:remove") ? (
+          <Button variant="critical" onClick={() => setDeleteOpen(true)}>
+            Delete
+          </Button>
+        ) : null}
+      </div>
       <PermissionDialog
         permission={permission}
         open={editOpen}
