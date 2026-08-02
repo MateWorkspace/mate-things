@@ -9,9 +9,10 @@ import (
 )
 
 type Registration struct {
-	DeviceId     string `json:"device_id"`
-	DeviceInfo   string `json:"device_info"`
-	FirmwareName string `json:"firmware_name"`
+	DeviceId     string            `json:"device_id"`
+	DeviceInfo   string            `json:"device_info"`
+	FirmwareName string            `json:"firmware_name"`
+	Config       map[string]string `json:"config"`
 }
 
 func DecodeRegistration(payload []byte) (domainusecasesnode.RegisterNodeMessageRequest, error) {
@@ -31,5 +32,6 @@ func DecodeRegistration(payload []byte) (domainusecasesnode.RegisterNodeMessageR
 		DeviceId:     dto.DeviceId,
 		DeviceInfo:   dto.DeviceInfo,
 		FirmwareName: dto.FirmwareName,
+		Config:       dto.Config,
 	}, nil
 }

@@ -19,6 +19,7 @@ type RegisterNodeMessageRequest struct {
 	DeviceId     string
 	DeviceInfo   string
 	FirmwareName string
+	Config       map[string]string
 }
 
 type NodeStatusMessageRequest struct {
