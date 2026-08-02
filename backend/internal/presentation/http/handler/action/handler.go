@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesaction "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/action"
 	presentationhttprequest "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/request"
 	presentationhttpresponse "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/response"
@@ -324,30 +325,40 @@ func (h *handler) ActionDispatchPost(c *echo.Context) error {
 // @Tags Action Logs
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
 // @Param executed_at_start query string false "RFC3339 timestamp"
 // @Param executed_at_end query string false "RFC3339 timestamp"
 // @Param action_id query string false "action id"
 // @Param node_id query string false "node id"
-// @Success 200 {object} presentationhttpresponse.CountDataResponse[presentationhttpresponse.ActionLogResponse]
+// @Param status query string false "action status (UNEXECUTED, UNRESPONDED, FAILED, SUCCESS)"
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.ActionLogResponse]
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
 // @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
 // @Router /v1/action-logs [get]
 func (h *handler) ActionLogGetList(c *echo.Context) error {
+	page, err := presentationhttputils.PageArgs(c)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
 	filter, err := h.actionLogFilter(c)
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
+	filter.Page = page.Page
+	filter.Limit = page.Limit
 
 	actionLogs, total, err := h.historyUseCase.ReadByFilter(c.Request().Context(), filter)
 	if err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
-	return c.JSON(http.StatusOK, presentationhttpresponse.CountDataResponse[presentationhttpresponse.ActionLogResponse]{
-		Data:       presentationhttpresponse.ActionLogs(actionLogs),
-		TotalItems: total,
+	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.ActionLogResponse]{
+		Data: presentationhttpresponse.ActionLogListItems(actionLogs),
+		Page: presentationhttputils.PageResponse(page, total),
 	})
 }
 
@@ -361,6 +372,7 @@ func (h *handler) ActionLogGetList(c *echo.Context) error {
 // @Param executed_at_end query string false "RFC3339 timestamp"
 // @Param action_id query string false "action id"
 // @Param node_id query string false "node id"
+// @Param status query string false "action status (UNEXECUTED, UNRESPONDED, FAILED, SUCCESS)"
 // @Success 200 {object} presentationhttpresponse.CountResponse
 // @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
@@ -398,12 +410,17 @@ func (h *handler) actionLogFilter(c *echo.Context) (domainusecasesaction.ReadAct
 	if err != nil {
 		return domainusecasesaction.ReadActionLogsByFilterRequest{}, err
 	}
+	actionStatus, err := actionLogStatus(presentationhttputils.QueryString(c, "status"))
+	if err != nil {
+		return domainusecasesaction.ReadActionLogsByFilterRequest{}, err
+	}
 
 	return domainusecasesaction.ReadActionLogsByFilterRequest{
 		ExecutedAtStart: executedAtStart,
 		ExecutedAtEnd:   executedAtEnd,
 		ActionId:        actionId,
 		NodeId:          nodeId,
+		ActionStatus:    actionStatus,
 	}, nil
 }
 
@@ -418,5 +435,31 @@ func (h *handler) actionLogDeleteFilter(c *echo.Context) (domainusecasesaction.D
 		ExecutedAtEnd:   filter.ExecutedAtEnd,
 		ActionId:        filter.ActionId,
 		NodeId:          filter.NodeId,
+		ActionStatus:    filter.ActionStatus,
 	}, nil
+}
+
+// actionLogStatus mirrors node_log/handler.go's nodeLogLevel helper - a
+// package-local enum-string validator, not a shared presentationhttputils
+// addition, matching this codebase's existing precedent for this kind of
+// query param.
+func actionLogStatus(value *string) (*domainmodels.ActionStatus, error) {
+	if value == nil {
+		return nil, nil
+	}
+
+	status := domainmodels.ActionStatus(*value)
+	switch status {
+	case domainmodels.ActionStatusUnexecuted,
+		domainmodels.ActionStatusUnresponded,
+		domainmodels.ActionStatusFailed,
+		domainmodels.ActionStatusSuccess:
+		return &status, nil
+	default:
+		return nil, domainmodels.NewError(
+			"status must be one of UNEXECUTED, UNRESPONDED, FAILED, SUCCESS",
+			domainmodels.ErrTypeValidation,
+			nil,
+		)
+	}
 }
