@@ -75,6 +75,7 @@ export default function SchemaFieldList({
               commitDraft();
             }
           }}
+          onBlur={commitDraft}
         />
         {draftError ? (
           <p className="text-critical mt-1 text-sm">{draftError}</p>

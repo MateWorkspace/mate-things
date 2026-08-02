@@ -27,6 +27,29 @@ describe("SchemaFieldList", () => {
     );
   });
 
+  it("adds a field row when the name input is left with text and loses focus", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const input = screen.getByPlaceholderText("variable_name");
+    await user.type(input, "sample_rate");
+    await user.tab();
+
+    expect(screen.getByText("sample_rate")).toBeInTheDocument();
+    expect(input).toHaveValue("");
+  });
+
+  it("does nothing when the name input is left blank and loses focus", async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={[]} />);
+
+    const input = screen.getByPlaceholderText("variable_name");
+    await user.click(input);
+    await user.tab();
+
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+  });
+
   it("converts a typed space into an underscore as the user types", async () => {
     const user = userEvent.setup();
     render(<Harness />);

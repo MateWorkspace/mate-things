@@ -13,18 +13,18 @@ export type FieldType =
   | "[]object";
 
 export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
-  string: "Text",
-  float: "Number",
-  integer: "Whole number",
-  boolean: "Yes/No",
-  enum: "Choice",
+  string: "String",
+  float: "Float",
+  integer: "Integer",
+  boolean: "Boolean",
+  enum: "Enum",
   object: "Object",
-  "[]string": "List of text",
-  "[]float": "List of numbers",
-  "[]integer": "List of whole numbers",
-  "[]boolean": "List of yes/no",
-  "[]enum": "List of choices",
-  "[]object": "List of objects",
+  "[]string": "String[]",
+  "[]float": "Float[]",
+  "[]integer": "Integer[]",
+  "[]boolean": "Boolean[]",
+  "[]enum": "Enum[]",
+  "[]object": "Object[]",
 };
 
 export const FIELD_TYPES = Object.keys(FIELD_TYPE_LABELS) as FieldType[];
