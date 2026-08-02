@@ -322,6 +322,37 @@ func ScanPgxActionLogs(rows pgx.Rows) ([]domainmodels.ActionLog, error) {
 	return items, rows.Err()
 }
 
+func ScanPgxActionLogListItem(row pgx.Row) (domainmodels.ActionLogListItem, error) {
+	var item domainmodels.ActionLogListItem
+	err := row.Scan(
+		&item.Id,
+		&item.ExecutionId,
+		&item.ActionId,
+		&item.NodeId,
+		&item.ActionStatus,
+		&item.ActionMessage,
+		&item.Payload,
+		&item.ExecutedAt,
+		&item.CreatedAt,
+		&item.ActionName,
+		&item.NodeDeviceId,
+		&item.NodeName,
+	)
+	return item, err
+}
+
+func ScanPgxActionLogListItems(rows pgx.Rows) ([]domainmodels.ActionLogListItem, error) {
+	items := make([]domainmodels.ActionLogListItem, 0)
+	for rows.Next() {
+		item, err := ScanPgxActionLogListItem(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func ScanPgxFirmwareConfigParameter(row pgx.Row) (domainmodels.FirmwareConfigParameter, error) {
 	var item domainmodels.FirmwareConfigParameter
 	err := row.Scan(

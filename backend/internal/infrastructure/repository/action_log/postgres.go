@@ -81,8 +81,11 @@ func (p *postgresImpl) ReadByFilter(
 	executedAtEnd *time.Time,
 	actionId *uuid.UUID,
 	nodeId *uuid.UUID,
-) (actionLogs []domainmodels.ActionLog, total int, err error) {
-	totalQuery, totalArgs, query, queryArgs, err := p.queryReadByFilter(executedAtStart, executedAtEnd, actionId, nodeId)
+	actionStatus *domainmodels.ActionStatus,
+	page int,
+	limit int,
+) (actionLogs []domainmodels.ActionLogListItem, total int, err error) {
+	totalQuery, totalArgs, query, queryArgs, err := p.queryReadByFilter(executedAtStart, executedAtEnd, actionId, nodeId, actionStatus, page, limit)
 	if err != nil {
 		return nil, 0, infrastructurerepositoryshared.QueryBuildError("failed to build read action logs query", err)
 	}
@@ -91,7 +94,7 @@ func (p *postgresImpl) ReadByFilter(
 		return nil, 0, infrastructurerepositoryshared.MapPgxError("failed to count action logs", err)
 	}
 	if total == 0 {
-		return []domainmodels.ActionLog{}, 0, nil
+		return []domainmodels.ActionLogListItem{}, 0, nil
 	}
 
 	rows, err := p.Dt.Query(ctx, query, queryArgs...)
@@ -100,7 +103,7 @@ func (p *postgresImpl) ReadByFilter(
 	}
 	defer rows.Close()
 
-	items, err := infrastructurerepositoryshared.ScanPgxActionLogs(rows)
+	items, err := infrastructurerepositoryshared.ScanPgxActionLogListItems(rows)
 	if err != nil {
 		return nil, 0, infrastructurerepositoryshared.MapPgxError("failed to scan action logs", err)
 	}
@@ -114,8 +117,9 @@ func (p *postgresImpl) DeleteByFilter(
 	executedAtEnd *time.Time,
 	actionId *uuid.UUID,
 	nodeId *uuid.UUID,
+	actionStatus *domainmodels.ActionStatus,
 ) (total int, err error) {
-	query, args, err := p.queryDeleteByFilter(executedAtStart, executedAtEnd, actionId, nodeId)
+	query, args, err := p.queryDeleteByFilter(executedAtStart, executedAtEnd, actionId, nodeId, actionStatus)
 	if err != nil {
 		return 0, infrastructurerepositoryshared.QueryBuildError("failed to build delete action logs query", err)
 	}
