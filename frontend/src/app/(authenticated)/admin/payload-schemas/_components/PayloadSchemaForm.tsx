@@ -99,6 +99,7 @@ function SchemaEditor({
     return parsed ? { [parsed.path.join(".")]: parsed.message } : {};
   }, [state]);
   const [definitionRepresentable, setDefinitionRepresentable] = useState(true);
+  const [definitionValid, setDefinitionValid] = useState(true);
   return (
     <Dialog
       open={open && state.status !== "success"}
@@ -145,12 +146,15 @@ function SchemaEditor({
             ) : null}
           </div>
           <div>
-            <Label>Definition</Label>
+            <h3 className="text-foreground/80 mb-1.5 block text-sm font-medium">
+              Definition
+            </h3>
             <SchemaDefinitionBuilder
               name="definition"
               defaultValue={schema?.definition}
               errors={definitionErrors}
               onRepresentableChange={setDefinitionRepresentable}
+              onValidityChange={setDefinitionValid}
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -193,7 +197,10 @@ function SchemaEditor({
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={pending || !definitionRepresentable}>
+          <Button
+            type="submit"
+            disabled={pending || !definitionRepresentable || !definitionValid}
+          >
             {pending ? "Saving…" : "Save schema"}
           </Button>
         </div>

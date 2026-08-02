@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   canRepresentDefinition,
+  createEmptyRow,
+  isRowTreeValid,
   isValidFieldName,
   rootDefinitionFromRows,
   rowsFromRootDefinition,
@@ -152,5 +154,46 @@ describe("rowsFromRootDefinition / rootDefinitionFromRows round trip", () => {
 
     expect(name?.required).toBe(true);
     expect(bio?.required).toBe(false);
+  });
+});
+
+describe("isRowTreeValid", () => {
+  it("is valid for an empty tree and for rows with no constraints", () => {
+    expect(isRowTreeValid([])).toBe(true);
+    expect(isRowTreeValid([createEmptyRow("name")])).toBe(true);
+  });
+
+  it("is invalid when an enum row has zero options", () => {
+    const row = { ...createEmptyRow("mode"), type: "enum" as const };
+    expect(isRowTreeValid([row])).toBe(false);
+  });
+
+  it("is valid once the enum row has at least one option", () => {
+    const row = {
+      ...createEmptyRow("mode"),
+      type: "enum" as const,
+      options: ["auto"],
+    };
+    expect(isRowTreeValid([row])).toBe(true);
+  });
+
+  it("is invalid when minimum exceeds maximum", () => {
+    const row = {
+      ...createEmptyRow("rate"),
+      type: "float" as const,
+      minimum: "100",
+      maximum: "0",
+    };
+    expect(isRowTreeValid([row])).toBe(false);
+  });
+
+  it("is invalid when a nested child row is invalid", () => {
+    const child = { ...createEmptyRow("mode"), type: "enum" as const };
+    const parent = {
+      ...createEmptyRow("location"),
+      type: "object" as const,
+      children: [child],
+    };
+    expect(isRowTreeValid([parent])).toBe(false);
   });
 });

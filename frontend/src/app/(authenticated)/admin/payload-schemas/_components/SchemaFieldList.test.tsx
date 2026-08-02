@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { useState } from "react";
@@ -145,16 +145,101 @@ describe("SchemaFieldList", () => {
     expect(screen.getByLabelText("Min")).toHaveValue(null);
   });
 
+  it("preserves enum options when switching to List of choices", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.type(screen.getByPlaceholderText("variable_name"), "mode{Enter}");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "mode type" }),
+      "enum",
+    );
+    const optionsInput = screen.getByPlaceholderText(
+      "Type an option and press Enter",
+    );
+    await user.type(optionsInput, "auto{Enter}");
+    await user.type(optionsInput, "manual{Enter}");
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "mode type" }),
+      "[]enum",
+    );
+
+    expect(screen.getByText("auto")).toBeInTheDocument();
+    expect(screen.getByText("manual")).toBeInTheDocument();
+  });
+
+  it("preserves min/max when switching float to List of numbers", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.type(screen.getByPlaceholderText("variable_name"), "rate{Enter}");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "rate type" }),
+      "float",
+    );
+    await user.type(screen.getByLabelText("Min"), "0");
+    await user.type(screen.getByLabelText("Max"), "100");
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "rate type" }),
+      "[]float",
+    );
+
+    expect(screen.getByLabelText("Min")).toHaveValue(0);
+    expect(screen.getByLabelText("Max")).toHaveValue(100);
+  });
+
+  it("shows an error and marks the tree invalid when an enum has zero options", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.type(screen.getByPlaceholderText("variable_name"), "mode{Enter}");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "mode type" }),
+      "enum",
+    );
+
+    expect(screen.getByText("Add at least one option.")).toBeInTheDocument();
+  });
+
+  it("shows an error when minimum exceeds maximum", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.type(screen.getByPlaceholderText("variable_name"), "rate{Enter}");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "rate type" }),
+      "float",
+    );
+    await user.type(screen.getByLabelText("Min"), "100");
+    await user.type(screen.getByLabelText("Max"), "0");
+
+    expect(screen.getByText("Min must not exceed Max.")).toBeInTheDocument();
+  });
+
+  it("cancels a rename in progress when Escape is pressed", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.type(screen.getByPlaceholderText("variable_name"), "name{Enter}");
+    await user.click(screen.getByText("name"));
+
+    const renameInput = screen.getByDisplayValue("name");
+    await user.clear(renameInput);
+    await user.type(renameInput, "renamed");
+    await user.keyboard("{Escape}");
+
+    expect(screen.getByText("name")).toBeInTheDocument();
+    expect(screen.queryByText("renamed")).not.toBeInTheDocument();
+  });
+
   it("toggles the Required checkbox for a row", async () => {
     const user = userEvent.setup();
     render(<Harness />);
 
     await user.type(screen.getByPlaceholderText("variable_name"), "name{Enter}");
-    const row = screen.getByText("name").closest("div")!;
-    const checkbox = within(row.parentElement as HTMLElement).getByRole(
-      "checkbox",
-      { name: "Required" },
-    );
+    const checkbox = screen.getByRole("checkbox", { name: "Required" });
 
     expect(checkbox).not.toBeChecked();
     await user.click(checkbox);

@@ -121,7 +121,7 @@ function numberToText(value: number | null | undefined): string {
   return value === undefined || value === null ? "" : String(value);
 }
 
-function textToNumber(value: string): number | undefined {
+export function textToNumber(value: string): number | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
   const parsed = Number(trimmed);
@@ -224,6 +224,52 @@ export function rootDefinitionFromRows(rows: readonly FieldRow[]): RawDefinition
  * constraints as the array node's own fields, per arrayItemSchema() in the
  * Go validator).
  */
+const MIN_MAX_MESSAGE = "Min must not exceed Max.";
+
+function minMaxError(minText: string, maxText: string): string | undefined {
+  const min = textToNumber(minText);
+  const max = textToNumber(maxText);
+  return min !== undefined && max !== undefined && min > max
+    ? MIN_MAX_MESSAGE
+    : undefined;
+}
+
+/** Client-side, live validation errors for a single row, grouped by widget. */
+export interface FieldGroupErrors {
+  options?: string;
+  minMax?: string;
+  length?: string;
+  items?: string;
+}
+
+export function fieldGroupErrors(row: FieldRow): FieldGroupErrors {
+  const errors: FieldGroupErrors = {};
+  if (isEnumType(row.type) && row.options.length === 0) {
+    errors.options = "Add at least one option.";
+  }
+  const type = baseType(row.type);
+  if (type === "float" || type === "integer") {
+    errors.minMax = minMaxError(row.minimum, row.maximum);
+  }
+  if (type === "string") {
+    errors.length = minMaxError(row.minimumLength, row.maximumLength);
+  }
+  if (isArrayType(row.type)) {
+    errors.items = minMaxError(row.minimumItem, row.maximumItem);
+  }
+  return errors;
+}
+
+function hasFieldGroupError(row: FieldRow): boolean {
+  return Object.values(fieldGroupErrors(row)).some(Boolean);
+}
+
+export function isRowTreeValid(rows: readonly FieldRow[]): boolean {
+  return rows.every(
+    (row) => !hasFieldGroupError(row) && isRowTreeValid(row.children),
+  );
+}
+
 export function canRepresentDefinition(value: unknown): value is RawDefinition {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;

@@ -10,6 +10,7 @@ import {
   FIELD_TYPES,
   FIELD_TYPE_LABELS,
   baseType,
+  fieldGroupErrors,
   isArrayType,
   isEnumType,
   isObjectType,
@@ -55,10 +56,12 @@ function OptionsField({
   id,
   options,
   onChange,
+  error,
 }: {
   id: string;
   options: string[];
   onChange: (options: string[]) => void;
+  error?: string;
 }) {
   const [draft, setDraft] = useState("");
   return (
@@ -98,6 +101,7 @@ function OptionsField({
           setDraft("");
         }}
       />
+      {error ? <p className="text-critical mt-1 text-sm">{error}</p> : null}
     </div>
   );
 }
@@ -116,6 +120,7 @@ export default function SchemaFieldRow({
   const [nameError, setNameError] = useState<string>();
   const rowError = errors[path.join(".")];
   const type = baseType(row.type);
+  const groupErrors = fieldGroupErrors(row);
 
   function commitRename() {
     const name = nameDraft.trim();
@@ -138,6 +143,12 @@ export default function SchemaFieldRow({
     setNameError(undefined);
   }
 
+  function cancelRename() {
+    setNameDraft(row.name);
+    setNameError(undefined);
+    setRenaming(false);
+  }
+
   return (
     <div className="border-control-border rounded-xl border p-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -153,6 +164,9 @@ export default function SchemaFieldRow({
               if (event.key === "Enter") {
                 event.preventDefault();
                 commitRename();
+              } else if (event.key === "Escape") {
+                event.preventDefault();
+                cancelRename();
               }
             }}
             className="max-w-48"
@@ -176,18 +190,20 @@ export default function SchemaFieldRow({
           onChange={(event) => {
             const nextType = event.target.value as FieldType;
             if (nextType === row.type) return;
-            onChange({
-              ...row,
-              type: nextType,
-              minimum: "",
-              maximum: "",
-              minimumLength: "",
-              maximumLength: "",
-              minimumItem: "",
-              maximumItem: "",
-              unit: "",
-              options: [],
-            });
+            const next: FieldRow = { ...row, type: nextType };
+            if (baseType(nextType) !== baseType(row.type)) {
+              next.minimum = "";
+              next.maximum = "";
+              next.minimumLength = "";
+              next.maximumLength = "";
+              next.unit = "";
+              next.options = [];
+            }
+            if (isArrayType(nextType) !== isArrayType(row.type)) {
+              next.minimumItem = "";
+              next.maximumItem = "";
+            }
+            onChange(next);
           }}
           className="border-control-border bg-background rounded-lg border px-2.5 py-1.5 text-sm"
         >
@@ -240,6 +256,11 @@ export default function SchemaFieldRow({
               value={row.maximumItem}
               onChange={(value) => onChange({ ...row, maximumItem: value })}
             />
+            {groupErrors.items ? (
+              <p className="text-critical text-sm sm:col-span-2">
+                {groupErrors.items}
+              </p>
+            ) : null}
           </>
         ) : null}
 
@@ -257,6 +278,11 @@ export default function SchemaFieldRow({
               value={row.maximumLength}
               onChange={(value) => onChange({ ...row, maximumLength: value })}
             />
+            {groupErrors.length ? (
+              <p className="text-critical text-sm sm:col-span-2">
+                {groupErrors.length}
+              </p>
+            ) : null}
           </>
         ) : null}
 
@@ -274,6 +300,11 @@ export default function SchemaFieldRow({
               value={row.maximum}
               onChange={(value) => onChange({ ...row, maximum: value })}
             />
+            {groupErrors.minMax ? (
+              <p className="text-critical text-sm sm:col-span-2">
+                {groupErrors.minMax}
+              </p>
+            ) : null}
             <div>
               <Label htmlFor={`${id}-unit`}>Unit</Label>
               <Input
@@ -293,6 +324,7 @@ export default function SchemaFieldRow({
             id={`${id}-options`}
             options={row.options}
             onChange={(options) => onChange({ ...row, options })}
+            error={groupErrors.options}
           />
         ) : null}
       </div>

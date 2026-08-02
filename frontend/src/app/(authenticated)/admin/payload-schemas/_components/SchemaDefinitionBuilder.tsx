@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import SchemaFieldList from "./SchemaFieldList";
 import {
   canRepresentDefinition,
+  isRowTreeValid,
   rootDefinitionFromRows,
   rowsFromRootDefinition,
   type FieldRow,
@@ -18,6 +19,7 @@ interface SchemaDefinitionBuilderProps {
   defaultValue?: Record<string, unknown>;
   errors?: Record<string, string>;
   onRepresentableChange?: (representable: boolean) => void;
+  onValidityChange?: (valid: boolean) => void;
 }
 
 export default function SchemaDefinitionBuilder({
@@ -25,6 +27,7 @@ export default function SchemaDefinitionBuilder({
   defaultValue,
   errors = {},
   onRepresentableChange,
+  onValidityChange,
 }: SchemaDefinitionBuilderProps) {
   const initial = (defaultValue as RawDefinition | undefined) ?? EMPTY_DEFINITION;
   const representable = useMemo(() => canRepresentDefinition(initial), [initial]);
@@ -39,6 +42,15 @@ export default function SchemaDefinitionBuilder({
     // be referentially stable across parent re-renders).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [representable]);
+
+  const valid = useMemo(() => isRowTreeValid(rows), [rows]);
+
+  useEffect(() => {
+    onValidityChange?.(valid);
+    // Same rationale as the representable effect above: re-run only when the
+    // computed validity itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valid]);
 
   if (!representable) {
     return (
