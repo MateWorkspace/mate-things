@@ -1,17 +1,11 @@
 import Card from "@/components/ui/card";
-import StatusBadge, { type StatusVariant } from "@/components/ui/status-badge";
-import type { NodeLogLevel, NodeLogResponse } from "@/lib/api/node-logs";
+import StatusBadge from "@/components/ui/status-badge";
+import type { NodeLogResponse } from "@/lib/api/node-logs";
 
-const LEVEL: Record<NodeLogLevel, { label: string; variant: StatusVariant }> = {
-  NONE: { label: "None", variant: "neutral" },
-  ERROR: { label: "Error", variant: "critical" },
-  WARN: { label: "Warning", variant: "warning" },
-  INFO: { label: "Info", variant: "info" },
-  DEBUG: { label: "Debug", variant: "neutral" },
-};
+import { NODE_LOG_LEVEL_LABELS } from "../_lib/status";
 
 export default function NodeLogCard({ log }: { log: NodeLogResponse }) {
-  const level = LEVEL[log.level];
+  const level = NODE_LOG_LEVEL_LABELS[log.level];
   return (
     <Card className="h-full">
       <div className="flex items-start justify-between gap-3">

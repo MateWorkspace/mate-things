@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
-import RecordWindow from "@/components/records/RecordWindow";
 import ScopedDeleteDialog from "@/components/records/ScopedDeleteDialog";
 import RefreshBoundary from "@/components/refresh/RefreshBoundary";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { listNodeLogs, type NodeLogLevel } from "@/lib/api/node-logs";
+import { getNodeByDeviceId } from "@/lib/api/nodes";
 import { activeFilterEntries, parseRecordFilters } from "@/lib/record-filters";
 import { requirePermission } from "@/lib/session";
 
-import NodeLogCard from "./_components/NodeLogCard";
 import NodeLogFilters from "./_components/NodeLogFilters";
+import NodeLogTable from "./_components/NodeLogTable";
 import { deleteNodeLogsAction } from "./_lib/actions";
 
 export const metadata: Metadata = { title: "Node Logs — Mate Things" };
@@ -39,6 +39,10 @@ export default async function NodeLogsPage({
     : undefined;
   const levelError =
     rawLevel && !level ? "Choose a supported log level." : undefined;
+  const nodeDefault =
+    parsed.error || levelError || !parsed.filters.nodeDeviceId
+      ? null
+      : await getNodeByDeviceId(parsed.filters.nodeDeviceId).catch(() => null);
   const query = {
     logged_at_start: parsed.filters.start,
     logged_at_end: parsed.filters.end,
@@ -75,6 +79,7 @@ export default async function NodeLogsPage({
         start={parsed.filters.start}
         end={parsed.filters.end}
         nodeDeviceId={parsed.filters.nodeDeviceId}
+        nodeName={nodeDefault?.name}
         level={level}
       />
       {parsed.error || levelError ? (
@@ -88,20 +93,13 @@ export default async function NodeLogsPage({
             <p>
               <strong>{result.total_items}</strong> log records
             </p>
-            <p className="text-muted-foreground">
-              Use a bounded time range when investigating noisy devices.
-            </p>
           </div>
           <RefreshBoundary
             updatedAt={result.data[0]?.created_at}
             intervalMs={15_000}
           >
             {result.data.length ? (
-              <RecordWindow>
-                {result.data.map((log) => (
-                  <NodeLogCard key={log.id} log={log} />
-                ))}
-              </RecordWindow>
+              <NodeLogTable records={result.data} />
             ) : (
               <EmptyState
                 title="No node logs found"
