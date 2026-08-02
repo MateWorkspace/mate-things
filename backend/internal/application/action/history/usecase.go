@@ -27,7 +27,7 @@ func NewUsecaseImpl(
 func (u *usecase) ReadByFilter(
 	ctx context.Context,
 	request domainusecasesaction.ReadActionLogsByFilterRequest,
-) ([]domainmodels.ActionLog, int, error) {
+) ([]domainmodels.ActionLogListItem, int, error) {
 	const tag = "action/history/ReadByFilter"
 
 	actionLogs, total, err := u.actionLog.ReadByFilter(
@@ -36,6 +36,9 @@ func (u *usecase) ReadByFilter(
 		request.ExecutedAtEnd,
 		request.ActionId,
 		request.NodeId,
+		request.ActionStatus,
+		request.Page,
+		request.Limit,
 	)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to read action logs", domainmodels.LoggerMeta{
@@ -61,6 +64,7 @@ func (u *usecase) DeleteByFilter(
 		request.ExecutedAtEnd,
 		request.ActionId,
 		request.NodeId,
+		request.ActionStatus,
 	)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to delete action logs", domainmodels.LoggerMeta{

@@ -9,7 +9,7 @@ import (
 )
 
 type History interface {
-	ReadByFilter(ctx context.Context, request ReadActionLogsByFilterRequest) ([]domainmodels.ActionLog, int, error)
+	ReadByFilter(ctx context.Context, request ReadActionLogsByFilterRequest) ([]domainmodels.ActionLogListItem, int, error)
 	DeleteByFilter(ctx context.Context, request DeleteActionLogsByFilterRequest) (int, error)
 }
 
@@ -18,6 +18,9 @@ type ReadActionLogsByFilterRequest struct {
 	ExecutedAtEnd   *time.Time
 	ActionId        *uuid.UUID
 	NodeId          *uuid.UUID
+	ActionStatus    *domainmodels.ActionStatus
+	Page            int
+	Limit           int
 }
 
 type DeleteActionLogsByFilterRequest struct {
@@ -25,4 +28,5 @@ type DeleteActionLogsByFilterRequest struct {
 	ExecutedAtEnd   *time.Time
 	ActionId        *uuid.UUID
 	NodeId          *uuid.UUID
+	ActionStatus    *domainmodels.ActionStatus
 }
