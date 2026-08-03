@@ -47,7 +47,6 @@ function values(formData: FormData) {
     id: String(formData.get("action_id") ?? "").trim(),
     name: String(formData.get("name") ?? "").trim(),
     description: String(formData.get("description") ?? "").trim(),
-    nodeClassId: String(formData.get("node_class_id") ?? "").trim(),
     schemaName: String(formData.get("payload_schema_name") ?? "").trim(),
     schemaVersion: Number(formData.get("payload_schema_version")),
   };
@@ -58,7 +57,6 @@ function validateAction(
 ): ActionFormState | null {
   const fieldErrors: Record<string, string> = {};
   if (!input.name) fieldErrors.name = "Name is required.";
-  if (!input.nodeClassId) fieldErrors.node_class_id = "Node class is required.";
   if (!input.schemaName)
     fieldErrors.payload_schema_name = "Payload schema is required.";
   if (!Number.isInteger(input.schemaVersion) || input.schemaVersion <= 0)
@@ -86,7 +84,6 @@ export async function createActionFormAction(
     await createAction({
       name: input.name,
       description: input.description,
-      node_class_id: input.nodeClassId,
       payload_schema_name: input.schemaName,
       payload_schema_version: input.schemaVersion,
     });
@@ -120,7 +117,6 @@ export async function updateActionFormAction(
     await updateAction(input.id, {
       name: input.name,
       description: input.description,
-      node_class_id: input.nodeClassId,
       payload_schema_name: input.schemaName,
       payload_schema_version: input.schemaVersion,
     });

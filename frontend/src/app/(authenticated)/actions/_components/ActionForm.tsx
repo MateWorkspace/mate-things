@@ -8,7 +8,6 @@ import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { ActionResponse } from "@/lib/api/actions";
-import type { NodeClassResponse } from "@/lib/api/node-classes";
 import type { PayloadSchemaResponse } from "@/lib/api/payload-schemas";
 
 import {
@@ -22,7 +21,6 @@ const EMPTY_STATE: ActionFormState = { status: "idle" };
 
 interface ActionFormProps {
   action?: ActionResponse;
-  nodeClasses: readonly NodeClassResponse[];
   schemas: readonly PayloadSchemaResponse[];
   canEdit?: boolean;
   canDelete?: boolean;
@@ -30,7 +28,6 @@ interface ActionFormProps {
 
 export default function ActionForm({
   action,
-  nodeClasses,
   schemas,
   canEdit = true,
   canDelete = false,
@@ -60,7 +57,6 @@ export default function ActionForm({
       {canEdit ? (
         <EditorDialog
           action={action}
-          nodeClasses={nodeClasses}
           schemas={schemas}
           open={editorOpen}
           onClose={() => setEditorOpen(false)}
@@ -79,7 +75,6 @@ export default function ActionForm({
 
 function EditorDialog({
   action,
-  nodeClasses,
   schemas,
   open,
   onClose,
@@ -127,23 +122,6 @@ function EditorDialog({
             rows={3}
             className="border-control-border bg-background focus-visible:ring-focus w-full rounded-xl border px-3.5 py-2.5 text-sm focus-visible:ring-2 focus-visible:outline-none"
           />
-        </div>
-        <div>
-          <Label htmlFor={`${id}-class`}>Node class</Label>
-          <select
-            id={`${id}-class`}
-            name="node_class_id"
-            defaultValue={action?.node_class_id ?? ""}
-            required
-            className="border-control-border bg-background focus-visible:ring-focus min-h-11 w-full rounded-xl border px-3.5 text-sm focus-visible:ring-2 focus-visible:outline-none"
-          >
-            <option value="">Select node class</option>
-            {nodeClasses.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
         </div>
         <div>
           <Label htmlFor={`${id}-schema`}>Payload schema/version</Label>
