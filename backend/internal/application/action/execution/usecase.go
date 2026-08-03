@@ -15,18 +15,20 @@ import (
 )
 
 type usecase struct {
-	action        domainusecasesrepocache.Action
-	node          domainusecasesrepocache.Node
-	payloadSchema domainusecasesrepocache.PayloadSchema
-	actionLog     domaincontractsrepository.ActionLog
-	publisher     domaincontractsnode.Publish
-	validator     domaincontractsutility.PayloadSchemaValidator
-	logger        domaincontractslogger.Leveled
+	action          domainusecasesrepocache.Action
+	node            domainusecasesrepocache.Node
+	nodeClassAction domainusecasesrepocache.NodeClassAction
+	payloadSchema   domainusecasesrepocache.PayloadSchema
+	actionLog       domaincontractsrepository.ActionLog
+	publisher       domaincontractsnode.Publish
+	validator       domaincontractsutility.PayloadSchemaValidator
+	logger          domaincontractslogger.Leveled
 }
 
 func NewUsecaseImpl(
 	action domainusecasesrepocache.Action,
 	node domainusecasesrepocache.Node,
+	nodeClassAction domainusecasesrepocache.NodeClassAction,
 	payloadSchema domainusecasesrepocache.PayloadSchema,
 	actionLog domaincontractsrepository.ActionLog,
 	publisher domaincontractsnode.Publish,
@@ -34,13 +36,14 @@ func NewUsecaseImpl(
 	logger domaincontractslogger.Leveled,
 ) domainusecasesaction.Execution {
 	return &usecase{
-		action:        action,
-		node:          node,
-		payloadSchema: payloadSchema,
-		actionLog:     actionLog,
-		publisher:     publisher,
-		validator:     validator,
-		logger:        logger,
+		action:          action,
+		node:            node,
+		nodeClassAction: nodeClassAction,
+		payloadSchema:   payloadSchema,
+		actionLog:       actionLog,
+		publisher:       publisher,
+		validator:       validator,
+		logger:          logger,
 	}
 }
 
@@ -92,16 +95,25 @@ func (u *usecase) Dispatch(
 			new("node is not connected"),
 		)
 	}
-	if node.NodeClassId != action.NodeClassId {
-		return u.createActionLog(
-			ctx,
-			tag,
-			executionId,
-			request,
-			&node.Id,
-			domainmodels.ActionStatusUnexecuted,
-			new("node class does not match action's node class"),
-		)
+	if _, _, _, err := u.nodeClassAction.ReadByNodeClassIdAndActionId(ctx, node.NodeClassId, action.Id); err != nil {
+		if errors.Is(err, domainmodels.ErrTypeNotFound) {
+			return u.createActionLog(
+				ctx,
+				tag,
+				executionId,
+				request,
+				&node.Id,
+				domainmodels.ActionStatusUnexecuted,
+				new("action is not compatible with node's class"),
+			)
+		}
+		u.logger.Error(ctx, tag, "failed to check node class action compatibility", domainmodels.LoggerMeta{
+			"err":           err,
+			"node_class_id": node.NodeClassId,
+			"action_id":     action.Id,
+			"actor_id":      request.ActorId,
+		})
+		return nil, err
 	}
 
 	payloadSchema, err := u.payloadSchema.ReadByNameAndVersion(

@@ -44,7 +44,6 @@ func (u *usecase) Create(ctx context.Context, request domainusecasesaction.Creat
 
 	id, err := u.action.Create(
 		ctx,
-		request.NodeClassId,
 		name,
 		request.Description,
 		payloadSchemaName,
@@ -101,7 +100,7 @@ func (u *usecase) ReadByName(
 func (u *usecase) ReadByPagination(
 	ctx context.Context,
 	request domainusecasesaction.ReadActionsByPaginationRequest,
-) ([]domainmodels.Action, int, error) {
+) ([]domainmodels.ActionListItem, int, error) {
 	const tag = "action/definition/ReadByPagination"
 
 	actions, total, err := u.action.ReadByPagination(
@@ -144,7 +143,6 @@ func (u *usecase) UpdateById(ctx context.Context, request domainusecasesaction.U
 	if err := u.action.UpdateById(
 		ctx,
 		request.Id,
-		request.NodeClassId,
 		name,
 		request.Description,
 		payloadSchemaName,
