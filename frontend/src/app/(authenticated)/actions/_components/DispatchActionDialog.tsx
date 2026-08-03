@@ -20,11 +20,13 @@ const EMPTY_STATE: ActionFormState = { status: "idle" };
 interface DispatchActionDialogProps {
   action: ActionResponse;
   nodes: readonly NodeResponse[];
+  compatibleNodeClassIds: ReadonlySet<string>;
 }
 
 export default function DispatchActionDialog({
   action,
   nodes,
+  compatibleNodeClassIds,
 }: DispatchActionDialogProps) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -32,6 +34,9 @@ export default function DispatchActionDialog({
     EMPTY_STATE,
   );
   const id = useId();
+  const compatibleNodes = nodes.filter((node) =>
+    compatibleNodeClassIds.has(node.node_class_id),
+  );
   return (
     <>
       <Button type="button" onClick={() => setOpen(true)}>
@@ -65,17 +70,13 @@ export default function DispatchActionDialog({
                 className="border-control-border bg-background focus-visible:ring-focus min-h-11 w-full rounded-xl border px-3.5 text-sm focus-visible:ring-2 focus-visible:outline-none"
               >
                 <option value="">Select node</option>
-                {nodes
-                  .filter((node) => node.node_class_id === action.node_class_id)
-                  .map((node) => (
-                    <option key={node.id} value={node.id}>
-                      {node.name} · {node.device_id}
-                    </option>
-                  ))}
+                {compatibleNodes.map((node) => (
+                  <option key={node.id} value={node.id}>
+                    {node.name} · {node.device_id}
+                  </option>
+                ))}
               </select>
-              {nodes.every(
-                (node) => node.node_class_id !== action.node_class_id,
-              ) ? (
+              {compatibleNodes.length === 0 ? (
                 <p className="text-warning mt-2 text-sm">
                   No compatible nodes are available.
                 </p>
@@ -116,7 +117,10 @@ export default function DispatchActionDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={pending || nodes.length === 0}>
+              <Button
+                type="submit"
+                disabled={pending || compatibleNodes.length === 0}
+              >
                 {pending ? "Dispatching…" : "Dispatch"}
               </Button>
             </div>

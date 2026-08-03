@@ -42,7 +42,11 @@ export function NodeActionsWorkspace({
             <div key={action.id} className="space-y-2">
               <ActionCard action={action} />
               {canDispatch ? (
-                <DispatchActionDialog action={action} nodes={[node]} />
+                <DispatchActionDialog
+                  action={action}
+                  nodes={[node]}
+                  compatibleNodeClassIds={new Set([node.node_class_id])}
+                />
               ) : null}
             </div>
           ))}
