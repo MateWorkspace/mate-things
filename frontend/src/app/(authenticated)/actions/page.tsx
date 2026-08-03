@@ -7,7 +7,6 @@ import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { listActions } from "@/lib/api/actions";
-import { listAllNodeClasses } from "@/lib/api/node-classes";
 import { listAllPayloadSchemas } from "@/lib/api/payload-schemas";
 import { parsePageQuery } from "@/lib/collection-query";
 import { requirePermission } from "@/lib/session";
@@ -31,35 +30,25 @@ export default async function ActionsPage({
     typeof raw.payload_schema_name === "string"
       ? raw.payload_schema_name.trim()
       : "";
-  const [result, nodeClasses, schemas] = await Promise.all([
+  const [result, schemas] = await Promise.all([
     listActions({
       ...pageQuery,
       node_class_id: nodeClassId || undefined,
       payload_schema_name: schemaName || undefined,
     }),
-    permissions.has("node_class:get")
-      ? listAllNodeClasses()
-      : Promise.resolve([]),
     permissions.has("payload_schema:get")
       ? listAllPayloadSchemas()
       : Promise.resolve([]),
   ]);
-  const classNames = new Map(nodeClasses.map((item) => [item.id, item.name]));
   const canCreate =
-    permissions.has("action:add") &&
-    permissions.has("node_class:get") &&
-    permissions.has("payload_schema:get");
+    permissions.has("action:add") && permissions.has("payload_schema:get");
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader
         title="Actions"
         description="Define fleet commands, match them to compatible node classes, and dispatch them safely."
-        actions={
-          canCreate ? (
-            <ActionForm nodeClasses={nodeClasses} schemas={schemas} />
-          ) : undefined
-        }
+        actions={canCreate ? <ActionForm schemas={schemas} /> : undefined}
       />
       <form className="border-border bg-muted grid gap-3 rounded-2xl border p-4 sm:grid-cols-[1fr_1fr_auto]">
         <Input
@@ -84,11 +73,7 @@ export default async function ActionsPage({
       {result.data.length ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {result.data.map((action) => (
-            <ActionCard
-              key={action.id}
-              action={action}
-              nodeClassName={classNames.get(action.node_class_id)}
-            />
+            <ActionCard key={action.id} action={action} />
           ))}
         </div>
       ) : (

@@ -5,14 +5,14 @@ import type { ActionResponse } from "@/lib/api/actions";
 
 interface ActionCardProps {
   action: ActionResponse;
-  nodeClassName?: string;
 }
 
-export default function ActionCard({ action, nodeClassName }: ActionCardProps) {
+export default function ActionCard({ action }: ActionCardProps) {
+  const count = action.compatible_node_class_count ?? 0;
   return (
     <ResourceCard
       title={action.name}
-      summary={nodeClassName ?? `Class ${action.node_class_id}`}
+      summary={`${count} compatible node class${count === 1 ? "" : "es"}`}
     >
       <p className="text-foreground/75 min-h-12">
         {action.description || "No description provided."}
