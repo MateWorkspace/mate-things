@@ -32,11 +32,11 @@ type PayloadSchema struct {
 }
 
 type Action struct {
-	Name                 string `json:"name"`
-	Description          string `json:"description"`
-	NodeClassName        string `json:"node_class_name"`
-	PayloadSchemaName    string `json:"payload_schema_name"`
-	PayloadSchemaVersion int32  `json:"payload_schema_version"`
+	Name                 string   `json:"name"`
+	Description          string   `json:"description"`
+	NodeClassNames       []string `json:"node_class_names"`
+	PayloadSchemaName    string   `json:"payload_schema_name"`
+	PayloadSchemaVersion int32    `json:"payload_schema_version"`
 }
 
 type User struct {

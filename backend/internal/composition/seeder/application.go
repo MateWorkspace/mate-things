@@ -27,6 +27,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		l.infra.roleRepository,
 		l.infra.rolePermissionRepository,
 		l.infra.nodeClassRepository,
+		l.infra.nodeClassActionRepository,
 		l.infra.payloadSchemaRepository,
 		l.infra.actionRepository,
 		l.infra.userRepository,

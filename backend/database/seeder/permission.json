@@ -17,6 +17,10 @@
   { "name": "role_permission:add", "description": "Assign a permission to a role." },
   { "name": "role_permission:remove", "description": "Remove a permission from a role." },
 
+  { "name": "node_class_action:get", "description": "View node-class-to-action compatibility assignments." },
+  { "name": "node_class_action:add", "description": "Mark an action as compatible with a node class." },
+  { "name": "node_class_action:remove", "description": "Remove an action's compatibility with a node class." },
+
   { "name": "payload_schema:get", "description": "View payload schemas." },
   { "name": "payload_schema:add", "description": "Create payload schemas." },
   { "name": "payload_schema:set", "description": "Update payload schemas." },

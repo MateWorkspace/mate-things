@@ -14,16 +14,17 @@ import (
 )
 
 type usecase struct {
-	permission     domaincontractsrepository.Permission
-	role           domaincontractsrepository.Role
-	rolePermission domaincontractsrepository.RolePermission
-	nodeClass      domaincontractsrepository.NodeClass
-	payloadSchema  domaincontractsrepository.PayloadSchema
-	action         domaincontractsrepository.Action
-	user           domaincontractsrepository.User
-	password       domaincontractsutility.Password
-	logger         domaincontractslogger.Leveled
-	data           seederdata.Data
+	permission      domaincontractsrepository.Permission
+	role            domaincontractsrepository.Role
+	rolePermission  domaincontractsrepository.RolePermission
+	nodeClass       domaincontractsrepository.NodeClass
+	nodeClassAction domaincontractsrepository.NodeClassAction
+	payloadSchema   domaincontractsrepository.PayloadSchema
+	action          domaincontractsrepository.Action
+	user            domaincontractsrepository.User
+	password        domaincontractsutility.Password
+	logger          domaincontractslogger.Leveled
+	data            seederdata.Data
 }
 
 func NewUsecaseImpl(
@@ -31,6 +32,7 @@ func NewUsecaseImpl(
 	role domaincontractsrepository.Role,
 	rolePermission domaincontractsrepository.RolePermission,
 	nodeClass domaincontractsrepository.NodeClass,
+	nodeClassAction domaincontractsrepository.NodeClassAction,
 	payloadSchema domaincontractsrepository.PayloadSchema,
 	action domaincontractsrepository.Action,
 	user domaincontractsrepository.User,
@@ -39,16 +41,17 @@ func NewUsecaseImpl(
 	data seederdata.Data,
 ) domainusecasesseeder.Seeder {
 	return &usecase{
-		permission:     permission,
-		role:           role,
-		rolePermission: rolePermission,
-		nodeClass:      nodeClass,
-		payloadSchema:  payloadSchema,
-		action:         action,
-		user:           user,
-		password:       password,
-		logger:         logger,
-		data:           data,
+		permission:      permission,
+		role:            role,
+		rolePermission:  rolePermission,
+		nodeClass:       nodeClass,
+		nodeClassAction: nodeClassAction,
+		payloadSchema:   payloadSchema,
+		action:          action,
+		user:            user,
+		password:        password,
+		logger:          logger,
+		data:            data,
 	}
 }
 
@@ -76,7 +79,12 @@ func (u *usecase) Run(ctx context.Context) error {
 		return err
 	}
 
-	if err := u.seedActions(ctx, nodeClassIds); err != nil {
+	actionIds, err := u.seedActions(ctx, nodeClassIds)
+	if err != nil {
+		return err
+	}
+
+	if err := u.seedNodeClassActions(ctx, nodeClassIds, actionIds); err != nil {
 		return err
 	}
 
@@ -298,24 +306,27 @@ func (u *usecase) seedPayloadSchemas(ctx context.Context) error {
 	return nil
 }
 
-func (u *usecase) seedActions(ctx context.Context, nodeClassIds map[string]uuid.UUID) error {
+func (u *usecase) seedActions(ctx context.Context, nodeClassIds map[string]uuid.UUID) (map[string]uuid.UUID, error) {
 	const tag = "seeder/seedActions"
 
+	ids := make(map[string]uuid.UUID, len(u.data.Actions))
 	for _, action := range u.data.Actions {
-		nodeClassId, ok := nodeClassIds[action.NodeClassName]
-		if !ok {
-			err := domainmodels.NewError("node class not found for action seeding", domainmodels.ErrTypeNotFound, nil)
-			u.logger.Error(ctx, tag, "unknown node class", domainmodels.LoggerMeta{
-				"err":        err,
-				"action":     action.Name,
-				"node_class": action.NodeClassName,
-			})
-			return err
+		for _, nodeClassName := range action.NodeClassNames {
+			if _, ok := nodeClassIds[nodeClassName]; !ok {
+				err := domainmodels.NewError("node class not found for action seeding", domainmodels.ErrTypeNotFound, nil)
+				u.logger.Error(ctx, tag, "unknown node class", domainmodels.LoggerMeta{
+					"err":        err,
+					"action":     action.Name,
+					"node_class": nodeClassName,
+				})
+				return nil, err
+			}
 		}
 
-		_, err := u.action.ReadByName(ctx, action.Name)
+		existing, err := u.action.ReadByName(ctx, action.Name)
 		if err == nil {
 			u.logger.Debug(ctx, tag, "action already exists, skipping", domainmodels.LoggerMeta{"name": action.Name})
+			ids[action.Name] = existing.Id
 			continue
 		}
 		if !errors.Is(err, domainmodels.ErrTypeNotFound) {
@@ -323,27 +334,91 @@ func (u *usecase) seedActions(ctx context.Context, nodeClassIds map[string]uuid.
 				"err":  err,
 				"name": action.Name,
 			})
-			return err
+			return nil, err
 		}
 
 		description := action.Description
-		if _, err := u.action.Create(
+		id, err := u.action.Create(
 			ctx,
-			nodeClassId,
 			action.Name,
 			&description,
 			action.PayloadSchemaName,
 			action.PayloadSchemaVersion,
 			nil,
-		); err != nil {
+		)
+		if err != nil {
 			u.logger.Error(ctx, tag, "failed to create action", domainmodels.LoggerMeta{
 				"err":  err,
 				"name": action.Name,
 			})
-			return err
+			return nil, err
 		}
 
 		u.logger.Info(ctx, tag, "action created", domainmodels.LoggerMeta{"name": action.Name})
+		ids[action.Name] = id
+	}
+
+	return ids, nil
+}
+
+func (u *usecase) seedNodeClassActions(
+	ctx context.Context,
+	nodeClassIds map[string]uuid.UUID,
+	actionIds map[string]uuid.UUID,
+) error {
+	const tag = "seeder/seedNodeClassActions"
+
+	for _, action := range u.data.Actions {
+		actionId, ok := actionIds[action.Name]
+		if !ok {
+			err := domainmodels.NewError("action not found for node_class_action seeding", domainmodels.ErrTypeNotFound, nil)
+			u.logger.Error(ctx, tag, "unknown action", domainmodels.LoggerMeta{"err": err, "action": action.Name})
+			return err
+		}
+
+		for _, nodeClassName := range action.NodeClassNames {
+			nodeClassId, ok := nodeClassIds[nodeClassName]
+			if !ok {
+				err := domainmodels.NewError("node class not found for node_class_action seeding", domainmodels.ErrTypeNotFound, nil)
+				u.logger.Error(ctx, tag, "unknown node class", domainmodels.LoggerMeta{
+					"err":        err,
+					"action":     action.Name,
+					"node_class": nodeClassName,
+				})
+				return err
+			}
+
+			_, _, _, err := u.nodeClassAction.ReadByNodeClassIdAndActionId(ctx, nodeClassId, actionId)
+			if err == nil {
+				u.logger.Debug(ctx, tag, "node class action already assigned, skipping", domainmodels.LoggerMeta{
+					"action":     action.Name,
+					"node_class": nodeClassName,
+				})
+				continue
+			}
+			if !errors.Is(err, domainmodels.ErrTypeNotFound) {
+				u.logger.Error(ctx, tag, "failed to read node class action", domainmodels.LoggerMeta{
+					"err":        err,
+					"action":     action.Name,
+					"node_class": nodeClassName,
+				})
+				return err
+			}
+
+			if _, err := u.nodeClassAction.Create(ctx, nodeClassId, actionId, nil); err != nil {
+				u.logger.Error(ctx, tag, "failed to create node class action", domainmodels.LoggerMeta{
+					"err":        err,
+					"action":     action.Name,
+					"node_class": nodeClassName,
+				})
+				return err
+			}
+
+			u.logger.Info(ctx, tag, "node class action assigned", domainmodels.LoggerMeta{
+				"action":     action.Name,
+				"node_class": nodeClassName,
+			})
+		}
 	}
 
 	return nil

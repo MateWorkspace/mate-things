@@ -17,7 +17,7 @@ func TestUpdateByIdAllowsSafePersistedNodeClassNames(t *testing.T) {
 	for _, name := range []string{"base_node", "base-node"} {
 		t.Run(name, func(t *testing.T) {
 			repository := &recordingNodeClassRepository{}
-			usecase := NewUsecaseImpl(repository, &classLogger{})
+			usecase := NewUsecaseImpl(repository, &stubNodeClassAction{}, &classLogger{})
 
 			err := usecase.UpdateById(context.Background(), domainusecasesnode.UpdateNodeClassRequest{
 				Id:   uuid.New(),
@@ -40,7 +40,7 @@ func TestUpdateByIdAllowsSafePersistedNodeClassNames(t *testing.T) {
 func TestUpdateByIdRejectsPathLikeNodeClassName(t *testing.T) {
 	name := "base_node/../../secrets"
 	repository := &recordingNodeClassRepository{}
-	usecase := NewUsecaseImpl(repository, &classLogger{})
+	usecase := NewUsecaseImpl(repository, &stubNodeClassAction{}, &classLogger{})
 
 	err := usecase.UpdateById(context.Background(), domainusecasesnode.UpdateNodeClassRequest{
 		Id:   uuid.New(),
@@ -76,4 +76,8 @@ func (r *recordingNodeClassRepository) UpdateById(
 
 type classLogger struct {
 	domaincontractslogger.Leveled
+}
+
+type stubNodeClassAction struct {
+	domainusecasesrepocache.NodeClassAction
 }

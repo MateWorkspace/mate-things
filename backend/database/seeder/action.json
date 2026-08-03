@@ -2,7 +2,7 @@
   {
     "name": "restart",
     "description": "Restart or reset the device.",
-    "node_class_name": "base_node",
+    "node_class_names": ["base_node"],
     "payload_schema_name": "restart",
     "payload_schema_version": 1
   }
