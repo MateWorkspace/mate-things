@@ -72,6 +72,12 @@ type NodeHandler interface {
 	NodeClassGetById(c *echo.Context) error
 	NodeClassPatch(c *echo.Context) error
 	NodeClassDelete(c *echo.Context) error
+	NodeClassActionsGet(c *echo.Context) error
+	NodeClassActionPost(c *echo.Context) error
+	NodeClassActionDeleteByPair(c *echo.Context) error
+	NodeClassActionGetList(c *echo.Context) error
+	NodeClassActionGetById(c *echo.Context) error
+	NodeClassActionGetByPair(c *echo.Context) error
 
 	NodeGetList(c *echo.Context) error
 	NodeGetByDeviceId(c *echo.Context) error
@@ -232,6 +238,12 @@ func routeNode(v1 *echo.Group, handler NodeHandler, permission PermissionMiddlew
 	v1.POST("/node-classes", handler.NodeClassPost, permission("node_class:add"))
 	v1.GET("/node-classes/by-name/:name", handler.NodeClassGetByName, permission("node_class:get"))
 	v1.GET("/node-classes/:node_class_id/firmwares", handler.FirmwareGetByNodeClassId, permission("firmware:get"))
+	v1.GET("/node-classes/:id/actions", handler.NodeClassActionsGet, permission("node_class_action:get"))
+	v1.POST("/node-classes/:node_class_id/actions/:action_id", handler.NodeClassActionPost, permission("node_class_action:add"))
+	v1.DELETE("/node-classes/:node_class_id/actions/:action_id", handler.NodeClassActionDeleteByPair, permission("node_class_action:remove"))
+	v1.GET("/node-class-actions", handler.NodeClassActionGetList, permission("node_class_action:get"))
+	v1.GET("/node-class-actions/by-pair", handler.NodeClassActionGetByPair, permission("node_class_action:get"))
+	v1.GET("/node-class-actions/:id", handler.NodeClassActionGetById, permission("node_class_action:get"))
 	v1.GET("/firmwares/:id/config-parameters", handler.FirmwareConfigParametersGet, permission("firmware:get"))
 	v1.GET("/node-classes/:id", handler.NodeClassGetById, permission("node_class:get"))
 	v1.PATCH("/node-classes/:id", handler.NodeClassPatch, permission("node_class:set"))
