@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import ActionCard from "@/app/(authenticated)/actions/_components/ActionCard";
 import DispatchActionDialog from "@/app/(authenticated)/actions/_components/DispatchActionDialog";
-import NodeLogCard from "@/app/(authenticated)/node-logs/_components/NodeLogCard";
+import NodeLogTable from "@/app/(authenticated)/node-logs/_components/NodeLogTable";
 import TelemetryCard from "@/app/(authenticated)/telemetry/_components/TelemetryCard";
 import RefreshBoundary from "@/components/refresh/RefreshBoundary";
 import { EmptyState } from "@/components/ui/states";
@@ -114,11 +114,7 @@ export function NodeLogsWorkspace({
         </Link>
       </div>
       {logs.length ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {logs.slice(0, 12).map((log) => (
-            <NodeLogCard key={log.id} log={log} />
-          ))}
-        </div>
+        <NodeLogTable records={logs.slice(0, 12)} />
       ) : (
         <EmptyState
           title="No node logs found"

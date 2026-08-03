@@ -44,7 +44,7 @@ export default function TelemetryFilters(props: TelemetryFiltersProps) {
       />
       <div className="flex gap-2">
         <button className="bg-primary text-surface min-h-11 flex-1 rounded-xl px-4 text-sm font-semibold">
-          Apply filters
+          Apply
         </button>
         {!props.immutableDevice ? (
           <a

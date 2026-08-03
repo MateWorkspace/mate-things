@@ -75,7 +75,7 @@ export default async function ActionsPage({
           aria-label="Filter by payload schema"
         />
         <button className="bg-primary text-surface rounded-xl px-4 py-2.5 text-sm font-semibold">
-          Apply filters
+          Apply
         </button>
       </form>
       <p className="text-muted-foreground text-sm">

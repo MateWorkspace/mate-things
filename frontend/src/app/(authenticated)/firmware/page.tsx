@@ -117,7 +117,7 @@ export default async function FirmwarePage({
           ) : null}
           <Button type="submit" className="min-h-11 gap-2">
             <Search aria-hidden="true" className="size-4" />
-            Apply filters
+            Apply
           </Button>
         </form>
       </CollectionToolbar>
