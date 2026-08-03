@@ -14,6 +14,10 @@ type NodeClass interface {
 	GetByName(ctx context.Context, name string) (nodeClass *domainmodels.NodeClass, hit bool, err error)
 	SetByName(ctx context.Context, name string, nodeClass *domainmodels.NodeClass) error
 	DeleteByName(ctx context.Context, name string) error
+	GetActions(ctx context.Context, nodeClassId uuid.UUID) (actions []domainmodels.Action, hit bool, err error)
+	SetActions(ctx context.Context, nodeClassId uuid.UUID, actions []domainmodels.Action) error
+	DeleteActions(ctx context.Context, nodeClassId uuid.UUID) error
+	InvalidateActions(ctx context.Context) error
 	GetPagination(ctx context.Context, page int, limit int, search *string) (pagination Pagination[domainmodels.NodeClass], hit bool, err error)
 	SetPagination(ctx context.Context, page int, limit int, search *string, pagination Pagination[domainmodels.NodeClass]) error
 	InvalidatePagination(ctx context.Context) error

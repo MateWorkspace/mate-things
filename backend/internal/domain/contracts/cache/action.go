@@ -14,8 +14,8 @@ type Action interface {
 	GetByName(ctx context.Context, name string) (action *domainmodels.Action, hit bool, err error)
 	SetByName(ctx context.Context, name string, action *domainmodels.Action) error
 	DeleteByName(ctx context.Context, name string) error
-	GetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, payloadSchemaName *string, payloadSchemaVersion *int32) (pagination Pagination[domainmodels.Action], hit bool, err error)
-	SetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, payloadSchemaName *string, payloadSchemaVersion *int32, pagination Pagination[domainmodels.Action]) error
+	GetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, payloadSchemaName *string, payloadSchemaVersion *int32) (pagination Pagination[domainmodels.ActionListItem], hit bool, err error)
+	SetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, payloadSchemaName *string, payloadSchemaVersion *int32, pagination Pagination[domainmodels.ActionListItem]) error
 	InvalidatePagination(ctx context.Context) error
 	InvalidateAll(ctx context.Context) error
 }

@@ -11,7 +11,6 @@ import (
 type Action interface {
 	Create(
 		ctx context.Context,
-		nodeClassId uuid.UUID,
 		name string,
 		description *string,
 		payloadSchemaName string,
@@ -37,12 +36,11 @@ type Action interface {
 		nodeClassId *uuid.UUID,
 		payloadSchemaName *string,
 		payloadSchemaVersion *int32,
-	) (actions []domainmodels.Action, total int, err error)
+	) (actions []domainmodels.ActionListItem, total int, err error)
 
 	UpdateById(
 		ctx context.Context,
 		id uuid.UUID,
-		nodeClassId *uuid.UUID,
 		name *string,
 		description *string,
 		payloadSchemaName *string,

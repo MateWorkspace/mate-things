@@ -9,7 +9,6 @@ import (
 
 type Action struct {
 	Id                   uuid.UUID       `db:"id" json:"id"`
-	NodeClassId          uuid.UUID       `db:"node_class_id" json:"node_class_id"`
 	Name                 string          `db:"name" json:"name"`
 	Description          string          `db:"description" json:"description"`
 	PayloadSchemaName    string          `db:"payload_schema_name" json:"payload_schema_name"`
@@ -21,4 +20,11 @@ type Action struct {
 	CreatedBy            *uuid.UUID      `db:"created_by" json:"created_by,omitempty"`
 	UpdatedBy            *uuid.UUID      `db:"updated_by" json:"updated_by,omitempty"`
 	DeletedBy            *uuid.UUID      `db:"deleted_by" json:"deleted_by,omitempty"`
+}
+
+// ActionListItem enriches Action with data only needed by the list view -
+// mirrors ActionLogListItem's embedding pattern in action_log.go.
+type ActionListItem struct {
+	Action
+	CompatibleNodeClassCount int `db:"compatible_node_class_count" json:"compatible_node_class_count"`
 }

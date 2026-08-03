@@ -12,3 +12,9 @@ type RolePermissionItem struct {
 	Role           domainmodels.Role           `json:"role"`
 	Permission     domainmodels.Permission     `json:"permission"`
 }
+
+type NodeClassActionItem struct {
+	NodeClassAction domainmodels.NodeClassAction `json:"node_class_action"`
+	NodeClass       domainmodels.NodeClass       `json:"node_class"`
+	Action          domainmodels.Action          `json:"action"`
+}

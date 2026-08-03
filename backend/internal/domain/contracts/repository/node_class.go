@@ -33,6 +33,11 @@ type NodeClass interface {
 		search *string,
 	) (nodeClasses []domainmodels.NodeClass, total int, err error)
 
+	ReadActions(
+		ctx context.Context,
+		nodeClassId uuid.UUID,
+	) (actions []domainmodels.Action, err error)
+
 	UpdateById(
 		ctx context.Context,
 		id uuid.UUID,
