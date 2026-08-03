@@ -11,16 +11,15 @@ import type {
 
 export interface ActionResponse extends AuditFields {
   id: string;
-  node_class_id: string;
   name: string;
   description: string;
   payload_schema_name: string;
   payload_schema_version: number;
   preferences: Record<string, unknown>;
+  compatible_node_class_count?: number;
 }
 
 export interface CreateActionRequest {
-  node_class_id: string;
   name: string;
   description?: string;
   payload_schema_name: string;
@@ -28,7 +27,6 @@ export interface CreateActionRequest {
 }
 
 export interface UpdateActionRequest {
-  node_class_id?: string;
   name?: string;
   description?: string;
   payload_schema_name?: string;

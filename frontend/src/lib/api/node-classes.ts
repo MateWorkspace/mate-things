@@ -1,5 +1,6 @@
 "use server";
 
+import type { ActionResponse } from "@/lib/api/actions";
 import { apiFetch, buildQuery } from "@/lib/api/client";
 import type {
   AuditFields,
@@ -98,4 +99,53 @@ export async function updateNodeClass(
 
 export async function deleteNodeClass(id: string): Promise<void> {
   return apiFetch(`/node-classes/${id}`, { method: "DELETE" });
+}
+
+export interface NodeClassActionResponse {
+  id: string;
+  node_class_id: string;
+  action_id: string;
+  created_at: string;
+  created_by?: string;
+}
+
+export interface NodeClassActionDetailResponse {
+  node_class_action: NodeClassActionResponse;
+  node_class: NodeClassResponse;
+  action: ActionResponse;
+}
+
+export interface ListNodeClassActionsQuery extends PageQuery {
+  node_class_id?: string;
+  action_id?: string;
+}
+
+export async function getNodeClassActions(
+  nodeClassId: string,
+): Promise<ActionResponse[]> {
+  return apiFetch(`/node-classes/${nodeClassId}/actions`);
+}
+
+export async function assignNodeClassAction(
+  nodeClassId: string,
+  actionId: string,
+): Promise<IdResponse> {
+  return apiFetch(`/node-classes/${nodeClassId}/actions/${actionId}`, {
+    method: "POST",
+  });
+}
+
+export async function revokeNodeClassAction(
+  nodeClassId: string,
+  actionId: string,
+): Promise<void> {
+  return apiFetch(`/node-classes/${nodeClassId}/actions/${actionId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listNodeClassActions(
+  query: ListNodeClassActionsQuery = {},
+): Promise<PageDataResponse<NodeClassActionDetailResponse>> {
+  return apiFetch(`/node-class-actions${buildQuery(query)}`);
 }
