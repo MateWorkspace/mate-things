@@ -11,13 +11,12 @@ type Definition interface {
 	Create(ctx context.Context, request CreateActionRequest) (uuid.UUID, error)
 	ReadById(ctx context.Context, request ReadActionByIdRequest) (*domainmodels.Action, error)
 	ReadByName(ctx context.Context, request ReadActionByNameRequest) (*domainmodels.Action, error)
-	ReadByPagination(ctx context.Context, request ReadActionsByPaginationRequest) ([]domainmodels.Action, int, error)
+	ReadByPagination(ctx context.Context, request ReadActionsByPaginationRequest) ([]domainmodels.ActionListItem, int, error)
 	UpdateById(ctx context.Context, request UpdateActionRequest) error
 	DeleteById(ctx context.Context, request DeleteActionRequest) error
 }
 
 type CreateActionRequest struct {
-	NodeClassId          uuid.UUID
 	Name                 string
 	Description          *string
 	PayloadSchemaName    string
@@ -44,7 +43,6 @@ type ReadActionsByPaginationRequest struct {
 
 type UpdateActionRequest struct {
 	Id                   uuid.UUID
-	NodeClassId          *uuid.UUID
 	Name                 *string
 	Description          *string
 	PayloadSchemaName    *string
