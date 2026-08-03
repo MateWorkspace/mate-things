@@ -70,17 +70,17 @@ func (r *redisImpl) DeleteByName(ctx context.Context, name string) error {
 	return r.Delete(ctx, key)
 }
 
-func (r *redisImpl) GetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, payloadSchemaName *string, payloadSchemaVersion *int32) (domaincontractscache.Pagination[domainmodels.Action], bool, error) {
+func (r *redisImpl) GetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, payloadSchemaName *string, payloadSchemaVersion *int32) (domaincontractscache.Pagination[domainmodels.ActionListItem], bool, error) {
 	key, err := r.paginationKey(ctx, page, limit, search, nodeClassId, payloadSchemaName, payloadSchemaVersion)
 	if err != nil {
-		return domaincontractscache.Pagination[domainmodels.Action]{}, false, err
+		return domaincontractscache.Pagination[domainmodels.ActionListItem]{}, false, err
 	}
-	var pagination domaincontractscache.Pagination[domainmodels.Action]
+	var pagination domaincontractscache.Pagination[domainmodels.ActionListItem]
 	hit, err := r.Get(ctx, key, &pagination)
 	return pagination, hit, err
 }
 
-func (r *redisImpl) SetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, payloadSchemaName *string, payloadSchemaVersion *int32, pagination domaincontractscache.Pagination[domainmodels.Action]) error {
+func (r *redisImpl) SetPagination(ctx context.Context, page int, limit int, search *string, nodeClassId *uuid.UUID, payloadSchemaName *string, payloadSchemaVersion *int32, pagination domaincontractscache.Pagination[domainmodels.ActionListItem]) error {
 	key, err := r.paginationKey(ctx, page, limit, search, nodeClassId, payloadSchemaName, payloadSchemaVersion)
 	if err != nil {
 		return err

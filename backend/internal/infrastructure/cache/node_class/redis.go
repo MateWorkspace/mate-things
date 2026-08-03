@@ -88,12 +88,42 @@ func (r *redisImpl) SetPagination(ctx context.Context, page int, limit int, sear
 	return r.Set(ctx, key, pagination, r.PaginationTtl())
 }
 
+func (r *redisImpl) GetActions(ctx context.Context, nodeClassId uuid.UUID) ([]domainmodels.Action, bool, error) {
+	key, err := r.ScopedKey(ctx, "actions", "node_class", nodeClassId.String())
+	if err != nil {
+		return nil, false, err
+	}
+	var items []domainmodels.Action
+	hit, err := r.Get(ctx, key, &items)
+	return items, hit, err
+}
+
+func (r *redisImpl) SetActions(ctx context.Context, nodeClassId uuid.UUID, actions []domainmodels.Action) error {
+	key, err := r.ScopedKey(ctx, "actions", "node_class", nodeClassId.String())
+	if err != nil {
+		return err
+	}
+	return r.Set(ctx, key, actions, r.RelationTtl())
+}
+
+func (r *redisImpl) DeleteActions(ctx context.Context, nodeClassId uuid.UUID) error {
+	key, err := r.ScopedKey(ctx, "actions", "node_class", nodeClassId.String())
+	if err != nil {
+		return err
+	}
+	return r.Delete(ctx, key)
+}
+
+func (r *redisImpl) InvalidateActions(ctx context.Context) error {
+	return r.Invalidate(ctx, "actions")
+}
+
 func (r *redisImpl) InvalidatePagination(ctx context.Context) error {
 	return r.Invalidate(ctx, "pagination")
 }
 
 func (r *redisImpl) InvalidateAll(ctx context.Context) error {
-	return r.Invalidate(ctx, "identity", "pagination")
+	return r.Invalidate(ctx, "identity", "actions", "pagination")
 }
 
 func (r *redisImpl) paginationKey(ctx context.Context, page int, limit int, search *string) (string, error) {
