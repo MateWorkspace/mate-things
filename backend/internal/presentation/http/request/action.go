@@ -6,7 +6,6 @@ import (
 )
 
 type ActionPostRequest struct {
-	NodeClassId          string  `json:"node_class_id" example:"3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"`
 	Name                 string  `json:"name" example:"brew_espresso"`
 	Description          *string `json:"description" example:"Pulls a double shot at the requested temperature and duration."`
 	PayloadSchemaName    string  `json:"payload_schema_name" example:"brew_command"`
@@ -14,7 +13,6 @@ type ActionPostRequest struct {
 }
 
 type ActionPatchRequest struct {
-	NodeClassId          *string `json:"node_class_id" example:"3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"`
 	Name                 *string `json:"name" example:"brew_espresso"`
 	Description          *string `json:"description" example:"Pulls a double shot at the requested temperature and duration."`
 	PayloadSchemaName    *string `json:"payload_schema_name" example:"brew_command"`
