@@ -10,7 +10,6 @@ import (
 
 var actionColumns = []string{
 	"id",
-	"node_class_id",
 	"name",
 	"description",
 	"payload_schema_name",
@@ -25,15 +24,14 @@ var actionColumns = []string{
 }
 
 func (p *postgresImpl) queryCreate(
-	nodeClassId uuid.UUID,
 	name string,
 	description *string,
 	payloadSchemaName string,
 	payloadSchemaVersion int32,
 	createdBy *uuid.UUID,
 ) (query string, args []any, err error) {
-	columns := []string{"node_class_id", "name", "payload_schema_name", "payload_schema_version", "created_by"}
-	values := []any{nodeClassId, name, payloadSchemaName, payloadSchemaVersion, createdBy}
+	columns := []string{"name", "payload_schema_name", "payload_schema_version", "created_by"}
+	values := []any{name, payloadSchemaName, payloadSchemaVersion, createdBy}
 
 	if description != nil {
 		columns = append(columns, "description")
@@ -72,7 +70,10 @@ func (p *postgresImpl) queryReadByPagination(
 	payloadSchemaName *string,
 	payloadSchemaVersion *int32,
 ) (totalQuery string, totalArgs []any, query string, queryArgs []any, err error) {
-	baseQ := p.SqrD.Select(actionColumns...).
+	selectColumns := append([]string{}, actionColumns...)
+	selectColumns = append(selectColumns, "(SELECT COUNT(*) FROM node_class_action nca WHERE nca.action_id = actions.id) AS compatible_node_class_count")
+
+	baseQ := p.SqrD.Select(selectColumns...).
 		From("actions").
 		Where("deleted_at IS NULL")
 	totalQ := p.SqrD.Select("COUNT(*)").
@@ -85,7 +86,10 @@ func (p *postgresImpl) queryReadByPagination(
 		totalQ = totalQ.Where(condition)
 	}
 	if nodeClassId != nil {
-		condition := squirrel.Eq{"node_class_id": *nodeClassId}
+		condition := squirrel.Expr(
+			"EXISTS (SELECT 1 FROM node_class_action nca WHERE nca.action_id = actions.id AND nca.node_class_id = ?)",
+			*nodeClassId,
+		)
 		baseQ = baseQ.Where(condition)
 		totalQ = totalQ.Where(condition)
 	}
@@ -115,7 +119,6 @@ func (p *postgresImpl) queryReadByPagination(
 
 func (p *postgresImpl) queryUpdateById(
 	id uuid.UUID,
-	nodeClassId *uuid.UUID,
 	name *string,
 	description *string,
 	payloadSchemaName *string,
@@ -127,9 +130,6 @@ func (p *postgresImpl) queryUpdateById(
 		Where(squirrel.Eq{"id": id}).
 		Where("deleted_at IS NULL")
 
-	if nodeClassId != nil {
-		q = q.Set("node_class_id", *nodeClassId)
-	}
 	if name != nil {
 		q = q.Set("name", *name)
 	}

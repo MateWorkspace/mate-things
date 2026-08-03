@@ -239,7 +239,6 @@ func ScanPgxAction(row pgx.Row) (domainmodels.Action, error) {
 	var item domainmodels.Action
 	err := row.Scan(
 		&item.Id,
-		&item.NodeClassId,
 		&item.Name,
 		&item.Description,
 		&item.PayloadSchemaName,
@@ -259,6 +258,38 @@ func ScanPgxActions(rows pgx.Rows) ([]domainmodels.Action, error) {
 	items := make([]domainmodels.Action, 0)
 	for rows.Next() {
 		item, err := ScanPgxAction(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func ScanPgxActionListItem(row pgx.Row) (domainmodels.ActionListItem, error) {
+	var item domainmodels.ActionListItem
+	err := row.Scan(
+		&item.Id,
+		&item.Name,
+		&item.Description,
+		&item.PayloadSchemaName,
+		&item.PayloadSchemaVersion,
+		&item.Preferences,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+		&item.DeletedAt,
+		&item.CreatedBy,
+		&item.UpdatedBy,
+		&item.DeletedBy,
+		&item.CompatibleNodeClassCount,
+	)
+	return item, err
+}
+
+func ScanPgxActionListItems(rows pgx.Rows) ([]domainmodels.ActionListItem, error) {
+	items := make([]domainmodels.ActionListItem, 0)
+	for rows.Next() {
+		item, err := ScanPgxActionListItem(rows)
 		if err != nil {
 			return nil, err
 		}

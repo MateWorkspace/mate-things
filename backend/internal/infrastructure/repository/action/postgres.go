@@ -34,14 +34,13 @@ func NewPostgresImpl(
 
 func (p *postgresImpl) Create(
 	ctx context.Context,
-	nodeClassId uuid.UUID,
 	name string,
 	description *string,
 	payloadSchemaName string,
 	payloadSchemaVersion int32,
 	createdBy *uuid.UUID,
 ) (id uuid.UUID, err error) {
-	query, args, err := p.queryCreate(nodeClassId, name, description, payloadSchemaName, payloadSchemaVersion, createdBy)
+	query, args, err := p.queryCreate(name, description, payloadSchemaName, payloadSchemaVersion, createdBy)
 	if err != nil {
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create action query", err)
 	}
@@ -98,7 +97,7 @@ func (p *postgresImpl) ReadByPagination(
 	nodeClassId *uuid.UUID,
 	payloadSchemaName *string,
 	payloadSchemaVersion *int32,
-) (actions []domainmodels.Action, total int, err error) {
+) (actions []domainmodels.ActionListItem, total int, err error) {
 	totalQuery, totalArgs, query, queryArgs, err := p.queryReadByPagination(page, limit, search, nodeClassId, payloadSchemaName, payloadSchemaVersion)
 	if err != nil {
 		return nil, 0, infrastructurerepositoryshared.QueryBuildError("failed to build read actions query", err)
@@ -108,7 +107,7 @@ func (p *postgresImpl) ReadByPagination(
 		return nil, 0, infrastructurerepositoryshared.MapPgxError("failed to count actions", err)
 	}
 	if total == 0 {
-		return []domainmodels.Action{}, 0, nil
+		return []domainmodels.ActionListItem{}, 0, nil
 	}
 
 	rows, err := p.Dt.Query(ctx, query, queryArgs...)
@@ -117,7 +116,7 @@ func (p *postgresImpl) ReadByPagination(
 	}
 	defer rows.Close()
 
-	items, err := infrastructurerepositoryshared.ScanPgxActions(rows)
+	items, err := infrastructurerepositoryshared.ScanPgxActionListItems(rows)
 	if err != nil {
 		return nil, 0, infrastructurerepositoryshared.MapPgxError("failed to scan actions", err)
 	}
@@ -128,7 +127,6 @@ func (p *postgresImpl) ReadByPagination(
 func (p *postgresImpl) UpdateById(
 	ctx context.Context,
 	id uuid.UUID,
-	nodeClassId *uuid.UUID,
 	name *string,
 	description *string,
 	payloadSchemaName *string,
@@ -136,7 +134,7 @@ func (p *postgresImpl) UpdateById(
 	preferences *json.RawMessage,
 	updatedBy *uuid.UUID,
 ) (err error) {
-	query, args, err := p.queryUpdateById(id, nodeClassId, name, description, payloadSchemaName, payloadSchemaVersion, preferences, updatedBy)
+	query, args, err := p.queryUpdateById(id, name, description, payloadSchemaName, payloadSchemaVersion, preferences, updatedBy)
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build update action query", err)
 	}

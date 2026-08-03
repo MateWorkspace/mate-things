@@ -119,6 +119,26 @@ func (p *postgresImpl) ReadByPagination(
 	return items, total, nil
 }
 
+func (p *postgresImpl) ReadActions(ctx context.Context, nodeClassId uuid.UUID) (actions []domainmodels.Action, err error) {
+	query, args, err := p.queryReadActions(nodeClassId)
+	if err != nil {
+		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build read node class actions query", err)
+	}
+
+	rows, err := p.Dt.Query(ctx, query, args...)
+	if err != nil {
+		return nil, infrastructurerepositoryshared.MapPgxError("failed to read node class actions", err)
+	}
+	defer rows.Close()
+
+	items, err := infrastructurerepositoryshared.ScanPgxActions(rows)
+	if err != nil {
+		return nil, infrastructurerepositoryshared.MapPgxError("failed to scan node class actions", err)
+	}
+
+	return items, nil
+}
+
 func (p *postgresImpl) UpdateById(
 	ctx context.Context,
 	id uuid.UUID,

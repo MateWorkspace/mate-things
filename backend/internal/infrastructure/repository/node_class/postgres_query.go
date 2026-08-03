@@ -89,6 +89,20 @@ func (p *postgresImpl) queryReadByPagination(
 	return
 }
 
+func (p *postgresImpl) queryReadActions(nodeClassId uuid.UUID) (query string, args []any, err error) {
+	return p.SqrD.Select(
+		"a.id", "a.name", "a.description", "a.payload_schema_name",
+		"a.payload_schema_version", "a.preferences", "a.created_at",
+		"a.updated_at", "a.deleted_at", "a.created_by", "a.updated_by", "a.deleted_by",
+	).
+		From("node_class_action nca").
+		Join("actions a ON a.id = nca.action_id").
+		Where(squirrel.Eq{"nca.node_class_id": nodeClassId}).
+		Where("a.deleted_at IS NULL").
+		OrderBy("a.created_at DESC", "a.id ASC").
+		ToSql()
+}
+
 func (p *postgresImpl) queryUpdateById(
 	id uuid.UUID,
 	name *string,
