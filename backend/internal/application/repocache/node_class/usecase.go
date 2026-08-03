@@ -82,6 +82,25 @@ func (u *usecase) ReadByName(ctx context.Context, name string) (*domainmodels.No
 	return item, nil
 }
 
+func (u *usecase) ReadActions(ctx context.Context, nodeClassId uuid.UUID) ([]domainmodels.Action, error) {
+	if items, hit, err := u.cache.GetActions(ctx, nodeClassId); err != nil {
+		return nil, err
+	} else if hit {
+		return items, nil
+	}
+
+	items, err := u.repository.ReadActions(ctx, nodeClassId)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := u.cache.SetActions(ctx, nodeClassId, items); err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
 func (u *usecase) ReadByPagination(
 	ctx context.Context,
 	page int,

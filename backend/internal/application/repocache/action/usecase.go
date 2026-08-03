@@ -28,14 +28,13 @@ func NewRepoCacheImpl(
 
 func (u *usecase) Create(
 	ctx context.Context,
-	nodeClassId uuid.UUID,
 	name string,
 	description *string,
 	payloadSchemaName string,
 	payloadSchemaVersion int32,
 	createdBy *uuid.UUID,
 ) (uuid.UUID, error) {
-	id, err := u.repository.Create(ctx, nodeClassId, name, description, payloadSchemaName, payloadSchemaVersion, createdBy)
+	id, err := u.repository.Create(ctx, name, description, payloadSchemaName, payloadSchemaVersion, createdBy)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -93,7 +92,7 @@ func (u *usecase) ReadByPagination(
 	nodeClassId *uuid.UUID,
 	payloadSchemaName *string,
 	payloadSchemaVersion *int32,
-) ([]domainmodels.Action, int, error) {
+) ([]domainmodels.ActionListItem, int, error) {
 	if pagination, hit, err := u.cache.GetPagination(ctx, page, limit, search, nodeClassId, payloadSchemaName, payloadSchemaVersion); err != nil {
 		return nil, 0, err
 	} else if hit {
@@ -105,7 +104,7 @@ func (u *usecase) ReadByPagination(
 		return nil, 0, err
 	}
 
-	if err := u.cache.SetPagination(ctx, page, limit, search, nodeClassId, payloadSchemaName, payloadSchemaVersion, domaincontractscache.Pagination[domainmodels.Action]{
+	if err := u.cache.SetPagination(ctx, page, limit, search, nodeClassId, payloadSchemaName, payloadSchemaVersion, domaincontractscache.Pagination[domainmodels.ActionListItem]{
 		Items: items,
 		Total: total,
 	}); err != nil {
@@ -118,7 +117,6 @@ func (u *usecase) ReadByPagination(
 func (u *usecase) UpdateById(
 	ctx context.Context,
 	id uuid.UUID,
-	nodeClassId *uuid.UUID,
 	name *string,
 	description *string,
 	payloadSchemaName *string,
@@ -126,7 +124,7 @@ func (u *usecase) UpdateById(
 	preferences *json.RawMessage,
 	updatedBy *uuid.UUID,
 ) error {
-	if err := u.repository.UpdateById(ctx, id, nodeClassId, name, description, payloadSchemaName, payloadSchemaVersion, preferences, updatedBy); err != nil {
+	if err := u.repository.UpdateById(ctx, id, name, description, payloadSchemaName, payloadSchemaVersion, preferences, updatedBy); err != nil {
 		return err
 	}
 
