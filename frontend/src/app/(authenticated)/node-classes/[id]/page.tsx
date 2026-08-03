@@ -14,10 +14,11 @@ import {
   listFirmwaresByNodeClassId,
   type FirmwareResponse,
 } from "@/lib/api/firmwares";
-import { getNodeClassById } from "@/lib/api/node-classes";
+import { getNodeClassById, getNodeClassActions } from "@/lib/api/node-classes";
 import { listNodes, type NodeResponse } from "@/lib/api/nodes";
 import { requirePermission } from "@/lib/session";
 
+import NodeClassActionChecklist from "../_components/NodeClassActionChecklist";
 import NodeClassForm from "../_components/NodeClassForm";
 
 interface NodeClassDetailPageProps {
@@ -194,6 +195,8 @@ export default async function NodeClassDetailPage({
   const canReadFirmware = permissions.has("firmware:get");
   const canReadNodes = permissions.has("node:get");
   const canReadActions = permissions.has("action:get");
+  const canManageActions =
+    permissions.has("node_class_action:get") && permissions.has("action:get");
   const nodeClassRequest = getNodeClass(id).catch((error: unknown) => {
     if (error instanceof ApiError && error.status === 404) {
       return null;
@@ -202,18 +205,23 @@ export default async function NodeClassDetailPage({
     throw error;
   });
 
-  const [nodeClass, firmwares, nodes, actions] = await Promise.all([
-    nodeClassRequest,
-    canReadFirmware
-      ? listFirmwaresByNodeClassId(id, { limit: 12 })
-      : Promise.resolve(null),
-    canReadNodes
-      ? listNodes({ node_class_id: id, limit: 12 })
-      : Promise.resolve(null),
-    canReadActions
-      ? listActions({ node_class_id: id, limit: 12 })
-      : Promise.resolve(null),
-  ]);
+  const [nodeClass, firmwares, nodes, actions, allActions, assignedActions] =
+    await Promise.all([
+      nodeClassRequest,
+      canReadFirmware
+        ? listFirmwaresByNodeClassId(id, { limit: 12 })
+        : Promise.resolve(null),
+      canReadNodes
+        ? listNodes({ node_class_id: id, limit: 12 })
+        : Promise.resolve(null),
+      canReadActions
+        ? listActions({ node_class_id: id, limit: 12 })
+        : Promise.resolve(null),
+      canManageActions
+        ? listActions({ limit: 100 }).then((result) => result.data)
+        : Promise.resolve([]),
+      canManageActions ? getNodeClassActions(id) : Promise.resolve([]),
+    ]);
 
   if (!nodeClass) {
     notFound();
@@ -323,6 +331,26 @@ export default async function NodeClassDetailPage({
             <ActionRelationship key={action.id} action={action} />
           ))}
         </RelationshipSection>
+      ) : null}
+
+      {canManageActions ? (
+        <section aria-labelledby="compatible-actions-heading">
+          <h2
+            id="compatible-actions-heading"
+            className="font-display text-primary mb-3 text-2xl tracking-wide"
+          >
+            Compatible actions
+          </h2>
+          <NodeClassActionChecklist
+            nodeClassId={id}
+            actions={allActions}
+            selected={new Set(assignedActions.map((action) => action.id))}
+            editable={
+              permissions.has("node_class_action:add") ||
+              permissions.has("node_class_action:remove")
+            }
+          />
+        </section>
       ) : null}
     </main>
   );

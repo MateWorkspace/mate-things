@@ -4,8 +4,11 @@ import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
 import {
+  assignNodeClassAction,
   createNodeClass,
   deleteNodeClass,
+  getNodeClassActions,
+  revokeNodeClassAction,
   updateNodeClass,
 } from "@/lib/api/node-classes";
 import { requireSessionContext } from "@/lib/session";
@@ -172,4 +175,52 @@ export async function deleteNodeClassAction(
   }
 
   redirect("/node-classes");
+}
+
+export async function updateNodeClassActionsAction(
+  _previousState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const session = await requireSessionContext();
+  const nodeClassId = String(formData.get("node_class_id") ?? "").trim();
+  if (!nodeClassId || !session.permissions.has("node_class_action:get")) {
+    return permissionDenied();
+  }
+
+  const current = new Set(
+    (await getNodeClassActions(nodeClassId)).map((item) => item.id),
+  );
+  const desired = formData.getAll("action_ids").map(String);
+  const desiredSet = new Set(desired);
+  const assign = desired.filter((id) => !current.has(id));
+  const revoke = [...current].filter((id) => !desiredSet.has(id));
+
+  if (assign.length && !session.permissions.has("node_class_action:add")) {
+    return permissionDenied();
+  }
+  if (revoke.length && !session.permissions.has("node_class_action:remove")) {
+    return permissionDenied();
+  }
+
+  const results = await Promise.allSettled([
+    ...assign.map((actionId) => assignNodeClassAction(nodeClassId, actionId)),
+    ...revoke.map((actionId) => revokeNodeClassAction(nodeClassId, actionId)),
+  ]);
+  const failures = results.filter(
+    (result) => result.status === "rejected",
+  ).length;
+
+  if (failures) {
+    return {
+      status: "error",
+      title: "Assignments partially updated",
+      message: `${results.length - failures} changes succeeded and ${failures} failed. The current authoritative assignments were reloaded.`,
+    };
+  }
+
+  return {
+    status: "success",
+    title: "Assignments updated",
+    message: `${results.length} action changes saved.`,
+  };
 }
