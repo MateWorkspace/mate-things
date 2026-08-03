@@ -10,6 +10,7 @@ import (
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
 	domainusecasesrepocache "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/repocache"
+	domainusecasestelemetry "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/telemetry"
 )
 
 const resubscribePageLimit = 100
@@ -20,6 +21,7 @@ type usecase struct {
 	nodeLog              domaincontractsrepository.NodeLog
 	firmwareConfigParams domaincontractsrepository.FirmwareConfigParameter
 	nodeConfigValues     domaincontractsrepository.NodeConfigValue
+	telemetryIngestion   domainusecasestelemetry.Ingestion
 	publisher            domaincontractsnode.Publish
 	subscriptions        domaincontractsnode.Subscriptions
 	logger               domaincontractslogger.Leveled
@@ -31,6 +33,7 @@ func NewUsecaseImpl(
 	nodeLog domaincontractsrepository.NodeLog,
 	firmwareConfigParams domaincontractsrepository.FirmwareConfigParameter,
 	nodeConfigValues domaincontractsrepository.NodeConfigValue,
+	telemetryIngestion domainusecasestelemetry.Ingestion,
 	publisher domaincontractsnode.Publish,
 	subscriptions domaincontractsnode.Subscriptions,
 	logger domaincontractslogger.Leveled,
@@ -41,6 +44,7 @@ func NewUsecaseImpl(
 		nodeLog:              nodeLog,
 		firmwareConfigParams: firmwareConfigParams,
 		nodeConfigValues:     nodeConfigValues,
+		telemetryIngestion:   telemetryIngestion,
 		publisher:            publisher,
 		subscriptions:        subscriptions,
 		logger:               logger,
@@ -181,6 +185,30 @@ func (u *usecase) Log(ctx context.Context, request domainusecasesnode.NodeLogMes
 	return nil
 }
 
+func (u *usecase) Telemetry(ctx context.Context, request domainusecasesnode.NodeTelemetryMessageRequest) error {
+	const tag = "node/messaging_callback/Telemetry"
+
+	if _, err := u.telemetryIngestion.Record(ctx, domainusecasestelemetry.RecordTelemetryRequest{
+		NodeDeviceId:         request.DeviceId,
+		MetricName:           request.MetricName,
+		PayloadSchemaName:    request.PayloadSchemaName,
+		PayloadSchemaVersion: request.PayloadSchemaVersion,
+		Payload:              request.Payload,
+		RecordedAt:           request.RecordedAt,
+	}); err != nil {
+		u.logger.Error(ctx, tag, "failed to record telemetry", domainmodels.LoggerMeta{
+			"err":                    err,
+			"device_id":              request.DeviceId,
+			"metric_name":            request.MetricName,
+			"payload_schema_name":    request.PayloadSchemaName,
+			"payload_schema_version": request.PayloadSchemaVersion,
+		})
+		return err
+	}
+
+	return nil
+}
+
 func (u *usecase) Resubscribe(ctx context.Context) error {
 	const tag = "node/messaging_callback/Resubscribe"
 
@@ -230,6 +258,9 @@ func (u *usecase) subscribeNode(ctx context.Context, deviceId string) error {
 		return err
 	}
 	if err := u.subscriptions.Log(ctx, deviceId); err != nil {
+		return err
+	}
+	if err := u.subscriptions.Telemetry(ctx, deviceId); err != nil {
 		return err
 	}
 	return nil

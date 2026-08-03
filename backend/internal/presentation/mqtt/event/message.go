@@ -54,6 +54,8 @@ func OnMessage(_ mqtt.Client, msg mqtt.Message) {
 			h.Status(ctx, msg, topic.DeviceId)
 		case "log":
 			h.Log(ctx, msg, topic.DeviceId)
+		case "telemetry":
+			h.Telemetry(ctx, msg, topic.DeviceId)
 		default:
 			h.Logger.Warn(ctx, tag, "unknown mqtt topic", domainmodels.LoggerMeta{
 				"topic": msg.Topic(),

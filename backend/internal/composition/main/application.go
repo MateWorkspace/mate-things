@@ -166,12 +166,19 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		l.infra.nodePublisher,
 		l.infra.logger,
 	)
+	telemetryIngestion := applicationtelemetryingestion.NewUsecaseImpl(
+		l.infra.telemetryRecordRepository,
+		payloadSchemaRepoCache,
+		l.infra.payloadSchemaValidator,
+		l.infra.logger,
+	)
 	nodeMessagingCallback := applicationnodemessagingcallback.NewUsecaseImpl(
 		nodeRepoCache,
 		l.infra.actionLogRepository,
 		l.infra.nodeLogRepository,
 		l.infra.firmwareConfigParameterRepository,
 		l.infra.nodeConfigValueRepository,
+		telemetryIngestion,
 		l.infra.nodePublisher,
 		l.infra.nodeSubscriptions,
 		l.infra.logger,
@@ -200,12 +207,6 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	profileMe := applicationprofileme.NewUsecaseImpl(userRepoCache, l.infra.logger)
 	profileSecurity := applicationprofilesecurity.NewUsecaseImpl(userRepoCache, l.infra.password, l.infra.logger)
 
-	telemetryIngestion := applicationtelemetryingestion.NewUsecaseImpl(
-		l.infra.telemetryRecordRepository,
-		payloadSchemaRepoCache,
-		l.infra.payloadSchemaValidator,
-		l.infra.logger,
-	)
 	telemetryQuery := applicationtelemetryquery.NewUsecaseImpl(l.infra.telemetryRecordRepository, l.infra.logger)
 	nodeLogQuery := applicationnodelogquery.NewUsecaseImpl(l.infra.nodeLogRepository, l.infra.logger)
 
