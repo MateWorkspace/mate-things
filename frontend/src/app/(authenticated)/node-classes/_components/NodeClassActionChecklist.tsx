@@ -37,9 +37,7 @@ export default function NodeClassActionChecklist({
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="node_class_id" value={nodeClassId} />
       <fieldset className="border-border rounded-xl border p-4">
-        <legend className="font-display text-primary px-2 text-lg">
-          Compatible actions
-        </legend>
+        <legend className="sr-only">Compatible actions</legend>
         <div className="space-y-2">
           {actions.map((action) => (
             <label

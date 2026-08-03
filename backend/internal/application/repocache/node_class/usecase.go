@@ -12,17 +12,20 @@ import (
 )
 
 type usecase struct {
-	repository domaincontractsrepository.NodeClass
-	cache      domaincontractscache.NodeClass
+	repository           domaincontractsrepository.NodeClass
+	cache                domaincontractscache.NodeClass
+	nodeClassActionCache domaincontractscache.NodeClassAction
 }
 
 func NewRepoCacheImpl(
 	repository domaincontractsrepository.NodeClass,
 	cache domaincontractscache.NodeClass,
+	nodeClassActionCache domaincontractscache.NodeClassAction,
 ) domainusecasesrepocache.NodeClass {
 	return &usecase{
-		repository: repository,
-		cache:      cache,
+		repository:           repository,
+		cache:                cache,
+		nodeClassActionCache: nodeClassActionCache,
 	}
 }
 
@@ -37,7 +40,7 @@ func (u *usecase) Create(
 		return uuid.Nil, err
 	}
 
-	if err := u.cache.InvalidateAll(ctx); err != nil {
+	if err := u.invalidateAll(ctx); err != nil {
 		return uuid.Nil, err
 	}
 
@@ -140,7 +143,7 @@ func (u *usecase) UpdateById(
 		return err
 	}
 
-	return u.cache.InvalidateAll(ctx)
+	return u.invalidateAll(ctx)
 }
 
 func (u *usecase) DeleteById(
@@ -152,5 +155,12 @@ func (u *usecase) DeleteById(
 		return err
 	}
 
-	return u.cache.InvalidateAll(ctx)
+	return u.invalidateAll(ctx)
+}
+
+func (u *usecase) invalidateAll(ctx context.Context) error {
+	if err := u.cache.InvalidateAll(ctx); err != nil {
+		return err
+	}
+	return u.nodeClassActionCache.InvalidateAll(ctx)
 }

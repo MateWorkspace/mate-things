@@ -8,7 +8,11 @@ import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Card from "@/components/ui/card";
 import PageHeader from "@/components/ui/page-header";
 import StatusBadge from "@/components/ui/status-badge";
-import { listActions, type ActionResponse } from "@/lib/api/actions";
+import {
+  listActions,
+  listAllActions,
+  type ActionResponse,
+} from "@/lib/api/actions";
 import { ApiError } from "@/lib/api/client";
 import {
   listFirmwaresByNodeClassId,
@@ -217,9 +221,7 @@ export default async function NodeClassDetailPage({
       canReadActions
         ? listActions({ node_class_id: id, limit: 12 })
         : Promise.resolve(null),
-      canManageActions
-        ? listActions({ limit: 100 }).then((result) => result.data)
-        : Promise.resolve([]),
+      canManageActions ? listAllActions() : Promise.resolve([]),
       canManageActions ? getNodeClassActions(id) : Promise.resolve([]),
     ]);
 

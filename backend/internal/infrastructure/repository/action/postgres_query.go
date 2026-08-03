@@ -71,7 +71,7 @@ func (p *postgresImpl) queryReadByPagination(
 	payloadSchemaVersion *int32,
 ) (totalQuery string, totalArgs []any, query string, queryArgs []any, err error) {
 	selectColumns := append([]string{}, actionColumns...)
-	selectColumns = append(selectColumns, "(SELECT COUNT(*) FROM node_class_action nca WHERE nca.action_id = actions.id) AS compatible_node_class_count")
+	selectColumns = append(selectColumns, "(SELECT COUNT(*) FROM node_class_action nca JOIN node_classes nc ON nc.id = nca.node_class_id WHERE nca.action_id = actions.id AND nc.deleted_at IS NULL) AS compatible_node_class_count")
 
 	baseQ := p.SqrD.Select(selectColumns...).
 		From("actions").

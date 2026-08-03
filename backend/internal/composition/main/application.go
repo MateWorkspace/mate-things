@@ -92,10 +92,10 @@ type application struct {
 func (l *launcher) newApplication(ctx context.Context) error {
 	const tag = path + "/application"
 
-	actionRepoCache := applicationrepocacheaction.NewRepoCacheImpl(l.infra.actionRepository, l.infra.actionCache)
+	actionRepoCache := applicationrepocacheaction.NewRepoCacheImpl(l.infra.actionRepository, l.infra.actionCache, l.infra.nodeClassActionCache)
 	firmwareRepoCache := applicationrepocachefirmware.NewRepoCacheImpl(l.infra.firmwareRepository, l.infra.firmwareCache)
 	nodeRepoCache := applicationrepocachenode.NewRepoCacheImpl(l.infra.nodeRepository, l.infra.nodeCache)
-	nodeClassRepoCache := applicationrepocachenodeclass.NewRepoCacheImpl(l.infra.nodeClassRepository, l.infra.nodeClassCache)
+	nodeClassRepoCache := applicationrepocachenodeclass.NewRepoCacheImpl(l.infra.nodeClassRepository, l.infra.nodeClassCache, l.infra.nodeClassActionCache)
 	nodeClassActionRepoCache := applicationrepocachenodeclassaction.NewRepoCacheImpl(
 		l.infra.nodeClassActionRepository,
 		l.infra.nodeClassActionCache,
