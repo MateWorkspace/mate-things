@@ -77,9 +77,6 @@ export default async function TelemetryPage({
             <p>
               <strong>{result.total_items}</strong> records
             </p>
-            <p className="text-muted-foreground">
-              Bound the time range to keep high-volume views focused.
-            </p>
           </div>
           <RefreshBoundary updatedAt={result.data[0]?.created_at}>
             {result.data.length ? (
