@@ -249,7 +249,7 @@ function DeleteDialog({
           <button
             type="submit"
             disabled={pending || confirmation !== action.name}
-            className="bg-critical text-background hover:opacity-90 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-critical text-background rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pending ? "Deleting…" : "Delete action"}
           </button>
