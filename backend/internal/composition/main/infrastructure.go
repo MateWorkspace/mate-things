@@ -16,6 +16,7 @@ import (
 	infrastructurecachefirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/firmware"
 	infrastructurecachenode "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/node"
 	infrastructurecachenodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/node_class"
+	infrastructurecachenodeclassaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/node_class_action"
 	infrastructurecachepayloadschema "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/payload_schema"
 	infrastructurecachepermission "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/permission"
 	infrastructurecacherole "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/role"
@@ -31,6 +32,7 @@ import (
 	infrastructurerepositoryfirmwareconfigparameter "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/firmware_config_parameter"
 	infrastructurerepositorynode "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node"
 	infrastructurerepositorynodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class"
+	infrastructurerepositorynodeclassaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class_action"
 	infrastructurerepositorynodeconfigvalue "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_config_value"
 	infrastructurerepositorynodelog "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_log"
 	infrastructurerepositorypayloadschema "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/payload_schema"
@@ -59,6 +61,7 @@ type infrastructure struct {
 	nodeConfigValueRepository         domaincontractsrepository.NodeConfigValue
 	nodeLogRepository                 domaincontractsrepository.NodeLog
 	nodeClassRepository               domaincontractsrepository.NodeClass
+	nodeClassActionRepository         domaincontractsrepository.NodeClassAction
 	payloadSchemaRepository           domaincontractsrepository.PayloadSchema
 	permissionRepository              domaincontractsrepository.Permission
 	roleRepository                    domaincontractsrepository.Role
@@ -66,15 +69,16 @@ type infrastructure struct {
 	telemetryRecordRepository         domaincontractsrepository.TelemetryRecord
 	userRepository                    domaincontractsrepository.User
 
-	actionCache         domaincontractscache.Action
-	firmwareCache       domaincontractscache.Firmware
-	nodeCache           domaincontractscache.Node
-	nodeClassCache      domaincontractscache.NodeClass
-	payloadSchemaCache  domaincontractscache.PayloadSchema
-	permissionCache     domaincontractscache.Permission
-	roleCache           domaincontractscache.Role
-	rolePermissionCache domaincontractscache.RolePermission
-	userCache           domaincontractscache.User
+	actionCache          domaincontractscache.Action
+	firmwareCache        domaincontractscache.Firmware
+	nodeCache            domaincontractscache.Node
+	nodeClassCache       domaincontractscache.NodeClass
+	nodeClassActionCache domaincontractscache.NodeClassAction
+	payloadSchemaCache   domaincontractscache.PayloadSchema
+	permissionCache      domaincontractscache.Permission
+	roleCache            domaincontractscache.Role
+	rolePermissionCache  domaincontractscache.RolePermission
+	userCache            domaincontractscache.User
 
 	firmwareStorage domaincontractsstorage.Firmware
 
@@ -110,6 +114,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	nodeConfigValueRepository := infrastructurerepositorynodeconfigvalue.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeLogRepository := infrastructurerepositorynodelog.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeClassRepository := infrastructurerepositorynodeclass.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	nodeClassActionRepository := infrastructurerepositorynodeclassaction.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	payloadSchemaRepository := infrastructurerepositorypayloadschema.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	permissionRepository := infrastructurerepositorypermission.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	roleRepository := infrastructurerepositoryrole.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -126,6 +131,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	firmwareCache := infrastructurecachefirmware.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 	nodeCache := infrastructurecachenode.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 	nodeClassCache := infrastructurecachenodeclass.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
+	nodeClassActionCache := infrastructurecachenodeclassaction.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 	payloadSchemaCache := infrastructurecachepayloadschema.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 	permissionCache := infrastructurecachepermission.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 	roleCache := infrastructurecacherole.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
@@ -157,6 +163,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		nodeConfigValueRepository:         nodeConfigValueRepository,
 		nodeLogRepository:                 nodeLogRepository,
 		nodeClassRepository:               nodeClassRepository,
+		nodeClassActionRepository:         nodeClassActionRepository,
 		payloadSchemaRepository:           payloadSchemaRepository,
 		permissionRepository:              permissionRepository,
 		roleRepository:                    roleRepository,
@@ -164,15 +171,16 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		telemetryRecordRepository:         telemetryRecordRepository,
 		userRepository:                    userRepository,
 
-		actionCache:         actionCache,
-		firmwareCache:       firmwareCache,
-		nodeCache:           nodeCache,
-		nodeClassCache:      nodeClassCache,
-		payloadSchemaCache:  payloadSchemaCache,
-		permissionCache:     permissionCache,
-		roleCache:           roleCache,
-		rolePermissionCache: rolePermissionCache,
-		userCache:           userCache,
+		actionCache:          actionCache,
+		firmwareCache:        firmwareCache,
+		nodeCache:            nodeCache,
+		nodeClassCache:       nodeClassCache,
+		nodeClassActionCache: nodeClassActionCache,
+		payloadSchemaCache:   payloadSchemaCache,
+		permissionCache:      permissionCache,
+		roleCache:            roleCache,
+		rolePermissionCache:  rolePermissionCache,
+		userCache:            userCache,
 
 		firmwareStorage: firmwareStorage,
 

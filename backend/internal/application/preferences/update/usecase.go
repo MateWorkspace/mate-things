@@ -51,7 +51,7 @@ func (u *usecase) Action(
 ) error {
 	const tag = "preferences/update/Action"
 
-	if err := u.action.UpdateById(ctx, request.Id, nil, nil, nil, nil, nil, &request.Preferences, request.UpdatedBy); err != nil {
+	if err := u.action.UpdateById(ctx, request.Id, nil, nil, nil, nil, &request.Preferences, request.UpdatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to update action preferences", domainmodels.LoggerMeta{
 			"err":        err,
 			"id":         request.Id,

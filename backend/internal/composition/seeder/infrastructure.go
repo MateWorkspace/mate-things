@@ -12,6 +12,7 @@ import (
 	infrastructureloggerleveled "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/logger/leveled"
 	infrastructurerepositoryaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/action"
 	infrastructurerepositorynodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class"
+	infrastructurerepositorynodeclassaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class_action"
 	infrastructurerepositorypayloadschema "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/payload_schema"
 	infrastructurerepositorypermission "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/permission"
 	infrastructurerepositoryrole "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/role"
@@ -23,13 +24,14 @@ import (
 type infrastructure struct {
 	logger domaincontractslogger.Leveled
 
-	actionRepository         domaincontractsrepository.Action
-	nodeClassRepository      domaincontractsrepository.NodeClass
-	payloadSchemaRepository  domaincontractsrepository.PayloadSchema
-	permissionRepository     domaincontractsrepository.Permission
-	roleRepository           domaincontractsrepository.Role
-	rolePermissionRepository domaincontractsrepository.RolePermission
-	userRepository           domaincontractsrepository.User
+	actionRepository          domaincontractsrepository.Action
+	nodeClassRepository       domaincontractsrepository.NodeClass
+	nodeClassActionRepository domaincontractsrepository.NodeClassAction
+	payloadSchemaRepository   domaincontractsrepository.PayloadSchema
+	permissionRepository      domaincontractsrepository.Permission
+	roleRepository            domaincontractsrepository.Role
+	rolePermissionRepository  domaincontractsrepository.RolePermission
+	userRepository            domaincontractsrepository.User
 
 	password domaincontractsutility.Password
 }
@@ -50,6 +52,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 
 	actionRepository := infrastructurerepositoryaction.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeClassRepository := infrastructurerepositorynodeclass.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	nodeClassActionRepository := infrastructurerepositorynodeclassaction.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	payloadSchemaRepository := infrastructurerepositorypayloadschema.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	permissionRepository := infrastructurerepositorypermission.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	roleRepository := infrastructurerepositoryrole.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -61,13 +64,14 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	l.infra = &infrastructure{
 		logger: logger,
 
-		actionRepository:         actionRepository,
-		nodeClassRepository:      nodeClassRepository,
-		payloadSchemaRepository:  payloadSchemaRepository,
-		permissionRepository:     permissionRepository,
-		roleRepository:           roleRepository,
-		rolePermissionRepository: rolePermissionRepository,
-		userRepository:           userRepository,
+		actionRepository:          actionRepository,
+		nodeClassRepository:       nodeClassRepository,
+		nodeClassActionRepository: nodeClassActionRepository,
+		payloadSchemaRepository:   payloadSchemaRepository,
+		permissionRepository:      permissionRepository,
+		roleRepository:            roleRepository,
+		rolePermissionRepository:  rolePermissionRepository,
+		userRepository:            userRepository,
 
 		password: password,
 	}

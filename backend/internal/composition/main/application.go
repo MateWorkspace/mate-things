@@ -27,6 +27,7 @@ import (
 	applicationrepocachefirmware "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/firmware"
 	applicationrepocachenode "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/node"
 	applicationrepocachenodeclass "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/node_class"
+	applicationrepocachenodeclassaction "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/node_class_action"
 	applicationrepocachepayloadschema "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/payload_schema"
 	applicationrepocachepermission "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/permission"
 	applicationrepocacherole "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/role"
@@ -47,15 +48,16 @@ import (
 )
 
 type application struct {
-	actionRepoCache         domainusecasesrepocache.Action
-	firmwareRepoCache       domainusecasesrepocache.Firmware
-	nodeRepoCache           domainusecasesrepocache.Node
-	nodeClassRepoCache      domainusecasesrepocache.NodeClass
-	payloadSchemaRepoCache  domainusecasesrepocache.PayloadSchema
-	permissionRepoCache     domainusecasesrepocache.Permission
-	roleRepoCache           domainusecasesrepocache.Role
-	rolePermissionRepoCache domainusecasesrepocache.RolePermission
-	userRepoCache           domainusecasesrepocache.User
+	actionRepoCache          domainusecasesrepocache.Action
+	firmwareRepoCache        domainusecasesrepocache.Firmware
+	nodeRepoCache            domainusecasesrepocache.Node
+	nodeClassRepoCache       domainusecasesrepocache.NodeClass
+	nodeClassActionRepoCache domainusecasesrepocache.NodeClassAction
+	payloadSchemaRepoCache   domainusecasesrepocache.PayloadSchema
+	permissionRepoCache      domainusecasesrepocache.Permission
+	roleRepoCache            domainusecasesrepocache.Role
+	rolePermissionRepoCache  domainusecasesrepocache.RolePermission
+	userRepoCache            domainusecasesrepocache.User
 
 	actionDefinition domainusecasesaction.Definition
 	actionExecution  domainusecasesaction.Execution
@@ -94,6 +96,12 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	firmwareRepoCache := applicationrepocachefirmware.NewRepoCacheImpl(l.infra.firmwareRepository, l.infra.firmwareCache)
 	nodeRepoCache := applicationrepocachenode.NewRepoCacheImpl(l.infra.nodeRepository, l.infra.nodeCache)
 	nodeClassRepoCache := applicationrepocachenodeclass.NewRepoCacheImpl(l.infra.nodeClassRepository, l.infra.nodeClassCache)
+	nodeClassActionRepoCache := applicationrepocachenodeclassaction.NewRepoCacheImpl(
+		l.infra.nodeClassActionRepository,
+		l.infra.nodeClassActionCache,
+		l.infra.nodeClassCache,
+		l.infra.actionCache,
+	)
 	payloadSchemaRepoCache := applicationrepocachepayloadschema.NewRepoCacheImpl(l.infra.payloadSchemaRepository, l.infra.payloadSchemaCache)
 	rolePermissionRepoCache := applicationrepocacherolepermission.NewRepoCacheImpl(
 		l.infra.rolePermissionRepository,
@@ -119,6 +127,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	actionExecution := applicationactionexecution.NewUsecaseImpl(
 		actionRepoCache,
 		nodeRepoCache,
+		nodeClassActionRepoCache,
 		payloadSchemaRepoCache,
 		l.infra.actionLogRepository,
 		l.infra.nodePublisher,
@@ -140,7 +149,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		l.infra.logger,
 	)
 
-	nodeClassManagement := applicationnodeclassmanagement.NewUsecaseImpl(nodeClassRepoCache, l.infra.logger)
+	nodeClassManagement := applicationnodeclassmanagement.NewUsecaseImpl(nodeClassRepoCache, nodeClassActionRepoCache, l.infra.logger)
 	nodeConfigParameter := applicationnodeconfigparameter.NewUsecaseImpl(l.infra.firmwareConfigParameterRepository, l.infra.logger)
 	nodeDeviceManagement := applicationnodedevicemanagement.NewUsecaseImpl(nodeRepoCache, l.infra.logger)
 	nodeFirmwareManagement := applicationnodefirmwaremanagement.NewUsecaseImpl(
@@ -201,15 +210,16 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	nodeLogQuery := applicationnodelogquery.NewUsecaseImpl(l.infra.nodeLogRepository, l.infra.logger)
 
 	l.app = &application{
-		actionRepoCache:         actionRepoCache,
-		firmwareRepoCache:       firmwareRepoCache,
-		nodeRepoCache:           nodeRepoCache,
-		nodeClassRepoCache:      nodeClassRepoCache,
-		payloadSchemaRepoCache:  payloadSchemaRepoCache,
-		permissionRepoCache:     permissionRepoCache,
-		roleRepoCache:           roleRepoCache,
-		rolePermissionRepoCache: rolePermissionRepoCache,
-		userRepoCache:           userRepoCache,
+		actionRepoCache:          actionRepoCache,
+		firmwareRepoCache:        firmwareRepoCache,
+		nodeRepoCache:            nodeRepoCache,
+		nodeClassRepoCache:       nodeClassRepoCache,
+		nodeClassActionRepoCache: nodeClassActionRepoCache,
+		payloadSchemaRepoCache:   payloadSchemaRepoCache,
+		permissionRepoCache:      permissionRepoCache,
+		roleRepoCache:            roleRepoCache,
+		rolePermissionRepoCache:  rolePermissionRepoCache,
+		userRepoCache:            userRepoCache,
 
 		actionDefinition: actionDefinition,
 		actionExecution:  actionExecution,
