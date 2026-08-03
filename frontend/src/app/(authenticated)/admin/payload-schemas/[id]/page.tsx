@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Card from "@/components/ui/card";
+import LocalDateTime from "@/components/ui/local-date-time";
 import PageHeader from "@/components/ui/page-header";
 import StatusBadge from "@/components/ui/status-badge";
 import { ApiError } from "@/lib/api/client";
@@ -75,18 +76,17 @@ export default async function PayloadSchemaDetails({
             <div>
               <dt className="text-muted-foreground">From</dt>
               <dd>
-                {new Date(schema.valid_from).toLocaleString("en", {
-                  timeZone: "UTC",
-                })}{" "}
-                UTC
+                <LocalDateTime value={schema.valid_from} />
               </dd>
             </div>
             <div>
               <dt className="text-muted-foreground">To</dt>
               <dd>
-                {schema.valid_to
-                  ? `${new Date(schema.valid_to).toLocaleString("en", { timeZone: "UTC" })} UTC`
-                  : "Open-ended"}
+                {schema.valid_to ? (
+                  <LocalDateTime value={schema.valid_to} />
+                ) : (
+                  "Open-ended"
+                )}
               </dd>
             </div>
           </dl>
@@ -97,20 +97,14 @@ export default async function PayloadSchemaDetails({
             <div>
               <dt className="text-muted-foreground">Created</dt>
               <dd>
-                {new Date(schema.created_at).toLocaleString("en", {
-                  timeZone: "UTC",
-                })}{" "}
-                UTC
+                <LocalDateTime value={schema.created_at} />
               </dd>
             </div>
             {schema.updated_at ? (
               <div>
                 <dt className="text-muted-foreground">Updated</dt>
                 <dd>
-                  {new Date(schema.updated_at).toLocaleString("en", {
-                    timeZone: "UTC",
-                  })}{" "}
-                  UTC
+                  <LocalDateTime value={schema.updated_at} />
                 </dd>
               </div>
             ) : null}

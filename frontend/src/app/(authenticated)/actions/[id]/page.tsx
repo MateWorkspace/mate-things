@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import ActionForm from "@/app/(authenticated)/actions/_components/ActionForm";
 import DispatchActionDialog from "@/app/(authenticated)/actions/_components/DispatchActionDialog";
 import Card from "@/components/ui/card";
+import LocalDateTime from "@/components/ui/local-date-time";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { getActionById } from "@/lib/api/actions";
@@ -92,9 +93,7 @@ export default async function ActionDetailPage({
           <div>
             <dt className="text-muted-foreground text-sm">Created</dt>
             <dd className="mt-1">
-              <time dateTime={action.created_at}>
-                {new Date(action.created_at).toLocaleString()}
-              </time>
+              <LocalDateTime value={action.created_at} />
             </dd>
           </div>
           <div>

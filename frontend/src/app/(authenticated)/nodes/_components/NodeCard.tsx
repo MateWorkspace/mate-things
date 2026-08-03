@@ -2,6 +2,7 @@ import { CloudUpload, Settings } from "lucide-react";
 import Link from "next/link";
 
 import ResourceCard from "@/components/collection/ResourceCard";
+import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
 import type { NodeResponse } from "@/lib/api";
 
@@ -11,12 +12,6 @@ interface NodeCardProps {
   nodeClassName?: string;
   firmwareName?: string;
 }
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 function DetailRow({
   label,
@@ -58,9 +53,7 @@ export default function NodeCard({
         <DetailRow label="Class">{nodeClassName ?? "Unresolved"}</DetailRow>
         <DetailRow label="Firmware">{firmwareName ?? "Unresolved"}</DetailRow>
         <DetailRow label={node.updated_at ? "Updated" : "Registered"}>
-          <time dateTime={freshness}>
-            {DATE_FORMATTER.format(new Date(freshness))}
-          </time>
+          <LocalDateTime value={freshness} />
         </DetailRow>
       </dl>
 

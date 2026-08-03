@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Card from "@/components/ui/card";
+import LocalDateTime from "@/components/ui/local-date-time";
 import PageHeader from "@/components/ui/page-header";
 import StatusBadge from "@/components/ui/status-badge";
 import { ApiError } from "@/lib/api/client";
@@ -42,12 +43,6 @@ export async function generateMetadata({
     return { title: "Firmware details — Mate Things" };
   }
 }
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 export default async function FirmwareDetailPage({
   params,
@@ -189,9 +184,7 @@ export default async function FirmwareDetailPage({
                 {firmware.updated_at ? "Updated" : "Created"}
               </dt>
               <dd className="mt-1">
-                <time dateTime={freshness}>
-                  {DATE_FORMATTER.format(new Date(freshness))} UTC
-                </time>
+                <LocalDateTime value={freshness} />
               </dd>
             </div>
             {firmware.created_by ? (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import ResourceCard from "@/components/collection/ResourceCard";
+import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
 import type { PayloadSchemaResponse } from "@/lib/api/payload-schemas";
 
@@ -32,24 +33,14 @@ export default function PayloadSchemaCard({
         <div>
           <dt className="text-muted-foreground">Valid from</dt>
           <dd>
-            <time dateTime={schema.valid_from}>
-              {new Date(schema.valid_from).toLocaleString("en", {
-                timeZone: "UTC",
-              })}{" "}
-              UTC
-            </time>
+            <LocalDateTime value={schema.valid_from} />
           </dd>
         </div>
         <div>
           <dt className="text-muted-foreground">Valid to</dt>
           <dd>
             {schema.valid_to ? (
-              <time dateTime={schema.valid_to}>
-                {new Date(schema.valid_to).toLocaleString("en", {
-                  timeZone: "UTC",
-                })}{" "}
-                UTC
-              </time>
+              <LocalDateTime value={schema.valid_to} />
             ) : (
               "Open-ended"
             )}
@@ -60,9 +51,10 @@ export default function PayloadSchemaCard({
             {schema.updated_at ? "Updated" : "Created"}
           </dt>
           <dd>
-            {new Date(
-              schema.updated_at ?? schema.created_at,
-            ).toLocaleDateString("en", { timeZone: "UTC" })}
+            <LocalDateTime
+              value={schema.updated_at ?? schema.created_at}
+              variant="date"
+            />
           </dd>
         </div>
       </dl>

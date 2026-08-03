@@ -3,16 +3,11 @@
 import { useState } from "react";
 
 import Button from "@/components/ui/button";
+import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
 import type { NodeLogResponse } from "@/lib/api/node-logs";
 
 import { NODE_LOG_LEVEL_LABELS } from "../_lib/status";
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 const BATCH_SIZE = 100;
 
@@ -57,9 +52,7 @@ export default function NodeLogTable({
                   className="hover:bg-highlight/20 transition-colors"
                 >
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <time dateTime={record.logged_at}>
-                      {DATE_FORMATTER.format(new Date(record.logged_at))}
-                    </time>
+                    <LocalDateTime value={record.logged_at} />
                   </td>
                   <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
                     {record.node_device_id}

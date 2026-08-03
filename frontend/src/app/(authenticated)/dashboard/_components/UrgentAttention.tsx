@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CircleX, RadioTower } from "lucide-react";
 
 import Card from "@/components/ui/card";
+import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
 import type { ActionLogResponse } from "@/lib/api/action-logs";
 import type { NodeResponse } from "@/lib/api/nodes";
@@ -10,12 +11,6 @@ interface UrgentAttentionProps {
   disconnectedNodes?: readonly NodeResponse[];
   failedActions?: readonly ActionLogResponse[];
 }
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 function actionHref(action: ActionLogResponse): string {
   const params = new URLSearchParams({
@@ -99,9 +94,7 @@ export default function UrgentAttention({
                 Action {action.action_id}
               </h3>
               <p className="text-muted-foreground mt-1 text-xs">
-                <time dateTime={action.executed_at}>
-                  {DATE_FORMATTER.format(new Date(action.executed_at))} UTC
-                </time>
+                <LocalDateTime value={action.executed_at} />
               </p>
               <p className="text-foreground/70 mt-2 line-clamp-2 text-sm">
                 {action.action_message || "No response message was recorded."}

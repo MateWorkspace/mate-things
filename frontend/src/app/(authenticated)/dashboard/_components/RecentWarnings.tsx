@@ -2,18 +2,13 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import Card from "@/components/ui/card";
+import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
 import type { NodeLogResponse } from "@/lib/api/node-logs";
 
 interface RecentWarningsProps {
   logs?: readonly NodeLogResponse[];
 }
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 export default function RecentWarnings({ logs }: RecentWarningsProps) {
   const visibleLogs = logs?.slice(0, 6) ?? [];
@@ -75,9 +70,7 @@ export default function RecentWarnings({ logs }: RecentWarningsProps) {
                 </div>
                 <p className="mt-3 text-sm break-words">{log.message}</p>
                 <p className="text-muted-foreground mt-2 text-xs">
-                  <time dateTime={log.logged_at}>
-                    {DATE_FORMATTER.format(new Date(log.logged_at))} UTC
-                  </time>
+                  <LocalDateTime value={log.logged_at} />
                 </p>
               </div>
               <Link

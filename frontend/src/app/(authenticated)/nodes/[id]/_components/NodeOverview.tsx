@@ -1,16 +1,11 @@
 import Card from "@/components/ui/card";
+import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
 import type { NodeResponse } from "@/lib/api";
 
 interface NodeOverviewProps {
   node: NodeResponse;
 }
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 function Detail({
   label,
@@ -89,9 +84,7 @@ export default function NodeOverview({ node }: NodeOverviewProps) {
               )}
             </Detail>
             <Detail label={node.updated_at ? "Updated" : "Registered"}>
-              <time dateTime={freshness}>
-                {DATE_FORMATTER.format(new Date(freshness))} UTC
-              </time>
+              <LocalDateTime value={freshness} />
             </Detail>
           </dl>
         </Card>

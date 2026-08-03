@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Card from "@/components/ui/card";
+import LocalDateTime from "@/components/ui/local-date-time";
 import PageHeader from "@/components/ui/page-header";
 import { ApiError } from "@/lib/api/client";
 import { listRoles } from "@/lib/api/roles";
@@ -91,20 +92,14 @@ export default async function UserDetails({
             <div>
               <dt className="text-muted-foreground">Created</dt>
               <dd>
-                {new Date(user.created_at).toLocaleString("en", {
-                  timeZone: "UTC",
-                })}{" "}
-                UTC
+                <LocalDateTime value={user.created_at} />
               </dd>
             </div>
             {user.updated_at ? (
               <div>
                 <dt className="text-muted-foreground">Updated</dt>
                 <dd>
-                  {new Date(user.updated_at).toLocaleString("en", {
-                    timeZone: "UTC",
-                  })}{" "}
-                  UTC
+                  <LocalDateTime value={user.updated_at} />
                 </dd>
               </div>
             ) : null}

@@ -35,14 +35,19 @@ export default function PayloadSchemaForm({
   canDelete?: boolean;
 }) {
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorGeneration, setEditorGeneration] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteGeneration, setDeleteGeneration] = useState(0);
   return (
     <div className="flex flex-wrap gap-2">
       {!schema || canEdit ? (
         <Button
           type="button"
           variant={schema ? "secondary" : "primary"}
-          onClick={() => setEditorOpen(true)}
+          onClick={() => {
+            setEditorGeneration((generation) => generation + 1);
+            setEditorOpen(true);
+          }}
         >
           {schema ? "Edit schema" : "Create schema"}
         </Button>
@@ -50,21 +55,28 @@ export default function PayloadSchemaForm({
       {schema && canDelete ? (
         <button
           type="button"
-          onClick={() => setDeleteOpen(true)}
+          onClick={() => {
+            setDeleteGeneration((generation) => generation + 1);
+            setDeleteOpen(true);
+          }}
           className="border-critical text-critical hover:bg-critical/10 active:bg-critical/15 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors"
         >
           Delete schema
         </button>
       ) : null}
+      {/* Keyed on a generation counter bumped only when opening, not on
+          editorOpen/deleteOpen themselves - remounting on close would
+          unmount a still-open native <dialog>, dropping it from the
+          browser's top layer without a clean close() call. */}
       <SchemaEditor
-        key={`${editorOpen}-${schema?.id ?? "new"}`}
+        key={`${editorGeneration}-${schema?.id ?? "new"}`}
         schema={schema}
         open={editorOpen}
         onClose={() => setEditorOpen(false)}
       />
       {schema ? (
         <DeleteSchema
-          key={`${deleteOpen}-${schema.id}`}
+          key={`${deleteGeneration}-${schema.id}`}
           schema={schema}
           open={deleteOpen}
           onClose={() => setDeleteOpen(false)}
@@ -90,9 +102,10 @@ function SchemaEditor({
   const router = useRouter();
   useEffect(() => {
     if (state.status === "success") {
+      onClose();
       router.refresh();
     }
-  }, [state, router]);
+  }, [state, onClose, router]);
   const definitionErrors = useMemo(() => {
     if (state.status !== "error" || !state.message) return {};
     const parsed = parseDefinitionFieldError(state.message);
@@ -102,7 +115,7 @@ function SchemaEditor({
   const [definitionValid, setDefinitionValid] = useState(true);
   return (
     <Dialog
-      open={open && state.status !== "success"}
+      open={open}
       onClose={onClose}
       title={
         schema

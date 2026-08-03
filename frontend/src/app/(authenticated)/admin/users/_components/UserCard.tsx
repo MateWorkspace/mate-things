@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import ResourceCard from "@/components/collection/ResourceCard";
+import LocalDateTime from "@/components/ui/local-date-time";
 import type { RoleResponse } from "@/lib/api/roles";
 import type { UserResponse } from "@/lib/api/users";
 
@@ -27,11 +28,7 @@ export default function UserCard({
             {user.updated_at ? "Updated" : "Created"}
           </dt>
           <dd>
-            <time dateTime={freshness}>
-              {new Date(freshness).toLocaleDateString("en", {
-                timeZone: "UTC",
-              })}
-            </time>
+            <LocalDateTime value={freshness} variant="date" />
           </dd>
         </div>
       </dl>

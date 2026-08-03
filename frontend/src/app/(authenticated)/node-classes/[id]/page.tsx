@@ -6,6 +6,7 @@ import { cache } from "react";
 
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Card from "@/components/ui/card";
+import LocalDateTime from "@/components/ui/local-date-time";
 import PageHeader from "@/components/ui/page-header";
 import StatusBadge from "@/components/ui/status-badge";
 import {
@@ -48,12 +49,6 @@ export async function generateMetadata({
     return { title: "Node Class Details — Mate Things" };
   }
 }
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 function formatBytes(size: number): string {
   if (size < 1024) {
@@ -273,9 +268,7 @@ export default async function NodeClassDetailPage({
               {nodeClass.updated_at ? "Updated" : "Created"}
             </dt>
             <dd className="mt-1 font-medium">
-              <time dateTime={freshness}>
-                {DATE_FORMATTER.format(new Date(freshness))}
-              </time>
+              <LocalDateTime value={freshness} />
             </dd>
           </div>
           {nodes ? (

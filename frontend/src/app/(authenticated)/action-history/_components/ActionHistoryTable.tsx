@@ -4,16 +4,11 @@ import { ChevronRight } from "lucide-react";
 import { Fragment, useState } from "react";
 
 import JsonPayload from "@/components/records/JsonPayload";
+import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
 import type { ActionLogResponse } from "@/lib/api/action-logs";
 
 import { ACTION_STATUS_LABELS } from "../_lib/status";
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 export default function ActionHistoryTable({
   records,
@@ -65,9 +60,7 @@ export default function ActionHistoryTable({
                         aria-hidden="true"
                         className={`size-3.5 shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`}
                       />
-                      <time dateTime={record.executed_at}>
-                        {DATE_FORMATTER.format(new Date(record.executed_at))}
-                      </time>
+                      <LocalDateTime value={record.executed_at} />
                     </button>
                   </td>
                   <td className="px-4 py-3" title={record.action_id}>

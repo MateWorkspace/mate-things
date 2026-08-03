@@ -1,5 +1,6 @@
 import JsonPayload from "@/components/records/JsonPayload";
 import Card from "@/components/ui/card";
+import LocalDateTime from "@/components/ui/local-date-time";
 import type { TelemetryRecordResponse } from "@/lib/api/telemetry";
 
 export default function TelemetryCard({
@@ -18,12 +19,10 @@ export default function TelemetryCard({
             {record.node_device_id}
           </p>
         </div>
-        <time
+        <LocalDateTime
           className="text-muted-foreground text-right text-xs"
-          dateTime={record.recorded_at}
-        >
-          {new Date(record.recorded_at).toLocaleString()}
-        </time>
+          value={record.recorded_at}
+        />
       </div>
       <p className="mt-4 text-sm">
         <span className="text-muted-foreground">Schema:</span>{" "}

@@ -5,19 +5,13 @@ import { useRouter } from "next/navigation";
 import { Pause, Play, RefreshCw } from "lucide-react";
 
 import Button from "@/components/ui/button";
+import LocalDateTime from "@/components/ui/local-date-time";
 
 const AUTO_REFRESH_INTERVAL_MS = 30_000;
 
 interface DashboardRefreshProps {
   loadedAt: string;
 }
-
-const TIME_FORMATTER = new Intl.DateTimeFormat("en", {
-  hour: "numeric",
-  minute: "2-digit",
-  second: "2-digit",
-  timeZone: "UTC",
-});
 
 export default function DashboardRefresh({ loadedAt }: DashboardRefreshProps) {
   const router = useRouter();
@@ -64,9 +58,7 @@ export default function DashboardRefresh({ loadedAt }: DashboardRefreshProps) {
             ? "Live refresh on"
             : "Auto-refresh paused"}
         {" · "}
-        <time dateTime={loadedAt}>
-          Updated {TIME_FORMATTER.format(new Date(loadedAt))} UTC
-        </time>
+        Updated <LocalDateTime value={loadedAt} variant="time" />
       </p>
       <Button
         type="button"

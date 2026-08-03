@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
-import RecordWindow from "@/components/records/RecordWindow";
 import ScopedDeleteDialog from "@/components/records/ScopedDeleteDialog";
 import RefreshBoundary from "@/components/refresh/RefreshBoundary";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
+import { getNodeByDeviceId } from "@/lib/api/nodes";
 import { listTelemetryRecords } from "@/lib/api/telemetry";
 import { activeFilterEntries, parseRecordFilters } from "@/lib/record-filters";
 import { requirePermission } from "@/lib/session";
 
-import TelemetryCard from "./_components/TelemetryCard";
 import TelemetryFilters from "./_components/TelemetryFilters";
+import TelemetryTable from "./_components/TelemetryTable";
 import { deleteTelemetryAction } from "./_lib/actions";
 
 export const metadata: Metadata = { title: "Telemetry — Mate Things" };
@@ -26,13 +26,15 @@ export default async function TelemetryPage({
     requirePermission("telemetry_record:get"),
   ]);
   const parsed = parseRecordFilters(raw);
+  const nodeDefault =
+    parsed.error || !parsed.filters.nodeDeviceId
+      ? null
+      : await getNodeByDeviceId(parsed.filters.nodeDeviceId).catch(() => null);
   const query = {
     recorded_at_start: parsed.filters.start,
     recorded_at_end: parsed.filters.end,
     node_device_id: parsed.filters.nodeDeviceId,
     metric_name: parsed.filters.metricName,
-    payload_schema_name: parsed.filters.payloadSchemaName,
-    payload_schema_version: parsed.filters.payloadSchemaVersion,
   };
   const result = parsed.error
     ? { data: [], total_items: 0 }
@@ -42,8 +44,6 @@ export default async function TelemetryPage({
     end: parsed.filters.end,
     node_device_id: parsed.filters.nodeDeviceId,
     metric_name: parsed.filters.metricName,
-    payload_schema_name: parsed.filters.payloadSchemaName,
-    payload_schema_version: parsed.filters.payloadSchemaVersion,
   });
 
   return (
@@ -65,9 +65,8 @@ export default async function TelemetryPage({
         start={parsed.filters.start}
         end={parsed.filters.end}
         nodeDeviceId={parsed.filters.nodeDeviceId}
+        nodeName={nodeDefault?.name}
         metricName={parsed.filters.metricName}
-        schemaName={parsed.filters.payloadSchemaName}
-        schemaVersion={parsed.filters.payloadSchemaVersion}
       />
       {parsed.error ? (
         <EmptyState title="Check the filters" description={parsed.error} />
@@ -80,11 +79,7 @@ export default async function TelemetryPage({
           </div>
           <RefreshBoundary updatedAt={result.data[0]?.created_at}>
             {result.data.length ? (
-              <RecordWindow>
-                {result.data.map((record) => (
-                  <TelemetryCard key={record.id} record={record} />
-                ))}
-              </RecordWindow>
+              <TelemetryTable records={result.data} />
             ) : (
               <EmptyState
                 title="No telemetry found"

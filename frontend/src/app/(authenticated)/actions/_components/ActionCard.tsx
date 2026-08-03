@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import ResourceCard from "@/components/collection/ResourceCard";
+import LocalDateTime from "@/components/ui/local-date-time";
 import type { ActionResponse } from "@/lib/api/actions";
 
 interface ActionCardProps {
@@ -27,11 +28,7 @@ export default function ActionCard({ action }: ActionCardProps) {
         <div className="flex justify-between gap-3">
           <dt className="text-muted-foreground">Updated</dt>
           <dd>
-            <time dateTime={action.updated_at ?? action.created_at}>
-              {new Date(
-                action.updated_at ?? action.created_at,
-              ).toLocaleString()}
-            </time>
+            <LocalDateTime value={action.updated_at ?? action.created_at} />
           </dd>
         </div>
       </dl>

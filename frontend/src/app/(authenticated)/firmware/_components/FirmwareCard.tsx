@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import ResourceCard from "@/components/collection/ResourceCard";
+import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
 import type { FirmwareResponse } from "@/lib/api/firmwares";
 
@@ -13,12 +14,6 @@ interface FirmwareCardProps {
   nodeClassName?: string;
   permissions: readonly string[];
 }
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 export default function FirmwareCard({
   firmware,
@@ -68,9 +63,7 @@ export default function FirmwareCard({
             {firmware.updated_at ? "Updated" : "Created"}
           </dt>
           <dd className="text-right font-medium">
-            <time dateTime={freshness}>
-              {DATE_FORMATTER.format(new Date(freshness))}
-            </time>
+            <LocalDateTime value={freshness} />
           </dd>
         </div>
       </dl>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import ResourceCard from "@/components/collection/ResourceCard";
+import LocalDateTime from "@/components/ui/local-date-time";
 import type { NodeClassResponse } from "@/lib/api/node-classes";
 
 import NodeClassForm from "./NodeClassForm";
@@ -11,12 +12,6 @@ interface NodeClassCardProps {
   nodeCount?: number;
   permissions: readonly string[];
 }
-
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
 
 function CountItem({ label, value }: { label: string; value: number }) {
   return (
@@ -68,9 +63,7 @@ export default function NodeClassCard({
             {nodeClass.updated_at ? "Updated" : "Created"}
           </dt>
           <dd className="text-right font-medium">
-            <time dateTime={freshness}>
-              {DATE_FORMATTER.format(new Date(freshness))}
-            </time>
+            <LocalDateTime value={freshness} />
           </dd>
         </div>
       </dl>

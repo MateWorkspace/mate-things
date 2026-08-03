@@ -5,6 +5,7 @@ import { useActionState, useId } from "react";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
+import LocalDateTime from "@/components/ui/local-date-time";
 import { EmptyState } from "@/components/ui/states";
 import type {
   FirmwareConfigParameterResponse,
@@ -133,17 +134,9 @@ function ConfigParameterForm({
         {!currentValue ? (
           <span className="text-muted-foreground text-xs">Not set</span>
         ) : currentValue.updated_at ? (
-          <time
-            className="text-muted-foreground text-xs"
-            dateTime={currentValue.updated_at}
-          >
-            Updated{" "}
-            {new Intl.DateTimeFormat("en", {
-              dateStyle: "medium",
-              timeStyle: "short",
-              timeZone: "UTC",
-            }).format(new Date(currentValue.updated_at))}
-          </time>
+          <p className="text-muted-foreground text-xs">
+            Updated <LocalDateTime value={currentValue.updated_at} />
+          </p>
         ) : (
           <span className="text-muted-foreground text-xs">
             Set — update time unavailable
