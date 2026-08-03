@@ -52,13 +52,7 @@ func (h *handler) ActionPost(c *echo.Context) error {
 		return err
 	}
 
-	nodeClassId, err := presentationhttputils.RequiredUUID(req.NodeClassId, "node_class_id")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
-
 	id, err := h.definitionUseCase.Create(c.Request().Context(), domainusecasesaction.CreateActionRequest{
-		NodeClassId:          nodeClassId,
 		Name:                 req.Name,
 		Description:          req.Description,
 		PayloadSchemaName:    req.PayloadSchemaName,
@@ -117,7 +111,7 @@ func (h *handler) ActionGetList(c *echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.ActionResponse]{
-		Data: presentationhttpresponse.Actions(actions),
+		Data: presentationhttpresponse.ActionListItems(actions),
 		Page: presentationhttputils.PageResponse(page, total),
 	})
 }
@@ -211,14 +205,9 @@ func (h *handler) ActionPatch(c *echo.Context) error {
 	if err := presentationhttputils.Bind(c, &req); err != nil {
 		return err
 	}
-	nodeClassId, err := presentationhttputils.OptionalUUID(req.NodeClassId, "node_class_id")
-	if err != nil {
-		return presentationhttputils.Error(c, err)
-	}
 
 	if err := h.definitionUseCase.UpdateById(c.Request().Context(), domainusecasesaction.UpdateActionRequest{
 		Id:                   id,
-		NodeClassId:          nodeClassId,
 		Name:                 req.Name,
 		Description:          req.Description,
 		PayloadSchemaName:    req.PayloadSchemaName,

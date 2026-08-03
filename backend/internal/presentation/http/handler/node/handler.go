@@ -243,6 +243,227 @@ func (h *handler) NodeClassDelete(c *echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// NodeClassActionsGet godoc
+//
+// @Summary Node Class Actions Get
+// @Tags Node Classes
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 200 {array} presentationhttpresponse.ActionResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/node-classes/{id}/actions [get]
+func (h *handler) NodeClassActionsGet(c *echo.Context) error {
+	nodeClassId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	actions, err := h.classUseCase.ReadActions(c.Request().Context(), domainusecasesnode.ReadNodeClassActionsRequest{NodeClassId: nodeClassId})
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.Actions(actions))
+}
+
+// NodeClassActionPost godoc
+//
+// @Summary Node Class Action
+// @Tags Node Classes
+// @Produce json
+// @Security BearerAuth
+// @Param node_class_id path string true "node_class_id"
+// @Param action_id path string true "action_id"
+// @Success 201 {object} presentationhttpresponse.IdResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/node-classes/{node_class_id}/actions/{action_id} [post]
+func (h *handler) NodeClassActionPost(c *echo.Context) error {
+	nodeClassId, actionId, err := h.nodeClassActionPath(c)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	id, err := h.classUseCase.AssignAction(c.Request().Context(), domainusecasesnode.AssignNodeClassActionRequest{
+		NodeClassId: nodeClassId,
+		ActionId:    actionId,
+		CreatedBy:   presentationhttputils.ActorId(c),
+	})
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusCreated, presentationhttpresponse.IdResponse{Id: id.String()})
+}
+
+// NodeClassActionDeleteByPair godoc
+//
+// @Summary Node Class Action Delete By Pair
+// @Tags Node Classes
+// @Produce json
+// @Security BearerAuth
+// @Param node_class_id path string true "node_class_id"
+// @Param action_id path string true "action_id"
+// @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/node-classes/{node_class_id}/actions/{action_id} [delete]
+func (h *handler) NodeClassActionDeleteByPair(c *echo.Context) error {
+	nodeClassId, actionId, err := h.nodeClassActionPath(c)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	if err := h.classUseCase.RevokeAction(c.Request().Context(), domainusecasesnode.RevokeNodeClassActionRequest{
+		NodeClassId: nodeClassId,
+		ActionId:    actionId,
+	}); err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// NodeClassActionGetList godoc
+//
+// @Summary Node Class Action List
+// @Tags Node Class Actions
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param node_class_id query string false "node class id"
+// @Param action_id query string false "action id"
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.NodeClassActionDetailResponse]
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/node-class-actions [get]
+func (h *handler) NodeClassActionGetList(c *echo.Context) error {
+	page, err := presentationhttputils.PageArgs(c)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	nodeClassId, err := presentationhttputils.QueryUUID(c, "node_class_id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	actionId, err := presentationhttputils.QueryUUID(c, "action_id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	nodeClassActions, nodeClasses, actions, total, err := h.classUseCase.ReadNodeClassActionsByPagination(
+		c.Request().Context(),
+		domainusecasesnode.ReadNodeClassActionsByPaginationRequest{
+			Page:        page.Page,
+			Limit:       page.Limit,
+			NodeClassId: nodeClassId,
+			ActionId:    actionId,
+		},
+	)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.NodeClassActionDetailResponse]{
+		Data: presentationhttpresponse.NodeClassActionDetails(nodeClassActions, nodeClasses, actions),
+		Page: presentationhttputils.PageResponse(page, total),
+	})
+}
+
+// NodeClassActionGetById godoc
+//
+// @Summary Node Class Action Get By ID
+// @Tags Node Class Actions
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 200 {object} presentationhttpresponse.NodeClassActionDetailResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/node-class-actions/{id} [get]
+func (h *handler) NodeClassActionGetById(c *echo.Context) error {
+	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	result, err := h.classUseCase.ReadNodeClassActionById(c.Request().Context(), domainusecasesnode.ReadNodeClassActionByIdRequest{Id: id})
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.NodeClassActionDetail(result.NodeClassAction, result.NodeClass, result.Action))
+}
+
+// NodeClassActionGetByPair godoc
+//
+// @Summary Node Class Action Get By Pair
+// @Tags Node Class Actions
+// @Produce json
+// @Security BearerAuth
+// @Param node_class_id query string true "node class id"
+// @Param action_id query string true "action id"
+// @Success 200 {object} presentationhttpresponse.NodeClassActionDetailResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/node-class-actions/by-pair [get]
+func (h *handler) NodeClassActionGetByPair(c *echo.Context) error {
+	nodeClassId, err := presentationhttputils.QueryUUID(c, "node_class_id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	actionId, err := presentationhttputils.QueryUUID(c, "action_id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	if nodeClassId == nil || actionId == nil {
+		return presentationhttputils.Error(c, presentationhttputils.BadPairQuery("node_class_id", "action_id"))
+	}
+
+	result, err := h.classUseCase.ReadNodeClassActionByNodeClassIdAndActionId(
+		c.Request().Context(),
+		domainusecasesnode.ReadNodeClassActionByNodeClassIdAndActionIdRequest{NodeClassId: *nodeClassId, ActionId: *actionId},
+	)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.NodeClassActionDetail(result.NodeClassAction, result.NodeClass, result.Action))
+}
+
+func (h *handler) nodeClassActionPath(c *echo.Context) (uuid.UUID, uuid.UUID, error) {
+	nodeClassId, err := presentationhttputils.RequiredUUID(c.Param("node_class_id"), "node_class_id")
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+	actionId, err := presentationhttputils.RequiredUUID(c.Param("action_id"), "action_id")
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	return nodeClassId, actionId, nil
+}
+
 // NodeGetList godoc
 //
 // @Summary Node List
