@@ -31,6 +31,7 @@ var (
 	ErrTypeNodeDeviceIdExists         = errors.New("NODE_DEVICE_ID_EXISTS")
 	ErrTypePayloadSchemaVersionExists = errors.New("PAYLOAD_SCHEMA_VERSION_EXISTS")
 	ErrTypeRolePermissionExists       = errors.New("ROLE_PERMISSION_EXISTS")
+	ErrTypeNodeClassActionExists      = errors.New("NODE_CLASS_ACTION_EXISTS")
 	ErrTypeFirmwareConfigKeyExists    = errors.New("FIRMWARE_CONFIG_KEY_EXISTS")
 	ErrTypeNodeConfigKeyExists        = errors.New("NODE_CONFIG_KEY_EXISTS")
 )
