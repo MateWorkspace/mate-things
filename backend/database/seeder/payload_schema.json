@@ -6,7 +6,24 @@
       "type": "object",
       "required": [],
       "properties": {
-        "delay_ms": { "type": "integer", "minimum": 0 }
+        "delay_ms": { 
+          "type": "integer", 
+          "minimum": 0 
+        }
+      }
+    }
+  },
+  {
+    "name": "counter",
+    "version": 1,
+    "definition": {
+      "type": "object",
+      "required": ["count"],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     }
   }
