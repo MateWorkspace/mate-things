@@ -68,6 +68,17 @@ func (u *usecase) Register(ctx context.Context, request domainusecasesnode.Regis
 		return err
 	}
 
+	success := false
+	defer func() {
+		if ackErr := u.publisher.RegistrationAck(ctx, deviceId, success); ackErr != nil {
+			u.logger.Error(ctx, tag, "failed to publish registration ack", domainmodels.LoggerMeta{
+				"err":       ackErr,
+				"device_id": deviceId,
+				"success":   success,
+			})
+		}
+	}()
+
 	node, created, err := u.node.UpsertRegistration(ctx, deviceId, request.DeviceInfo, request.FirmwareName)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to upsert node registration", domainmodels.LoggerMeta{
@@ -99,15 +110,7 @@ func (u *usecase) Register(ctx context.Context, request domainusecasesnode.Regis
 		}
 	}
 
-	if err := u.publisher.RegistrationAck(ctx, node.DeviceId); err != nil {
-		u.logger.Error(ctx, tag, "failed to publish registration ack", domainmodels.LoggerMeta{
-			"err":       err,
-			"device_id": node.DeviceId,
-			"node_id":   node.Id,
-		})
-		return err
-	}
-
+	success = true
 	return nil
 }
 

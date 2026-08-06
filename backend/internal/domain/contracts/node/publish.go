@@ -11,6 +11,7 @@ type Publish interface {
 	RegistrationAck(
 		ctx context.Context,
 		nodeDeviceId string,
+		success bool,
 	) (err error)
 
 	Ota(

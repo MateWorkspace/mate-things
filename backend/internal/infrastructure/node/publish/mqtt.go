@@ -31,10 +31,16 @@ func NewMqttImpl(client mqtt.Client) domaincontractsnode.Publish {
 func (m *mqttImpl) RegistrationAck(
 	ctx context.Context,
 	nodeDeviceId string,
+	success bool,
 ) (err error) {
+	payload, err := json.Marshal(infrastructurenodeshared.RegistrationAckPayload{Success: success})
+	if err != nil {
+		return domainmodels.NewError("failed to build payload", domainmodels.ErrTypeValidation, err)
+	}
+
 	return m.publish(
 		ctx, infrastructurenodeshared.NodeSubTopic(nodeDeviceId, "registration_ack"),
-		registrationAckQos, false, []byte{},
+		registrationAckQos, false, payload,
 	)
 }
 

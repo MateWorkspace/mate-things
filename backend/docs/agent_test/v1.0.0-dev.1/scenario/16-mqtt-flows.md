@@ -31,7 +31,7 @@ mosquitto_pub -h $MQTT_HOST -p $MQTT_PORT --cafile /etc/ssl/certs/ca-certificate
 ```
 **Expect:** within a couple seconds, `curl GET /v1/nodes/by-device/test-device-001`
 returns `200` with a new node row. Also expect a `registration_ack` message
-(empty payload) on `/sub/test-device-001/registration_ack` — confirm with
+(`{"success":true}`) on `/sub/test-device-001/registration_ack` — confirm with
 a subscriber running concurrently:
 ```bash
 mosquitto_sub -h $MQTT_HOST -p $MQTT_PORT --cafile /etc/ssl/certs/ca-certificates.crt \

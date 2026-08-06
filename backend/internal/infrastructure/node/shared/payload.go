@@ -6,6 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type RegistrationAckPayload struct {
+	Success bool `json:"success"`
+}
+
 type OtaPayload struct {
 	FirmwareUrl      string `json:"firmware_url"`
 	FirmwareSize     int32  `json:"firmware_size"`
