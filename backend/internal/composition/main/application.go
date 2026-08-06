@@ -33,6 +33,7 @@ import (
 	applicationrepocacherole "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/role"
 	applicationrepocacherolepermission "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/role_permission"
 	applicationrepocacheuser "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/user"
+	applicationtelemetrybroadcast "github.com/MateWorkspace/mate-things/backend/internal/application/telemetry/broadcast"
 	applicationtelemetryingestion "github.com/MateWorkspace/mate-things/backend/internal/application/telemetry/ingestion"
 	applicationtelemetryquery "github.com/MateWorkspace/mate-things/backend/internal/application/telemetry/query"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -86,6 +87,7 @@ type application struct {
 
 	telemetryIngestion domainusecasestelemetry.Ingestion
 	telemetryQuery     domainusecasestelemetry.Query
+	telemetryBroadcast domainusecasestelemetry.Broadcast
 	nodeLogQuery       domainusecasesnodelog.Query
 }
 
@@ -181,6 +183,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		telemetryIngestion,
 		l.infra.nodePublisher,
 		l.infra.nodeSubscriptions,
+		l.infra.telemetryBroadcaster,
 		l.infra.logger,
 	)
 	nodeOta := applicationnodeota.NewUsecaseImpl(
@@ -208,6 +211,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	profileSecurity := applicationprofilesecurity.NewUsecaseImpl(userRepoCache, l.infra.password, l.infra.logger)
 
 	telemetryQuery := applicationtelemetryquery.NewUsecaseImpl(l.infra.telemetryRecordRepository, l.infra.logger)
+	telemetryBroadcast := applicationtelemetrybroadcast.NewUsecaseImpl(l.infra.telemetryBroadcaster, l.infra.logger)
 	nodeLogQuery := applicationnodelogquery.NewUsecaseImpl(l.infra.nodeLogRepository, l.infra.logger)
 
 	l.app = &application{
@@ -249,6 +253,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 
 		telemetryIngestion: telemetryIngestion,
 		telemetryQuery:     telemetryQuery,
+		telemetryBroadcast: telemetryBroadcast,
 		nodeLogQuery:       nodeLogQuery,
 	}
 

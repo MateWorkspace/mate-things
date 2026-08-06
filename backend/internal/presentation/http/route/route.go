@@ -122,6 +122,8 @@ type ActionHandler interface {
 type TelemetryHandler interface {
 	TelemetryRecordGetList(c *echo.Context) error
 	TelemetryRecordDelete(c *echo.Context) error
+	TelemetryBroadcastRegister(c *echo.Context) error
+	TelemetryBroadcastSessionList(c *echo.Context) error
 }
 
 type NodeLogHandler interface {
@@ -156,6 +158,10 @@ func Route(e *echo.Echo, args Args) {
 
 	publicV1 := api.Group("/v1")
 	routeAuthPublic(publicV1, args.Auth)
+	// The broadcast handshake authenticates itself (the browser WebSocket
+	// API can't set an Authorization header, so the token travels as a
+	// query param) — it can't run under the standard Auth middleware.
+	routeTelemetryBroadcastRegister(publicV1, args.Telemetry)
 
 	v1 := api.Group("/v1")
 	v1.Use(presentationhttpmiddleware.Auth(args.Token))
@@ -183,6 +189,10 @@ func Route(e *echo.Echo, args Args) {
 func routeAuthPublic(v1 *echo.Group, handler AuthHandler) {
 	v1.POST("/auth/login", handler.AuthLoginPost)
 	v1.POST("/auth/refresh", handler.AuthRefreshPost)
+}
+
+func routeTelemetryBroadcastRegister(v1 *echo.Group, handler TelemetryHandler) {
+	v1.GET("/telemetry/broadcast", handler.TelemetryBroadcastRegister)
 }
 
 func routeProfile(v1 *echo.Group, handler ProfileHandler, permission PermissionMiddleware) {
@@ -287,8 +297,9 @@ func routeAction(v1 *echo.Group, handler ActionHandler, permission PermissionMid
 }
 
 func routeTelemetry(v1 *echo.Group, handler TelemetryHandler, permission PermissionMiddleware) {
-	v1.GET("/telemetry-records", handler.TelemetryRecordGetList, permission("telemetry_record:get"))
-	v1.DELETE("/telemetry-records", handler.TelemetryRecordDelete, permission("telemetry_record:remove"))
+	v1.GET("/telemetry", handler.TelemetryRecordGetList, permission("telemetry_record:get"))
+	v1.DELETE("/telemetry", handler.TelemetryRecordDelete, permission("telemetry_record:remove"))
+	v1.GET("/telemetry/broadcast/sessions", handler.TelemetryBroadcastSessionList, permission("broadcast_session:get"))
 }
 
 func routeNodeLog(v1 *echo.Group, handler NodeLogHandler, permission PermissionMiddleware) {

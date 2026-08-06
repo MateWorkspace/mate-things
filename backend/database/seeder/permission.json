@@ -61,6 +61,7 @@
 
   { "name": "telemetry_record:get", "description": "View telemetry records." },
   { "name": "telemetry_record:remove", "description": "Delete telemetry records." },
+  { "name": "broadcast_session:get", "description": "View active telemetry broadcast sessions." },
 
   { "name": "node_log:get", "description": "View node logs." },
   { "name": "node_log:remove", "description": "Delete node logs." },

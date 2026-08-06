@@ -2,8 +2,10 @@ package applicationnodemessagingcallback
 
 import (
 	"context"
+	"time"
 
 	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
+	domaincontractsbroadcaster "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/broadcaster"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
 	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
@@ -24,6 +26,7 @@ type usecase struct {
 	telemetryIngestion   domainusecasestelemetry.Ingestion
 	publisher            domaincontractsnode.Publish
 	subscriptions        domaincontractsnode.Subscriptions
+	broadcaster          domaincontractsbroadcaster.Telemetry
 	logger               domaincontractslogger.Leveled
 }
 
@@ -36,6 +39,7 @@ func NewUsecaseImpl(
 	telemetryIngestion domainusecasestelemetry.Ingestion,
 	publisher domaincontractsnode.Publish,
 	subscriptions domaincontractsnode.Subscriptions,
+	broadcaster domaincontractsbroadcaster.Telemetry,
 	logger domaincontractslogger.Leveled,
 ) domainusecasesnode.MessagingCallback {
 	return &usecase{
@@ -47,6 +51,7 @@ func NewUsecaseImpl(
 		telemetryIngestion:   telemetryIngestion,
 		publisher:            publisher,
 		subscriptions:        subscriptions,
+		broadcaster:          broadcaster,
 		logger:               logger,
 	}
 }
@@ -188,14 +193,15 @@ func (u *usecase) Log(ctx context.Context, request domainusecasesnode.NodeLogMes
 func (u *usecase) Telemetry(ctx context.Context, request domainusecasesnode.NodeTelemetryMessageRequest) error {
 	const tag = "node/messaging_callback/Telemetry"
 
-	if _, err := u.telemetryIngestion.Record(ctx, domainusecasestelemetry.RecordTelemetryRequest{
+	id, err := u.telemetryIngestion.Record(ctx, domainusecasestelemetry.RecordTelemetryRequest{
 		NodeDeviceId:         request.DeviceId,
 		MetricName:           request.MetricName,
 		PayloadSchemaName:    request.PayloadSchemaName,
 		PayloadSchemaVersion: request.PayloadSchemaVersion,
 		Payload:              request.Payload,
 		RecordedAt:           request.RecordedAt,
-	}); err != nil {
+	})
+	if err != nil {
 		u.logger.Error(ctx, tag, "failed to record telemetry", domainmodels.LoggerMeta{
 			"err":                    err,
 			"device_id":              request.DeviceId,
@@ -206,7 +212,29 @@ func (u *usecase) Telemetry(ctx context.Context, request domainusecasesnode.Node
 		return err
 	}
 
+	u.broadcastTelemetry(ctx, tag, id, request)
+
 	return nil
+}
+
+func (u *usecase) broadcastTelemetry(ctx context.Context, tag string, id int64, request domainusecasesnode.NodeTelemetryMessageRequest) {
+	record := domainmodels.TelemetryRecord{
+		Id:                   id,
+		NodeDeviceId:         request.DeviceId,
+		MetricName:           request.MetricName,
+		PayloadSchemaName:    request.PayloadSchemaName,
+		PayloadSchemaVersion: request.PayloadSchemaVersion,
+		Payload:              request.Payload,
+		RecordedAt:           request.RecordedAt,
+		CreatedAt:            time.Now().UTC(),
+	}
+
+	if err := u.broadcaster.Send(ctx, record); err != nil {
+		u.logger.Warn(ctx, tag, "failed to broadcast telemetry", domainmodels.LoggerMeta{
+			"err":       err,
+			"device_id": request.DeviceId,
+		})
+	}
 }
 
 func (u *usecase) Resubscribe(ctx context.Context) error {
@@ -266,15 +294,6 @@ func (u *usecase) subscribeNode(ctx context.Context, deviceId string) error {
 	return nil
 }
 
-// syncReportedConfig upserts node_config_values from what the device itself
-// reported at registration - the device is the source of truth for its own
-// live config, so this runs on every registration (not just first-time
-// creation), keeping the DB from drifting away from a value set out-of-band
-// (e.g. via BLE) since the node's last reconnect. A key the current
-// firmware's schema doesn't recognize, or a value that fails the schema's
-// declared value_type, is logged and skipped - never a reason to fail the
-// whole registration, matching the firmware's own MQTT config handler's
-// "unknown key" behavior.
 func (u *usecase) syncReportedConfig(ctx context.Context, node *domainmodels.Node, reported map[string]string) error {
 	const tag = "node/messaging_callback/syncReportedConfig"
 

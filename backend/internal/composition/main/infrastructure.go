@@ -5,6 +5,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/MateWorkspace/mate-things/backend/internal/config"
+	domaincontractsbroadcaster "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/broadcaster"
 	domaincontractscache "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/cache"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
@@ -45,6 +46,7 @@ import (
 	infrastructureutilitypassword "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/password"
 	infrastructureutilitypayloadschemavalidator "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/payload_schema_validator"
 	infrastructureutilitytoken "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/token"
+	infrastructurebroadcastertelemetry "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/broadcaster/telemetry"
 	infrastructureutilitytransactor "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/transactor"
 )
 
@@ -84,6 +86,8 @@ type infrastructure struct {
 
 	nodePublisher     domaincontractsnode.Publish
 	nodeSubscriptions domaincontractsnode.Subscriptions
+
+	telemetryBroadcaster domaincontractsbroadcaster.Telemetry
 
 	password               domaincontractsutility.Password
 	token                  domaincontractsutility.Token
@@ -141,6 +145,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	firmwareStorage := infrastructurestoragefirmware.NewMinioImpl(l.drv.minioClient, config.MinioBucket, config.BaseUrl, config.MinioPresignDuration)
 	nodePublisher := infrastructurenodepublish.NewMqttImpl(l.drv.mqttClient)
 	nodeSubscriptions := infrastructurenodesubscriptions.NewMqttImpl(l.drv.mqttClient)
+	telemetryBroadcaster := infrastructurebroadcastertelemetry.NewGorillaImpl(config.HttpCorsAllowedOrigins)
 	password := infrastructureutilitypassword.NewBcryptImpl(config.PasswordBcryptCost)
 	token := infrastructureutilitytoken.NewJwtImpl(
 		config.TokenAccessSecret,
@@ -186,6 +191,8 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 
 		nodePublisher:     nodePublisher,
 		nodeSubscriptions: nodeSubscriptions,
+
+		telemetryBroadcaster: telemetryBroadcaster,
 
 		password:               password,
 		token:                  token,

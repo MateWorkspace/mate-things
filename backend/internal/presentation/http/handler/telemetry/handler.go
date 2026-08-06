@@ -3,18 +3,32 @@ package presentationhttphandlertelemetry
 import (
 	"net/http"
 
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasestelemetry "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/telemetry"
 	presentationhttpresponse "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/response"
 	presentationhttputils "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/utils"
 	"github.com/labstack/echo/v5"
 )
 
+const broadcastPermission = "telemetry_record:get"
+
 type handler struct {
-	queryUseCase domainusecasestelemetry.Query
+	queryUseCase     domainusecasestelemetry.Query
+	broadcastUseCase domainusecasestelemetry.Broadcast
+	token            domaincontractsutility.Token
 }
 
-func NewHandler(queryUseCase domainusecasestelemetry.Query) *handler {
-	return &handler{queryUseCase: queryUseCase}
+func NewHandler(
+	queryUseCase domainusecasestelemetry.Query,
+	broadcastUseCase domainusecasestelemetry.Broadcast,
+	token domaincontractsutility.Token,
+) *handler {
+	return &handler{
+		queryUseCase:     queryUseCase,
+		broadcastUseCase: broadcastUseCase,
+		token:            token,
+	}
 }
 
 // TelemetryRecordGetList godoc
@@ -34,7 +48,7 @@ func NewHandler(queryUseCase domainusecasestelemetry.Query) *handler {
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
 // @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
-// @Router /v1/telemetry-records [get]
+// @Router /v1/telemetry [get]
 func (h *handler) TelemetryRecordGetList(c *echo.Context) error {
 	filter, err := h.filter(c)
 	if err != nil {
@@ -69,7 +83,7 @@ func (h *handler) TelemetryRecordGetList(c *echo.Context) error {
 // @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
 // @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
 // @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
-// @Router /v1/telemetry-records [delete]
+// @Router /v1/telemetry [delete]
 func (h *handler) TelemetryRecordDelete(c *echo.Context) error {
 	filter, err := h.deleteFilter(c)
 	if err != nil {
@@ -82,6 +96,78 @@ func (h *handler) TelemetryRecordDelete(c *echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.CountResponse{Count: count})
+}
+
+// TelemetryBroadcastRegister godoc
+//
+// @Summary Telemetry Broadcast Register
+// @Description Upgrades to a websocket connection and streams every telemetry
+// record as it is ingested, optionally filtered to node_device_id/metric_name,
+// as JSON matching TelemetryRecordResponse. The browser WebSocket API can't
+// set an Authorization header, so the access token travels as a query
+// parameter instead of the usual Bearer header.
+// @Tags Telemetry
+// @Param token query string true "access token"
+// @Param node_device_id query string false "node device id"
+// @Param metric_name query string false "metric name"
+// @Success 101
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Router /v1/telemetry/broadcast [get]
+func (h *handler) TelemetryBroadcastRegister(c *echo.Context) error {
+	req := c.Request()
+
+	accessToken := req.URL.Query().Get("token")
+	if accessToken == "" {
+		return presentationhttputils.Error(c, domainmodels.NewError("authorization is required", domainmodels.ErrTypeUnauthorized, nil))
+	}
+
+	claims, err := h.token.ValidateAccess(accessToken)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	if !hasPermission(claims, broadcastPermission) {
+		return presentationhttputils.Error(c, domainmodels.NewError("you do not have permission to perform this action", domainmodels.ErrTypeForbidden, nil))
+	}
+
+	nodeDeviceId := presentationhttputils.QueryString(c, "node_device_id")
+	metricName := presentationhttputils.QueryString(c, "metric_name")
+
+	// Past this point the upgrader owns the response — any failure can no
+	// longer be reported through presentationhttputils.Error.
+	return h.broadcastUseCase.Register(req.Context(), c.Response(), req, claims.UserId, nodeDeviceId, metricName)
+}
+
+// TelemetryBroadcastSessionList godoc
+//
+// @Summary Telemetry Broadcast Session List
+// @Tags Telemetry
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} presentationhttpresponse.CountDataResponse[presentationhttpresponse.BroadcastSessionTelemetryResponse]
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/telemetry/broadcast/sessions [get]
+func (h *handler) TelemetryBroadcastSessionList(c *echo.Context) error {
+	sessions, err := h.broadcastUseCase.SessionList(c.Request().Context())
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.CountDataResponse[presentationhttpresponse.BroadcastSessionTelemetryResponse]{
+		Data:       presentationhttpresponse.BroadcastSessionTelemetries(sessions),
+		TotalItems: len(sessions),
+	})
+}
+
+func hasPermission(claims *domainmodels.TokenClaimsAccess, required string) bool {
+	for _, permission := range claims.Permissions {
+		if permission == required {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *handler) filter(c *echo.Context) (domainusecasestelemetry.ReadTelemetryByFilterRequest, error) {

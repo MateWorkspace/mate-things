@@ -20,12 +20,6 @@ import (
 	echomiddleware "github.com/labstack/echo/v5/middleware"
 )
 
-// frontendAddress is where the Next.js standalone server listens (matches
-// PORT=3000 hardcoded in docker/entrypoint.sh) - not exposed via config
-// since it's an internal wiring detail, never configurable even when nginx
-// used to own this proxying.
-const frontendAddress = "127.0.0.1:3000"
-
 type presentation struct {
 }
 
@@ -57,7 +51,7 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 		l.app.actionExecution,
 		l.app.actionHistory,
 	)
-	telemetryHandler := presentationhttphandlertelemetry.NewHandler(l.app.telemetryQuery)
+	telemetryHandler := presentationhttphandlertelemetry.NewHandler(l.app.telemetryQuery, l.app.telemetryBroadcast, l.infra.token)
 	nodeLogHandler := presentationhttphandlernodelog.NewHandler(l.app.nodeLogQuery)
 	preferencesHandler := presentationhttphandlerpreferences.NewHandler(l.app.preferencesUpdate)
 	presentationmqtthandler.New(
@@ -103,7 +97,7 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 		Preferences:   preferencesHandler,
 		Token:         l.infra.token,
 		MinioProxy:    presentationhttpproxy.NewMinioProxy(config.MinioEndpoint, config.MinioUseSsl),
-		FrontendProxy: presentationhttpproxy.NewFrontendProxy(frontendAddress),
+		FrontendProxy: presentationhttpproxy.NewFrontendProxy("127.0.0.1:3000"),
 	})
 
 	l.pres = &presentation{}

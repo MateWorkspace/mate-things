@@ -18,6 +18,7 @@
       "action:get", "action:add", "action:dispatch", "action:set", "action:remove",
       "action_log:get", "action_log:remove",
       "telemetry_record:get", "telemetry_record:remove",
+      "broadcast_session:get",
       "node_log:get", "node_log:remove",
       "preferences:set"
     ]
@@ -38,6 +39,7 @@
       "action:get", "action:add", "action:dispatch", "action:set", "action:remove",
       "action_log:get", "action_log:remove",
       "telemetry_record:get", "telemetry_record:remove",
+      "broadcast_session:get",
       "node_log:get", "node_log:remove",
       "preferences:set"
     ]
