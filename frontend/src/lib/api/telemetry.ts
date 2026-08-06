@@ -38,3 +38,18 @@ export async function deleteTelemetryRecords(
     method: "DELETE",
   });
 }
+
+export interface BroadcastSessionResponse {
+  id: string;
+  user_id: string;
+  node_device_id: string | null;
+  metric_name: string | null;
+  remote_addr: string;
+  connected_at: string;
+}
+
+export async function listBroadcastSessions(): Promise<
+  CountDataResponse<BroadcastSessionResponse>
+> {
+  return apiFetch("/telemetry/broadcast/sessions");
+}

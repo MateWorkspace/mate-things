@@ -71,6 +71,11 @@ export const NAVIGATION_GROUPS: readonly NavigationGroup[] = [
         href: "/node-logs",
         requiredPermissions: ["node_log:get"],
       },
+      {
+        label: "Broadcast Sessions",
+        href: "/broadcast-sessions",
+        requiredPermissions: ["broadcast_session:get"],
+      },
     ],
   },
   {
