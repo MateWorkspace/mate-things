@@ -41,8 +41,8 @@ permission-aware `AppShell`:
 | Overview | `/dashboard` | Cards render only from reads the session may perform |
 | Fleet | `/nodes`, `/nodes/[id]`, `/node-classes`, `/node-classes/[id]`, `/firmware`, `/firmware/[id]` | `node:*`, `node_config:*`, `node_class:*`, `firmware:*`, `ota:dispatch` |
 | Operations | `/actions`, `/actions/[id]`, `/action-history` | `action:*`, `action_log:*` |
-| Observability | `/telemetry`, `/node-logs` | `telemetry_record:*`, `node_log:*` |
-| Administration | `/admin/users`, `/admin/users/[id]`, `/admin/access-control`, `/admin/payload-schemas`, `/admin/payload-schemas/[id]` | `user:*`, role/permission assignment permissions, `payload_schema:*` |
+| Observability | `/telemetry`, `/node-logs`, `/broadcast-sessions` | `telemetry_record:*`, `node_log:*`, `broadcast_session:get` |
+| Administration | `/admin/users`, `/admin/users/[id]`, `/admin/access-control`, `/admin/payload-schemas`, `/admin/payload-schemas/[id]`, `/admin/api-keys` | `user:*`, role/permission assignment permissions, `payload_schema:*`, `api_key:*` |
 
 The node detail route is the contextual operations workspace: Overview,
 Configuration, Firmware/OTA, Actions, Telemetry, and Logs are URL-selected
@@ -176,7 +176,17 @@ most of the tree stays server-rendered.
 - Resource collections are card-first. Use
   `src/components/collection/` and URL-owned search/filter/page state; do not
   introduce a desktop table without a materially better small-screen
-  representation.
+  representation. Telemetry, Node Logs, and API Keys are the established
+  `<table>` exceptions (record-dense, tabular-by-nature data) — API Keys
+  pairs that table with real `page`/`limit` pagination (`<Pagination>`,
+  like Users/Nodes) rather than Telemetry/Node Logs' unpaginated
+  batch-load, since it's a bounded per-user resource, not a time-series one.
+- Secret-bearing values (API keys) are shown in full exactly once,
+  immediately after generate/regenerate, next to a copy-to-clipboard
+  control (`src/components/ui/copy-button.tsx`); every list/table view
+  after that only ever shows a masked suffix (`key_last_four`). Follow this
+  same show-once pattern for any future credential-like resource — never
+  make a raw secret re-viewable from a list.
 - Parse pagination through `src/lib/collection-query.ts`. Page numbers must be
   positive safe integers; preserve filters when redirecting an out-of-range
   page.

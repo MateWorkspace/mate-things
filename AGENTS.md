@@ -13,13 +13,19 @@ platform for ESP32-class devices. It provides:
 - **Action dispatch** — admins define actions (validated against a
   payload schema) and dispatch them to specific nodes over MQTT; dispatch
   results are recorded as action logs.
-- **Telemetry ingestion** — devices publish telemetry records that the API
-  exposes for querying.
+- **Telemetry ingestion & live broadcast** — devices publish telemetry
+  records that the API exposes for querying, plus a websocket
+  (`GET /v1/telemetry/broadcast`, filtered by node/metric) that streams new
+  records as they arrive and pushes the latest known reading immediately on
+  connect so the UI isn't stuck waiting for the device's next publish.
 - **Node-log ingestion** — devices forward UTC log lines over MQTT; the
   backend parses and stores their level, tag, message, and embedded timestamp
   in a compressed TimescaleDB hypertable exposed through GET/DELETE endpoints.
 - **RBAC** — permissions, roles, and role↔permission assignments gate every
-  admin-facing endpoint; users authenticate via JWT access/refresh tokens.
+  admin-facing endpoint; users authenticate via JWT access/refresh tokens, or
+  via a per-user `X-Api-Key` header (one key per user, optional expiry,
+  admin-managed at `/admin/api-keys`) as a lighter alternative for
+  app-to-app callers.
 - **Preferences** — arbitrary per-resource key/value preferences (e.g. UI
   state) attached to any entity.
 
@@ -56,8 +62,9 @@ presentation → application → domain ← infrastructure
   - `contracts/` — interfaces the application layer depends on and
     infrastructure implements: `repository/` (Postgres access per entity),
     `cache/`, `storage/` (firmware binaries via MinIO), `node/` (MQTT
-    publish/subscribe), `utility/` (password hashing, tokens, payload
-    schema validation), `logger/`.
+    publish/subscribe), `broadcaster/` (per-domain-typed live websocket
+    fan-out, e.g. `Telemetry`), `utility/` (password hashing, tokens, API
+    key generation/hashing, payload schema validation), `logger/`.
   - `usecases/` — one interface per feature area (`admin`, `node`, `node_log`,
     `action`, `auth`, `profile`, `preferences`, `telemetry`, `seeder`, and an
     internal `repocache` interface set used by the cache-decorator layer) plus
@@ -299,6 +306,14 @@ table/type.
 - String node-config values are stored verbatim, including empty or
   whitespace-only strings. Validate presence separately from value content;
   numeric and boolean types retain their own validation.
+- Registration ack (`/sub/<device_id>/registration_ack`) carries a real
+  `{"success": bool}` body, not an empty payload. `messaging_callback`'s
+  `Register` usecase always publishes exactly one ack per registration
+  attempt via a `defer` (`true` only on full success; `false` on any
+  earlier failure) — on the firmware side, `success:false`, a missing
+  `success` field, and an unparseable payload all restart the device
+  immediately (see `mate-espidf-base/AGENTS.md`'s MQTT protocol contracts).
+  Keep both repos' handling of this payload shape in sync.
 
 ### RBAC seed and cache rollout
 
