@@ -28,13 +28,13 @@ export interface TelemetryFilterQuery {
 export async function listTelemetryRecords(
   query: TelemetryFilterQuery = {},
 ): Promise<CountDataResponse<TelemetryRecordResponse>> {
-  return apiFetch(`/telemetry-records${buildQuery(query)}`);
+  return apiFetch(`/telemetry${buildQuery(query)}`);
 }
 
 export async function deleteTelemetryRecords(
   query: TelemetryFilterQuery = {},
 ): Promise<CountResponse> {
-  return apiFetch(`/telemetry-records${buildQuery(query)}`, {
+  return apiFetch(`/telemetry${buildQuery(query)}`, {
     method: "DELETE",
   });
 }
