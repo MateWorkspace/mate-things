@@ -20,28 +20,36 @@ export default async function BroadcastSessionsPage() {
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader
         title="Broadcast Sessions"
-        description="Live telemetry websocket connections currently subscribed to broadcast updates."
+        description="Live connections currently subscribed to broadcast updates."
       />
-      <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-        {result.total_items} active session{result.total_items === 1 ? "" : "s"}
-      </p>
-      <RefreshBoundary intervalMs={10_000}>
-        {result.data.length ? (
-          <section
-            aria-label="Broadcast sessions"
-            className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-          >
-            {result.data.map((session) => (
-              <BroadcastSessionCard key={session.id} session={session} />
-            ))}
-          </section>
-        ) : (
-          <EmptyState
-            title="No active sessions"
-            description="Open a live telemetry stream to see it appear here."
-          />
-        )}
-      </RefreshBoundary>
+      <section aria-labelledby="telemetry-broadcast-heading" className="space-y-3">
+        <h2
+          id="telemetry-broadcast-heading"
+          className="font-display text-primary text-xl tracking-wide"
+        >
+          Telemetry
+        </h2>
+        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          {result.total_items} active session{result.total_items === 1 ? "" : "s"}
+        </p>
+        <RefreshBoundary intervalMs={10_000}>
+          {result.data.length ? (
+            <section
+              aria-label="Telemetry broadcast sessions"
+              className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+            >
+              {result.data.map((session) => (
+                <BroadcastSessionCard key={session.id} session={session} />
+              ))}
+            </section>
+          ) : (
+            <EmptyState
+              title="No active sessions"
+              description="Open a live telemetry stream to see it appear here."
+            />
+          )}
+        </RefreshBoundary>
+      </section>
     </main>
   );
 }
