@@ -37,6 +37,7 @@ func (h *gorillaImpl) Register(
 	userId uuid.UUID,
 	nodeDeviceId *string,
 	metricName *string,
+	initial *domainmodels.TelemetryRecord,
 ) (err error) {
 	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -46,6 +47,12 @@ func (h *gorillaImpl) Register(
 	c := newClient(conn, userId, nodeDeviceId, metricName, r.RemoteAddr)
 	h.add(c)
 	defer h.remove(c)
+
+	if initial != nil {
+		if payload, marshalErr := json.Marshal(*initial); marshalErr == nil {
+			c.enqueue(payload)
+		}
+	}
 
 	go c.writePump()
 	c.readPump(ctx)

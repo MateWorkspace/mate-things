@@ -211,7 +211,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	profileSecurity := applicationprofilesecurity.NewUsecaseImpl(userRepoCache, l.infra.password, l.infra.logger)
 
 	telemetryQuery := applicationtelemetryquery.NewUsecaseImpl(l.infra.telemetryRecordRepository, l.infra.logger)
-	telemetryBroadcast := applicationtelemetrybroadcast.NewUsecaseImpl(l.infra.telemetryBroadcaster, l.infra.logger)
+	telemetryBroadcast := applicationtelemetrybroadcast.NewUsecaseImpl(l.infra.telemetryBroadcaster, l.infra.telemetryRecordRepository, l.infra.logger)
 	nodeLogQuery := applicationnodelogquery.NewUsecaseImpl(l.infra.nodeLogRepository, l.infra.logger)
 
 	l.app = &application{

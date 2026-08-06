@@ -8,8 +8,14 @@ import (
 )
 
 type Query interface {
+	ReadLatest(ctx context.Context, request ReadLatestTelemetryRequest) (*domainmodels.TelemetryRecord, error)
 	ReadByFilter(ctx context.Context, request ReadTelemetryByFilterRequest) ([]domainmodels.TelemetryRecord, int, error)
 	DeleteByFilter(ctx context.Context, request DeleteTelemetryByFilterRequest) (int, error)
+}
+
+type ReadLatestTelemetryRequest struct {
+	NodeDeviceId *string
+	MetricName   *string
 }
 
 type ReadTelemetryByFilterRequest struct {

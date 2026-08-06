@@ -121,6 +121,7 @@ type ActionHandler interface {
 
 type TelemetryHandler interface {
 	TelemetryRecordGetList(c *echo.Context) error
+	TelemetryRecordGetLatest(c *echo.Context) error
 	TelemetryRecordDelete(c *echo.Context) error
 	TelemetryBroadcastRegister(c *echo.Context) error
 	TelemetryBroadcastSessionList(c *echo.Context) error
@@ -299,6 +300,7 @@ func routeAction(v1 *echo.Group, handler ActionHandler, permission PermissionMid
 func routeTelemetry(v1 *echo.Group, handler TelemetryHandler, permission PermissionMiddleware) {
 	v1.GET("/telemetry", handler.TelemetryRecordGetList, permission("telemetry_record:get"))
 	v1.DELETE("/telemetry", handler.TelemetryRecordDelete, permission("telemetry_record:remove"))
+	v1.GET("/telemetry/latest", handler.TelemetryRecordGetLatest, permission("telemetry_record:get"))
 	v1.GET("/telemetry/broadcast/sessions", handler.TelemetryBroadcastSessionList, permission("broadcast_session:get"))
 }
 

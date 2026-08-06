@@ -24,6 +24,25 @@ func NewUsecaseImpl(
 	}
 }
 
+func (u *usecase) ReadLatest(
+	ctx context.Context,
+	request domainusecasestelemetry.ReadLatestTelemetryRequest,
+) (*domainmodels.TelemetryRecord, error) {
+	const tag = "telemetry/query/ReadLatest"
+
+	telemetryRecord, err := u.telemetryRecord.ReadLatest(ctx, request.NodeDeviceId, request.MetricName)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to read latest telemetry record", domainmodels.LoggerMeta{
+			"err":            err,
+			"node_device_id": request.NodeDeviceId,
+			"metric_name":    request.MetricName,
+		})
+		return nil, err
+	}
+
+	return telemetryRecord, nil
+}
+
 func (u *usecase) ReadByFilter(
 	ctx context.Context,
 	request domainusecasestelemetry.ReadTelemetryByFilterRequest,

@@ -16,6 +16,7 @@ type Telemetry interface {
 		userId uuid.UUID,
 		nodeDeviceId *string,
 		metricName *string,
+		initial *domainmodels.TelemetryRecord,
 	) (err error)
 
 	Send(

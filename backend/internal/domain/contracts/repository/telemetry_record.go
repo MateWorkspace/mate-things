@@ -19,6 +19,12 @@ type TelemetryRecord interface {
 		recordedAt time.Time,
 	) (id int64, err error)
 
+	ReadLatest(
+		ctx context.Context,
+		nodeDeviceId *string,
+		metricName *string,
+	) (telemetryRecord *domainmodels.TelemetryRecord, err error)
+
 	ReadByFilter(
 		ctx context.Context,
 		recordedAtStart *time.Time,

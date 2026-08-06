@@ -3,6 +3,7 @@ package infrastructurerepositorytelemetryrecord
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -10,6 +11,7 @@ import (
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	infrastructurerepositoryshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/shared"
 	"github.com/MateWorkspace/mate-things/backend/pkg/pgxdt"
+	"github.com/jackc/pgx/v5"
 )
 
 type postgresImpl struct {
@@ -49,6 +51,27 @@ func (p *postgresImpl) Create(
 	}
 
 	return id, nil
+}
+
+func (p *postgresImpl) ReadLatest(
+	ctx context.Context,
+	nodeDeviceId *string,
+	metricName *string,
+) (telemetryRecord *domainmodels.TelemetryRecord, err error) {
+	query, args, err := p.queryReadLatest(nodeDeviceId, metricName)
+	if err != nil {
+		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build read latest telemetry record query", err)
+	}
+
+	item, err := infrastructurerepositoryshared.ScanPgxTelemetryRecord(p.Dt.QueryRow(ctx, query, args...))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, infrastructurerepositoryshared.MapPgxError("failed to read latest telemetry record", err)
+	}
+
+	return &item, nil
 }
 
 func (p *postgresImpl) ReadByFilter(

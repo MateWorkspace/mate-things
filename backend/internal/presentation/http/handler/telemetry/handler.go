@@ -66,6 +66,37 @@ func (h *handler) TelemetryRecordGetList(c *echo.Context) error {
 	})
 }
 
+// TelemetryRecordGetLatest godoc
+//
+// @Summary Telemetry Record Get Latest
+// @Tags Telemetry
+// @Produce json
+// @Security BearerAuth
+// @Param node_device_id query string false "node device id"
+// @Param metric_name query string false "metric name"
+// @Success 200 {object} presentationhttpresponse.TelemetryRecordResponse
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/telemetry/latest [get]
+func (h *handler) TelemetryRecordGetLatest(c *echo.Context) error {
+	request := domainusecasestelemetry.ReadLatestTelemetryRequest{
+		NodeDeviceId: presentationhttputils.QueryString(c, "node_device_id"),
+		MetricName:   presentationhttputils.QueryString(c, "metric_name"),
+	}
+
+	telemetryRecord, err := h.queryUseCase.ReadLatest(c.Request().Context(), request)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	if telemetryRecord == nil {
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("telemetry record"))
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.TelemetryRecord(*telemetryRecord))
+}
+
 // TelemetryRecordDelete godoc
 //
 // @Summary Telemetry Record Delete

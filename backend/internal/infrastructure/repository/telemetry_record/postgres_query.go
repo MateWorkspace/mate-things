@@ -33,6 +33,23 @@ func (p *postgresImpl) queryCreate(
 		ToSql()
 }
 
+func (p *postgresImpl) queryReadLatest(
+	nodeDeviceId *string,
+	metricName *string,
+) (query string, args []any, err error) {
+	q := p.SqrD.Select(telemetryRecordColumns...).
+		From("telemetry_records")
+
+	if nodeDeviceId != nil {
+		q = q.Where(squirrel.Eq{"node_device_id": *nodeDeviceId})
+	}
+	if metricName != nil {
+		q = q.Where(squirrel.Eq{"metric_name": *metricName})
+	}
+
+	return q.OrderBy("recorded_at DESC", "id DESC").Limit(1).ToSql()
+}
+
 func (p *postgresImpl) queryReadByFilter(
 	recordedAtStart *time.Time,
 	recordedAtEnd *time.Time,

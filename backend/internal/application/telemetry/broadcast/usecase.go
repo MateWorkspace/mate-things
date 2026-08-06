@@ -6,23 +6,27 @@ import (
 
 	domaincontractsbroadcaster "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/broadcaster"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
+	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasestelemetry "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/telemetry"
 	"github.com/google/uuid"
 )
 
 type usecase struct {
-	broadcaster domaincontractsbroadcaster.Telemetry
-	logger      domaincontractslogger.Leveled
+	broadcaster     domaincontractsbroadcaster.Telemetry
+	telemetryRecord domaincontractsrepository.TelemetryRecord
+	logger          domaincontractslogger.Leveled
 }
 
 func NewUsecaseImpl(
 	broadcaster domaincontractsbroadcaster.Telemetry,
+	telemetryRecord domaincontractsrepository.TelemetryRecord,
 	logger domaincontractslogger.Leveled,
 ) domainusecasestelemetry.Broadcast {
 	return &usecase{
-		broadcaster: broadcaster,
-		logger:      logger,
+		broadcaster:     broadcaster,
+		telemetryRecord: telemetryRecord,
+		logger:          logger,
 	}
 }
 
@@ -36,7 +40,18 @@ func (u *usecase) Register(
 ) error {
 	const tag = "telemetry/broadcast/Register"
 
-	if err := u.broadcaster.Register(ctx, w, r, userId, nodeDeviceId, metricName); err != nil {
+	initial, err := u.telemetryRecord.ReadLatest(ctx, nodeDeviceId, metricName)
+	if err != nil {
+		u.logger.Warn(ctx, tag, "failed to read latest telemetry record for new session", domainmodels.LoggerMeta{
+			"err":            err,
+			"user_id":        userId,
+			"node_device_id": nodeDeviceId,
+			"metric_name":    metricName,
+		})
+		initial = nil
+	}
+
+	if err := u.broadcaster.Register(ctx, w, r, userId, nodeDeviceId, metricName, initial); err != nil {
 		u.logger.Warn(ctx, tag, "failed to register broadcast session", domainmodels.LoggerMeta{
 			"err":            err,
 			"user_id":        userId,
