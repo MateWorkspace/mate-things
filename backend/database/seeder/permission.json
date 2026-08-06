@@ -33,6 +33,11 @@
   { "name": "user:set", "description": "Update users." },
   { "name": "user:remove", "description": "Delete users." },
 
+  { "name": "api_key:get", "description": "View API keys." },
+  { "name": "api_key:add", "description": "Generate an API key for a user." },
+  { "name": "api_key:set", "description": "Regenerate or revoke an API key." },
+  { "name": "api_key:remove", "description": "Delete an API key." },
+
   { "name": "node_class:get", "description": "View node classes." },
   { "name": "node_class:add", "description": "Create node classes." },
   { "name": "node_class:set", "description": "Update node classes." },

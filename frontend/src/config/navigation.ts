@@ -87,6 +87,11 @@ export const NAVIGATION_GROUPS: readonly NavigationGroup[] = [
         requiredPermissions: ["user:get"],
       },
       {
+        label: "API Keys",
+        href: "/admin/api-keys",
+        requiredPermissions: ["api_key:get"],
+      },
+      {
         label: "Access Control",
         href: "/admin/access-control",
         requiredPermissions: [

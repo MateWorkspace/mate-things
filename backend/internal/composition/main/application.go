@@ -6,10 +6,12 @@ import (
 	applicationactiondefinition "github.com/MateWorkspace/mate-things/backend/internal/application/action/definition"
 	applicationactionexecution "github.com/MateWorkspace/mate-things/backend/internal/application/action/execution"
 	applicationactionhistory "github.com/MateWorkspace/mate-things/backend/internal/application/action/history"
+	applicationadminapikeymanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/api_key_management"
 	applicationadminpermissionmanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/permission_management"
 	applicationadminrolemanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/role_management"
 	applicationadminschemaregistry "github.com/MateWorkspace/mate-things/backend/internal/application/admin/schema_registry"
 	applicationadminusermanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/user_management"
+	applicationauthapikey "github.com/MateWorkspace/mate-things/backend/internal/application/auth/api_key"
 	applicationauthsession "github.com/MateWorkspace/mate-things/backend/internal/application/auth/session"
 	applicationnodeclassmanagement "github.com/MateWorkspace/mate-things/backend/internal/application/node/class_management"
 	applicationnodeconfigparameter "github.com/MateWorkspace/mate-things/backend/internal/application/node/config_parameter"
@@ -24,6 +26,7 @@ import (
 	applicationprofileme "github.com/MateWorkspace/mate-things/backend/internal/application/profile/me"
 	applicationprofilesecurity "github.com/MateWorkspace/mate-things/backend/internal/application/profile/security"
 	applicationrepocacheaction "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/action"
+	applicationrepocacheapikey "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/api_key"
 	applicationrepocachefirmware "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/firmware"
 	applicationrepocachenode "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/node"
 	applicationrepocachenodeclass "github.com/MateWorkspace/mate-things/backend/internal/application/repocache/node_class"
@@ -50,6 +53,7 @@ import (
 
 type application struct {
 	actionRepoCache          domainusecasesrepocache.Action
+	apiKeyRepoCache          domainusecasesrepocache.ApiKey
 	firmwareRepoCache        domainusecasesrepocache.Firmware
 	nodeRepoCache            domainusecasesrepocache.Node
 	nodeClassRepoCache       domainusecasesrepocache.NodeClass
@@ -68,8 +72,10 @@ type application struct {
 	adminRoleManagement       domainusecasesadmin.RoleManagement
 	adminSchemaRegistry       domainusecasesadmin.SchemaRegistry
 	adminUserManagement       domainusecasesadmin.UserManagement
+	adminApiKeyManagement     domainusecasesadmin.ApiKeyManagement
 
 	authSession domainusecasesauth.Session
+	authApiKey  domainusecasesauth.ApiKey
 
 	nodeClassManagement    domainusecasesnode.ClassManagement
 	nodeConfigParameter    domainusecasesnode.ConfigParameter
@@ -95,6 +101,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	const tag = path + "/application"
 
 	actionRepoCache := applicationrepocacheaction.NewRepoCacheImpl(l.infra.actionRepository, l.infra.actionCache, l.infra.nodeClassActionCache)
+	apiKeyRepoCache := applicationrepocacheapikey.NewRepoCacheImpl(l.infra.apiKeyRepository, l.infra.apiKeyCache)
 	firmwareRepoCache := applicationrepocachefirmware.NewRepoCacheImpl(l.infra.firmwareRepository, l.infra.firmwareCache)
 	nodeRepoCache := applicationrepocachenode.NewRepoCacheImpl(l.infra.nodeRepository, l.infra.nodeCache)
 	nodeClassRepoCache := applicationrepocachenodeclass.NewRepoCacheImpl(l.infra.nodeClassRepository, l.infra.nodeClassCache, l.infra.nodeClassActionCache)
@@ -142,12 +149,20 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	adminRoleManagement := applicationadminrolemanagement.NewUsecaseImpl(roleRepoCache, rolePermissionRepoCache, l.infra.logger)
 	adminSchemaRegistry := applicationadminschemaregistry.NewUsecaseImpl(payloadSchemaRepoCache, l.infra.logger)
 	adminUserManagement := applicationadminusermanagement.NewUsecaseImpl(userRepoCache, l.infra.password, l.infra.logger)
+	adminApiKeyManagement := applicationadminapikeymanagement.NewUsecaseImpl(apiKeyRepoCache, l.infra.apiKeyGenerator, l.infra.logger)
 
 	authSession := applicationauthsession.NewUsecaseImpl(
 		userRepoCache,
 		roleRepoCache,
 		l.infra.password,
 		l.infra.token,
+		l.infra.logger,
+	)
+	authApiKey := applicationauthapikey.NewUsecaseImpl(
+		apiKeyRepoCache,
+		userRepoCache,
+		roleRepoCache,
+		l.infra.apiKeyGenerator,
 		l.infra.logger,
 	)
 
@@ -216,6 +231,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 
 	l.app = &application{
 		actionRepoCache:          actionRepoCache,
+		apiKeyRepoCache:          apiKeyRepoCache,
 		firmwareRepoCache:        firmwareRepoCache,
 		nodeRepoCache:            nodeRepoCache,
 		nodeClassRepoCache:       nodeClassRepoCache,
@@ -234,8 +250,10 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		adminRoleManagement:       adminRoleManagement,
 		adminSchemaRegistry:       adminSchemaRegistry,
 		adminUserManagement:       adminUserManagement,
+		adminApiKeyManagement:     adminApiKeyManagement,
 
 		authSession: authSession,
+		authApiKey:  authApiKey,
 
 		nodeClassManagement:    nodeClassManagement,
 		nodeConfigParameter:    nodeConfigParameter,

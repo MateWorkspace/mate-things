@@ -5,6 +5,7 @@ import (
 
 	_ "github.com/MateWorkspace/mate-things/backend/docs/swagger"
 	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
+	domainusecasesauth "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/auth"
 	presentationhttpmiddleware "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/middleware"
 	"github.com/labstack/echo/v5"
 	echoSwagger "github.com/swaggo/echo-swagger/v2"
@@ -63,6 +64,12 @@ type AdminHandler interface {
 	UserPatch(c *echo.Context) error
 	UserPasswordPatch(c *echo.Context) error
 	UserDelete(c *echo.Context) error
+
+	ApiKeyGetList(c *echo.Context) error
+	ApiKeyPost(c *echo.Context) error
+	ApiKeyRegeneratePatch(c *echo.Context) error
+	ApiKeyRevokePatch(c *echo.Context) error
+	ApiKeyDelete(c *echo.Context) error
 }
 
 type NodeHandler interface {
@@ -146,6 +153,7 @@ type Args struct {
 	NodeLog       NodeLogHandler
 	Preferences   PreferencesHandler
 	Token         domaincontractsutility.Token
+	ApiKeyAuth    domainusecasesauth.ApiKey
 	MinioProxy    http.Handler
 	FrontendProxy http.Handler
 }
@@ -165,7 +173,7 @@ func Route(e *echo.Echo, args Args) {
 	routeTelemetryBroadcastRegister(publicV1, args.Telemetry)
 
 	v1 := api.Group("/v1")
-	v1.Use(presentationhttpmiddleware.Auth(args.Token))
+	v1.Use(presentationhttpmiddleware.Auth(args.Token, args.ApiKeyAuth))
 
 	permission := presentationhttpmiddleware.Permission
 	routeProfile(v1, args.Profile, permission)
@@ -242,6 +250,12 @@ func routeAdmin(v1 *echo.Group, handler AdminHandler, permission PermissionMiddl
 	v1.GET("/admin/users/:id", handler.UserGetById, permission("user:get"))
 	v1.PATCH("/admin/users/:id", handler.UserPatch, permission("user:set"))
 	v1.DELETE("/admin/users/:id", handler.UserDelete, permission("user:remove"))
+
+	v1.GET("/admin/api-keys", handler.ApiKeyGetList, permission("api_key:get"))
+	v1.POST("/admin/api-keys", handler.ApiKeyPost, permission("api_key:add"))
+	v1.PATCH("/admin/api-keys/:id/regenerate", handler.ApiKeyRegeneratePatch, permission("api_key:set"))
+	v1.PATCH("/admin/api-keys/:id/revoke", handler.ApiKeyRevokePatch, permission("api_key:set"))
+	v1.DELETE("/admin/api-keys/:id", handler.ApiKeyDelete, permission("api_key:remove"))
 }
 
 func routeNode(v1 *echo.Group, handler NodeHandler, permission PermissionMiddleware) {

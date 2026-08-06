@@ -16,6 +16,7 @@ type handler struct {
 	roleUseCase       domainusecasesadmin.RoleManagement
 	schemaUseCase     domainusecasesadmin.SchemaRegistry
 	userUseCase       domainusecasesadmin.UserManagement
+	apiKeyUseCase     domainusecasesadmin.ApiKeyManagement
 }
 
 func NewHandler(
@@ -23,12 +24,14 @@ func NewHandler(
 	roleUseCase domainusecasesadmin.RoleManagement,
 	schemaUseCase domainusecasesadmin.SchemaRegistry,
 	userUseCase domainusecasesadmin.UserManagement,
+	apiKeyUseCase domainusecasesadmin.ApiKeyManagement,
 ) *handler {
 	return &handler{
 		permissionUseCase: permissionUseCase,
 		roleUseCase:       roleUseCase,
 		schemaUseCase:     schemaUseCase,
 		userUseCase:       userUseCase,
+		apiKeyUseCase:     apiKeyUseCase,
 	}
 }
 
@@ -1247,6 +1250,180 @@ func (h *handler) UserDelete(c *echo.Context) error {
 		Id:        id,
 		DeletedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// ApiKeyGetList godoc
+//
+// @Summary API Key List
+// @Tags Admin - API Keys
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "page"
+// @Param limit query int false "limit"
+// @Param search query string false "search by user name or username"
+// @Param status query string false "active, inactive, or any"
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.ApiKeyResponse]
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/admin/api-keys [get]
+func (h *handler) ApiKeyGetList(c *echo.Context) error {
+	page, err := presentationhttputils.PageArgs(c)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	status := presentationhttputils.QueryString(c, "status")
+
+	apiKeys, total, err := h.apiKeyUseCase.ReadByPagination(c.Request().Context(), domainusecasesadmin.ReadApiKeysByPaginationRequest{
+		Page:   page.Page,
+		Limit:  page.Limit,
+		Search: page.Search,
+		Status: status,
+	})
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.ApiKeyResponse]{
+		Data: presentationhttpresponse.ApiKeys(apiKeys),
+		Page: presentationhttputils.PageResponse(page, total),
+	})
+}
+
+// ApiKeyPost godoc
+//
+// @Summary API Key Generate
+// @Description Generates a new API key for a user. The raw key is only ever returned here - store it now, it cannot be retrieved again.
+// @Tags Admin - API Keys
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body presentationhttprequest.ApiKeyPostRequest true "request"
+// @Success 201 {object} presentationhttpresponse.ApiKeySecretResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 409 {object} presentationhttpresponse.ErrorResponse "Already Exists"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/admin/api-keys [post]
+func (h *handler) ApiKeyPost(c *echo.Context) error {
+	var req presentationhttprequest.ApiKeyPostRequest
+	if err := presentationhttputils.Bind(c, &req); err != nil {
+		return err
+	}
+	userId, err := presentationhttputils.RequiredUUID(req.UserId, "user_id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	key, err := h.apiKeyUseCase.Create(c.Request().Context(), domainusecasesadmin.CreateApiKeyRequest{
+		UserId:    userId,
+		ExpiresAt: req.ExpiresAt,
+		CreatedBy: presentationhttputils.ActorId(c),
+	})
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusCreated, presentationhttpresponse.ApiKeySecretResponse{Key: key})
+}
+
+// ApiKeyRegeneratePatch godoc
+//
+// @Summary API Key Regenerate
+// @Description Issues a fresh value for an existing API key, reactivating it if it was revoked. The raw key is only ever returned here.
+// @Tags Admin - API Keys
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Param request body presentationhttprequest.ApiKeyRegenerateRequest true "request"
+// @Success 200 {object} presentationhttpresponse.ApiKeySecretResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/admin/api-keys/{id}/regenerate [patch]
+func (h *handler) ApiKeyRegeneratePatch(c *echo.Context) error {
+	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	var req presentationhttprequest.ApiKeyRegenerateRequest
+	if err := presentationhttputils.Bind(c, &req); err != nil {
+		return err
+	}
+
+	key, err := h.apiKeyUseCase.Regenerate(c.Request().Context(), domainusecasesadmin.RegenerateApiKeyRequest{
+		Id:        id,
+		ExpiresAt: req.ExpiresAt,
+		UpdatedBy: presentationhttputils.ActorId(c),
+	})
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.ApiKeySecretResponse{Key: key})
+}
+
+// ApiKeyRevokePatch godoc
+//
+// @Summary API Key Revoke
+// @Description Marks the API key inactive without deleting it. Regenerate reactivates it.
+// @Tags Admin - API Keys
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/admin/api-keys/{id}/revoke [patch]
+func (h *handler) ApiKeyRevokePatch(c *echo.Context) error {
+	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	if err := h.apiKeyUseCase.Revoke(c.Request().Context(), domainusecasesadmin.RevokeApiKeyRequest{
+		Id:        id,
+		UpdatedBy: presentationhttputils.ActorId(c),
+	}); err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// ApiKeyDelete godoc
+//
+// @Summary API Key Delete
+// @Tags Admin - API Keys
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/admin/api-keys/{id} [delete]
+func (h *handler) ApiKeyDelete(c *echo.Context) error {
+	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	if err := h.apiKeyUseCase.DeleteById(c.Request().Context(), domainusecasesadmin.DeleteApiKeyRequest{Id: id}); err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 

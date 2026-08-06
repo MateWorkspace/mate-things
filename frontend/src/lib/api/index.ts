@@ -1,5 +1,6 @@
 export * from "./action-logs";
 export * from "./actions";
+export * from "./api-keys";
 export * from "./auth";
 export * from "./client";
 export * from "./firmwares";

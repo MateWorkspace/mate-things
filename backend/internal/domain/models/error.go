@@ -34,6 +34,7 @@ var (
 	ErrTypeNodeClassActionExists      = errors.New("NODE_CLASS_ACTION_EXISTS")
 	ErrTypeFirmwareConfigKeyExists    = errors.New("FIRMWARE_CONFIG_KEY_EXISTS")
 	ErrTypeNodeConfigKeyExists        = errors.New("NODE_CONFIG_KEY_EXISTS")
+	ErrTypeApiKeyUserExists           = errors.New("API_KEY_USER_EXISTS")
 )
 
 type Error struct {

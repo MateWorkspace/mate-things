@@ -5,15 +5,28 @@ import (
 
 	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	domainusecasesauth "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/auth"
 	presentationhttputils "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/utils"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 )
 
-func Auth(token domaincontractsutility.Token) echo.MiddlewareFunc {
+func Auth(token domaincontractsutility.Token, apiKeyAuth domainusecasesauth.ApiKey) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			req := c.Request()
+
+			if apiKey := strings.TrimSpace(req.Header.Get("X-Api-Key")); apiKey != "" {
+				claims, err := apiKeyAuth.Authenticate(req.Context(), apiKey)
+				if err != nil {
+					return presentationhttputils.Error(c, err)
+				}
+
+				ctx := presentationhttputils.InjectAccessClaims(req.Context(), claims)
+				c.SetRequest(req.WithContext(ctx))
+
+				return next(c)
+			}
 
 			accessToken := authorizationToken(req.Header.Get("Authorization"))
 			if accessToken == "" {

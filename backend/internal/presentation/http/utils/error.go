@@ -40,6 +40,7 @@ var errorMappings = []struct {
 	{domainmodels.ErrTypeRolePermissionExists, errorMapping{http.StatusConflict, "Already Exists", "This permission is already assigned to the role."}},
 	{domainmodels.ErrTypeFirmwareConfigKeyExists, errorMapping{http.StatusConflict, "Already Exists", "This config key already exists for the firmware."}},
 	{domainmodels.ErrTypeNodeConfigKeyExists, errorMapping{http.StatusConflict, "Already Exists", "This config key already exists for the node."}},
+	{domainmodels.ErrTypeApiKeyUserExists, errorMapping{http.StatusConflict, "Already Exists", "This user already has an API key. Regenerate it instead."}},
 	{domainmodels.ErrTypeConflict, errorMapping{http.StatusConflict, "Already Exists", ""}},
 	{domainmodels.ErrTypeBadArgs, errorMapping{http.StatusBadRequest, "Invalid Format", ""}},
 	{domainmodels.ErrTypeValidation, errorMapping{http.StatusBadRequest, "Invalid Format", ""}},

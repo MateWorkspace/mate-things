@@ -442,3 +442,51 @@ func ScanPgxNodeLogs(rows pgx.Rows) ([]domainmodels.NodeLog, error) {
 	}
 	return items, rows.Err()
 }
+
+func ScanPgxApiKey(row pgx.Row) (domainmodels.ApiKey, error) {
+	var item domainmodels.ApiKey
+	err := row.Scan(
+		&item.Id,
+		&item.UserId,
+		&item.KeyHash,
+		&item.KeyLastFour,
+		&item.ExpiresAt,
+		&item.RevokedAt,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+		&item.CreatedBy,
+		&item.UpdatedBy,
+	)
+	return item, err
+}
+
+func ScanPgxApiKeyWithUser(row pgx.Row) (domainmodels.ApiKeyWithUser, error) {
+	var item domainmodels.ApiKeyWithUser
+	err := row.Scan(
+		&item.Id,
+		&item.UserId,
+		&item.KeyHash,
+		&item.KeyLastFour,
+		&item.ExpiresAt,
+		&item.RevokedAt,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+		&item.CreatedBy,
+		&item.UpdatedBy,
+		&item.UserName,
+		&item.UserUsername,
+	)
+	return item, err
+}
+
+func ScanPgxApiKeysWithUser(rows pgx.Rows) ([]domainmodels.ApiKeyWithUser, error) {
+	items := make([]domainmodels.ApiKeyWithUser, 0)
+	for rows.Next() {
+		item, err := ScanPgxApiKeyWithUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}

@@ -59,3 +59,12 @@ type UserPatchRequest struct {
 type UserPasswordPatchRequest struct {
 	Password string `json:"password" example:"EvenMoreEspresso!7"`
 }
+
+type ApiKeyPostRequest struct {
+	UserId    string     `json:"user_id" example:"7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"`
+	ExpiresAt *time.Time `json:"expires_at" example:"2027-01-01T00:00:00Z"`
+}
+
+type ApiKeyRegenerateRequest struct {
+	ExpiresAt *time.Time `json:"expires_at" example:"2027-01-01T00:00:00Z"`
+}

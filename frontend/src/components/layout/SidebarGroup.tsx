@@ -5,6 +5,7 @@ import {
   Cpu,
   FileJson,
   History,
+  KeyRound,
   LayoutDashboard,
   Radio,
   RadioTower,
@@ -29,6 +30,7 @@ const NAVIGATION_ICONS: Readonly<Record<string, LucideIcon>> = {
   "/node-logs": ScrollText,
   "/broadcast-sessions": RadioTower,
   "/admin/users": Users,
+  "/admin/api-keys": KeyRound,
   "/admin/access-control": Shield,
   "/admin/payload-schemas": FileJson,
 };

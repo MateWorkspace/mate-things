@@ -14,6 +14,7 @@ import (
 	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	infrastructurecacheaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/action"
+	infrastructurecacheapikey "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/api_key"
 	infrastructurecachefirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/firmware"
 	infrastructurecachenode "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/node"
 	infrastructurecachenodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/node_class"
@@ -29,6 +30,7 @@ import (
 	infrastructurenodesubscriptions "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/node/subscriptions"
 	infrastructurerepositoryaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/action"
 	infrastructurerepositoryactionlog "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/action_log"
+	infrastructurerepositoryapikey "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/api_key"
 	infrastructurerepositoryfirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/firmware"
 	infrastructurerepositoryfirmwareconfigparameter "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/firmware_config_parameter"
 	infrastructurerepositorynode "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node"
@@ -43,6 +45,7 @@ import (
 	infrastructurerepositorytelemetryrecord "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/telemetry_record"
 	infrastructurerepositoryuser "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/user"
 	infrastructurestoragefirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/storage/firmware"
+	infrastructureutilityapikey "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/apikey"
 	infrastructureutilitypassword "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/password"
 	infrastructureutilitypayloadschemavalidator "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/payload_schema_validator"
 	infrastructureutilitytoken "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/token"
@@ -57,6 +60,7 @@ type infrastructure struct {
 
 	actionRepository                  domaincontractsrepository.Action
 	actionLogRepository               domaincontractsrepository.ActionLog
+	apiKeyRepository                  domaincontractsrepository.ApiKey
 	firmwareRepository                domaincontractsrepository.Firmware
 	firmwareConfigParameterRepository domaincontractsrepository.FirmwareConfigParameter
 	nodeRepository                    domaincontractsrepository.Node
@@ -72,6 +76,7 @@ type infrastructure struct {
 	userRepository                    domaincontractsrepository.User
 
 	actionCache          domaincontractscache.Action
+	apiKeyCache          domaincontractscache.ApiKey
 	firmwareCache        domaincontractscache.Firmware
 	nodeCache            domaincontractscache.Node
 	nodeClassCache       domaincontractscache.NodeClass
@@ -92,6 +97,7 @@ type infrastructure struct {
 	password               domaincontractsutility.Password
 	token                  domaincontractsutility.Token
 	payloadSchemaValidator domaincontractsutility.PayloadSchemaValidator
+	apiKeyGenerator        domaincontractsutility.ApiKey
 }
 
 func (l *launcher) newInfrastructure(ctx context.Context) error {
@@ -112,6 +118,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 
 	actionRepository := infrastructurerepositoryaction.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	actionLogRepository := infrastructurerepositoryactionlog.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	apiKeyRepository := infrastructurerepositoryapikey.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	firmwareRepository := infrastructurerepositoryfirmware.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	firmwareConfigParameterRepository := infrastructurerepositoryfirmwareconfigparameter.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeRepository := infrastructurerepositorynode.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -132,6 +139,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		Relation:   config.RedisTtlRelation,
 	}
 	actionCache := infrastructurecacheaction.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
+	apiKeyCache := infrastructurecacheapikey.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 	firmwareCache := infrastructurecachefirmware.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 	nodeCache := infrastructurecachenode.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
 	nodeClassCache := infrastructurecachenodeclass.NewRedisImpl(l.drv.redisClient, config.RedisCacheNamespace, cacheTtl)
@@ -154,6 +162,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		config.TokenRefreshDuration,
 	)
 	payloadSchemaValidator := infrastructureutilitypayloadschemavalidator.NewValidatorImpl()
+	apiKeyGenerator := infrastructureutilityapikey.NewGeneratorImpl()
 
 	l.infra = &infrastructure{
 		logger: logger,
@@ -162,6 +171,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 
 		actionRepository:                  actionRepository,
 		actionLogRepository:               actionLogRepository,
+		apiKeyRepository:                  apiKeyRepository,
 		firmwareRepository:                firmwareRepository,
 		firmwareConfigParameterRepository: firmwareConfigParameterRepository,
 		nodeRepository:                    nodeRepository,
@@ -177,6 +187,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		userRepository:                    userRepository,
 
 		actionCache:          actionCache,
+		apiKeyCache:          apiKeyCache,
 		firmwareCache:        firmwareCache,
 		nodeCache:            nodeCache,
 		nodeClassCache:       nodeClassCache,
@@ -197,6 +208,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		password:               password,
 		token:                  token,
 		payloadSchemaValidator: payloadSchemaValidator,
+		apiKeyGenerator:        apiKeyGenerator,
 	}
 
 	logger.Info(ctx, tag, "Infrastructure initialized", domainmodels.LoggerMeta{})

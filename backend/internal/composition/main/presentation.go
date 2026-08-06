@@ -37,6 +37,7 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 		l.app.adminRoleManagement,
 		l.app.adminSchemaRegistry,
 		l.app.adminUserManagement,
+		l.app.adminApiKeyManagement,
 	)
 	nodeHandler := presentationhttphandlernode.NewHandler(
 		l.app.nodeClassManagement,
@@ -96,6 +97,7 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 		NodeLog:       nodeLogHandler,
 		Preferences:   preferencesHandler,
 		Token:         l.infra.token,
+		ApiKeyAuth:    l.app.authApiKey,
 		MinioProxy:    presentationhttpproxy.NewMinioProxy(config.MinioEndpoint, config.MinioUseSsl),
 		FrontendProxy: presentationhttpproxy.NewFrontendProxy("127.0.0.1:3000"),
 	})
