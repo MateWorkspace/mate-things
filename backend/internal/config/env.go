@@ -61,6 +61,8 @@ var (
 	TokenRefreshDuration time.Duration = 24 * time.Hour
 
 	PasswordBcryptCost int = 10
+
+	LlmEncryptionKey string = ""
 )
 
 func LoadEnv() {
@@ -115,6 +117,8 @@ func LoadEnv() {
 	TokenRefreshDuration = envGetDuration("BE_TOKEN_REFRESH_DURATION", TokenRefreshDuration)
 
 	PasswordBcryptCost = envGetInt("BE_PASSWORD_BCRYPT_COST", PasswordBcryptCost)
+
+	LlmEncryptionKey = envGetString("BE_LLM_ENCRYPTION_KEY", LlmEncryptionKey)
 }
 
 func envGetString(key string, fallback string) string {
