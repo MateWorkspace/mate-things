@@ -19,12 +19,14 @@ import (
 
 type fakeSessionRepository struct {
 	domaincontractsrepository.InfraredRecordSession
-	createdNodeId   uuid.UUID
-	createdDeviceId uuid.UUID
-	created         uuid.UUID
-	mu              sync.Mutex
-	statusUpdates   []string
-	getResult       *domainmodels.InfraredRecordSession
+	createdNodeId        uuid.UUID
+	createdDeviceId      uuid.UUID
+	created              uuid.UUID
+	mu                   sync.Mutex
+	statusUpdates        []string
+	getResult            *domainmodels.InfraredRecordSession
+	currentCaseSessionId uuid.UUID
+	currentCaseId        *uuid.UUID
 }
 
 func (f *fakeSessionRepository) Create(_ context.Context, nodeId uuid.UUID, deviceId uuid.UUID) (uuid.UUID, error) {
@@ -49,8 +51,20 @@ func (f *fakeSessionRepository) StatusUpdates() []string {
 	defer f.mu.Unlock()
 	return append([]string(nil), f.statusUpdates...)
 }
-func (f *fakeSessionRepository) UpdateCurrentRecordCaseIdById(_ context.Context, _ uuid.UUID, _ *uuid.UUID) error {
+func (f *fakeSessionRepository) UpdateCurrentRecordCaseIdById(_ context.Context, sessionId uuid.UUID, currentRecordCaseId *uuid.UUID) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.currentCaseSessionId = sessionId
+	f.currentCaseId = currentRecordCaseId
 	return nil
+}
+
+// CurrentCaseId returns a snapshot, safe to read while the background
+// goroutine may still be calling UpdateCurrentRecordCaseIdById concurrently.
+func (f *fakeSessionRepository) CurrentCaseId() *uuid.UUID {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.currentCaseId
 }
 func (f *fakeSessionRepository) GetActiveByNodeId(_ context.Context, _ uuid.UUID) (*domainmodels.InfraredRecordSession, error) {
 	return f.getResult, nil
@@ -107,9 +121,14 @@ func (f *fakeStateRepository) ListByDeviceTypeId(_ context.Context, _ uuid.UUID)
 
 type fakeCaseRepository struct {
 	domaincontractsrepository.InfraredStateDeviceRecordCase
+	mu              sync.Mutex
 	createRawCaseId uuid.UUID
 	createRawData   []byte
 	createRawCalls  int
+	createdCaseIds  []uuid.UUID
+	statusUpdateIds []uuid.UUID
+	getResult       *domainmodels.InfraredStateDeviceRecordCase
+	getErr          error
 }
 
 func (f *fakeCaseRepository) CreateRaw(_ context.Context, caseId uuid.UUID, rawData []byte) (uuid.UUID, error) {
@@ -118,7 +137,31 @@ func (f *fakeCaseRepository) CreateRaw(_ context.Context, caseId uuid.UUID, rawD
 	return uuid.New(), nil
 }
 func (f *fakeCaseRepository) CreateWithStates(_ context.Context, _ uuid.UUID, _ int32, _ string, _ []domainmodels.InfraredStateDeviceRecordState) (uuid.UUID, error) {
-	return uuid.New(), nil
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	id := uuid.New()
+	f.createdCaseIds = append(f.createdCaseIds, id)
+	return id, nil
+}
+
+// CreatedCaseIds returns a snapshot, safe to read while the background
+// goroutine may still be appending to createdCaseIds concurrently.
+func (f *fakeCaseRepository) CreatedCaseIds() []uuid.UUID {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]uuid.UUID(nil), f.createdCaseIds...)
+}
+func (f *fakeCaseRepository) UpdateStatusById(_ context.Context, id uuid.UUID, _ domainmodels.InfraredRecordCaseStatus) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.statusUpdateIds = append(f.statusUpdateIds, id)
+	return nil
+}
+func (f *fakeCaseRepository) GetById(_ context.Context, _ uuid.UUID) (*domainmodels.InfraredStateDeviceRecordCase, error) {
+	return f.getResult, f.getErr
+}
+func (f *fakeCaseRepository) ListRawByCaseId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordRaw, error) {
+	return nil, nil
 }
 
 // fakeLlmClient/fakeLlmClientFactory stand in for the merged prior plan's
@@ -355,5 +398,123 @@ func TestCaptureIrRawDoesNothingWhenNodeUnknown(t *testing.T) {
 	}
 	if caseRepo.createRawCalls != 0 {
 		t.Fatalf("CreateRaw() calls = %d, want 0", caseRepo.createRawCalls)
+	}
+}
+
+func TestRunCaseGenerationSetsFirstCaseAsSessionCurrentCase(t *testing.T) {
+	nodeId := uuid.New()
+	deviceId := "AC276E5E030C"
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{NodeId: nodeId}}
+	caseRepo := &fakeCaseRepository{}
+	subscriptions := &fakeSubscriptions{}
+	nodeRepo := &fakeNodeRepository{result: &domainmodels.Node{Id: nodeId, DeviceId: deviceId}}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, subscriptions,
+		&fakeLlmClientFactory{}, nodeRepo, &noopLogger{},
+	)
+
+	_, err := usecase.Start(context.Background(), domainusecasesinfrared.StartRecordSessionRequest{
+		NodeId: nodeId, Brand: "Polytron", Model: "PAC-09HDN",
+	})
+	if err != nil {
+		t.Fatalf("Start() error = %v, want nil", err)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) && sessionRepo.CurrentCaseId() == nil {
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	createdCaseIds := caseRepo.CreatedCaseIds()
+	if len(createdCaseIds) == 0 {
+		t.Fatalf("no cases were created")
+	}
+	currentCaseId := sessionRepo.CurrentCaseId()
+	if currentCaseId == nil || *currentCaseId != createdCaseIds[0] {
+		t.Fatalf("session current case id = %v, want the first created case %v", currentCaseId, createdCaseIds[0])
+	}
+}
+
+func TestSetCurrentCaseRejectsCaseFromDifferentSession(t *testing.T) {
+	sessionId := uuid.New()
+	otherSessionId := uuid.New()
+	caseId := uuid.New()
+	caseRepo := &fakeCaseRepository{getResult: &domainmodels.InfraredStateDeviceRecordCase{
+		Id: caseId, InfraredRecordSessionId: otherSessionId,
+	}}
+	sessionRepo := &fakeSessionRepository{}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &noopLogger{},
+	)
+
+	err := usecase.SetCurrentCase(context.Background(), sessionId, caseId)
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("SetCurrentCase() error = %v, want validation error", err)
+	}
+	if sessionRepo.CurrentCaseId() != nil {
+		t.Fatalf("session current case id = %v, want nil (case belongs to a different session)", sessionRepo.CurrentCaseId())
+	}
+}
+
+func TestSetCurrentCaseSetsSessionCurrentCase(t *testing.T) {
+	sessionId := uuid.New()
+	caseId := uuid.New()
+	caseRepo := &fakeCaseRepository{getResult: &domainmodels.InfraredStateDeviceRecordCase{
+		Id: caseId, InfraredRecordSessionId: sessionId,
+	}}
+	sessionRepo := &fakeSessionRepository{}
+	broadcaster := &fakeBroadcaster{}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, broadcaster, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &noopLogger{},
+	)
+
+	if err := usecase.SetCurrentCase(context.Background(), sessionId, caseId); err != nil {
+		t.Fatalf("SetCurrentCase() error = %v, want nil", err)
+	}
+
+	currentCaseId := sessionRepo.CurrentCaseId()
+	if currentCaseId == nil || *currentCaseId != caseId {
+		t.Fatalf("session current case id = %v, want %v", currentCaseId, caseId)
+	}
+	if len(caseRepo.statusUpdateIds) != 1 || caseRepo.statusUpdateIds[0] != caseId {
+		t.Fatalf("case status updates = %v, want [%v]", caseRepo.statusUpdateIds, caseId)
+	}
+	if len(broadcaster.sentEvents) != 1 || broadcaster.sentEvents[0].CurrentRecordCaseId == nil || *broadcaster.sentEvents[0].CurrentRecordCaseId != caseId {
+		t.Fatalf("broadcaster sent events = %+v, want one event with current case id %v", broadcaster.sentEvents, caseId)
+	}
+}
+
+func TestRetryCaseSetsCurrentCase(t *testing.T) {
+	sessionId := uuid.New()
+	caseId := uuid.New()
+	caseRepo := &fakeCaseRepository{getResult: &domainmodels.InfraredStateDeviceRecordCase{
+		Id: caseId, InfraredRecordSessionId: sessionId,
+	}}
+	sessionRepo := &fakeSessionRepository{}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &noopLogger{},
+	)
+
+	if err := usecase.RetryCase(context.Background(), caseId); err != nil {
+		t.Fatalf("RetryCase() error = %v, want nil", err)
+	}
+
+	currentCaseId := sessionRepo.CurrentCaseId()
+	if currentCaseId == nil || *currentCaseId != caseId {
+		t.Fatalf("session current case id = %v, want %v", currentCaseId, caseId)
+	}
+	if sessionRepo.currentCaseSessionId != sessionId {
+		t.Fatalf("session id used for current case update = %v, want %v", sessionRepo.currentCaseSessionId, sessionId)
 	}
 }

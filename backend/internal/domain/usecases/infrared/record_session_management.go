@@ -14,6 +14,7 @@ type RecordSessionManagement interface {
 	AcceptRaw(ctx context.Context, rawId uuid.UUID) error
 	DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string) error
 	RetryCase(ctx context.Context, caseId uuid.UUID) error
+	SetCurrentCase(ctx context.Context, sessionId uuid.UUID, caseId uuid.UUID) error
 	CaptureIrRaw(ctx context.Context, request CaptureIrRawRequest) error
 }
 

@@ -228,3 +228,34 @@ func (h *handler) RecordCaseRetry(c *echo.Context) error {
 
 	return c.NoContent(http.StatusNoContent)
 }
+
+// RecordSessionCaseCurrentPost godoc
+//
+// @Summary Infrared Record Session Set Current Case
+// @Tags Infrared
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "session id"
+// @Param caseId path string true "case id"
+// @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/infrared/record-sessions/{id}/cases/{caseId}/current [post]
+func (h *handler) RecordSessionCaseCurrentPost(c *echo.Context) error {
+	sessionId, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	caseId, err := presentationhttputils.RequiredUUID(c.Param("caseId"), "caseId")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	if err := h.recordSessionUseCase.SetCurrentCase(c.Request().Context(), sessionId, caseId); err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}

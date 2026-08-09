@@ -49,6 +49,7 @@ func (p *postgresImpl) queryListBySessionId(sessionId uuid.UUID) (query string, 
 	return p.SqrD.Select(infraredRecordCaseColumns...).
 		From("infrared_state_device_record_case").
 		Where(squirrel.Eq{"infrared_record_session_id": sessionId}).
+		OrderBy("step").
 		ToSql()
 }
 
