@@ -498,3 +498,36 @@ func RequiredFirmwareContent(content io.Reader, field string) (io.Reader, error)
 
 	return io.MultiReader(bytes.NewReader(header), content), nil
 }
+
+var validInfraredRecordingStates = map[string]struct{}{
+	domainmodels.InfraredRecordingStateDraft:               {},
+	domainmodels.InfraredRecordingStateCasesGenerating:     {},
+	domainmodels.InfraredRecordingStateRecording:           {},
+	domainmodels.InfraredRecordingStateAnalyzing:           {},
+	domainmodels.InfraredRecordingStateFunctionGenerating:  {},
+	domainmodels.InfraredRecordingStateTestCasesGenerating: {},
+	domainmodels.InfraredRecordingStateTesting:             {},
+	domainmodels.InfraredRecordingStateCompleted:           {},
+	domainmodels.InfraredRecordingStateFailed:              {},
+}
+
+func RequiredInfraredRecordingState(value string, field string) (string, error) {
+	if _, ok := validInfraredRecordingStates[value]; !ok {
+		return "", domainmodels.NewError(fmt.Sprintf("%s is not a recognized recording state", field), domainmodels.ErrTypeValidation, nil)
+	}
+	return value, nil
+}
+
+func RequiredInfraredBrand(value string, field string) (string, error) {
+	if value == "" {
+		return "", domainmodels.NewError(fmt.Sprintf("%s is required", field), domainmodels.ErrTypeValidation, nil)
+	}
+	return value, nil
+}
+
+func RequiredInfraredModel(value string, field string) (string, error) {
+	if value == "" {
+		return "", domainmodels.NewError(fmt.Sprintf("%s is required", field), domainmodels.ErrTypeValidation, nil)
+	}
+	return value, nil
+}
