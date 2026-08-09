@@ -8,4 +8,5 @@ type Subscriptions interface {
 	Log(ctx context.Context, nodeDeviceId string) (err error)
 	ActionAck(ctx context.Context, nodeDeviceId string) (err error)
 	Telemetry(ctx context.Context, nodeDeviceId string) (err error)
+	IrCapture(ctx context.Context, nodeDeviceId string) (err error)
 }
