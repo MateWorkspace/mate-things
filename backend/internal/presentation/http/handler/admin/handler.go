@@ -17,6 +17,7 @@ type handler struct {
 	schemaUseCase     domainusecasesadmin.SchemaRegistry
 	userUseCase       domainusecasesadmin.UserManagement
 	apiKeyUseCase     domainusecasesadmin.ApiKeyManagement
+	llmConfigUseCase  domainusecasesadmin.LlmConfigManagement
 }
 
 func NewHandler(
@@ -25,6 +26,7 @@ func NewHandler(
 	schemaUseCase domainusecasesadmin.SchemaRegistry,
 	userUseCase domainusecasesadmin.UserManagement,
 	apiKeyUseCase domainusecasesadmin.ApiKeyManagement,
+	llmConfigUseCase domainusecasesadmin.LlmConfigManagement,
 ) *handler {
 	return &handler{
 		permissionUseCase: permissionUseCase,
@@ -32,6 +34,7 @@ func NewHandler(
 		schemaUseCase:     schemaUseCase,
 		userUseCase:       userUseCase,
 		apiKeyUseCase:     apiKeyUseCase,
+		llmConfigUseCase:  llmConfigUseCase,
 	}
 }
 
@@ -199,6 +202,57 @@ func (h *handler) PermissionPatch(c *echo.Context) error {
 		Name:        req.Name,
 		Description: req.Description,
 		UpdatedBy:   presentationhttputils.ActorId(c),
+	}); err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// LlmConfigGet godoc
+//
+// @Summary LLM Config
+// @Tags Admin - LLM Config
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} presentationhttpresponse.LlmConfigResponse
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/admin/llm-config [get]
+func (h *handler) LlmConfigGet(c *echo.Context) error {
+	config, err := h.llmConfigUseCase.Get(c.Request().Context())
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	return c.JSON(http.StatusOK, presentationhttpresponse.LlmConfig(config))
+}
+
+// LlmConfigPut godoc
+//
+// @Summary LLM Config
+// @Tags Admin - LLM Config
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body presentationhttprequest.LlmConfigPutRequest true "request"
+// @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/admin/llm-config [put]
+func (h *handler) LlmConfigPut(c *echo.Context) error {
+	var req presentationhttprequest.LlmConfigPutRequest
+	if err := presentationhttputils.Bind(c, &req); err != nil {
+		return err
+	}
+
+	if err := h.llmConfigUseCase.Update(c.Request().Context(), domainusecasesadmin.UpdateLlmConfigRequest{
+		Provider: req.Provider,
+		Model:    req.Model,
+		ApiKey:   req.ApiKey,
+		BaseURL:  req.BaseURL,
 	}); err != nil {
 		return presentationhttputils.Error(c, err)
 	}

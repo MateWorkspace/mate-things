@@ -3,6 +3,8 @@ package presentationhttprequest
 import (
 	"encoding/json"
 	"time"
+
+	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 )
 
 type PermissionPostRequest struct {
@@ -13,6 +15,13 @@ type PermissionPostRequest struct {
 type PermissionPatchRequest struct {
 	Name        *string `json:"name" example:"node:get"`
 	Description *string `json:"description" example:"View registered nodes and their status."`
+}
+
+type LlmConfigPutRequest struct {
+	Provider domainmodels.LlmProvider `json:"provider" example:"CLAUDE"`
+	Model    string                   `json:"model" example:"claude-opus-5"`
+	ApiKey   string                   `json:"api_key" example:"sk-ant-..."`
+	BaseURL  *string                  `json:"base_url,omitempty" example:"https://api.anthropic.com"`
 }
 
 type RolePostRequest struct {

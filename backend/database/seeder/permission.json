@@ -17,6 +17,9 @@
   { "name": "role_permission:add", "description": "Assign a permission to a role." },
   { "name": "role_permission:remove", "description": "Remove a permission from a role." },
 
+  { "name": "llm_config:get", "description": "View the active LLM provider configuration." },
+  { "name": "llm_config:set", "description": "Change the active LLM provider, model, or credential." },
+
   { "name": "node_class_action:get", "description": "View node-class-to-action compatibility assignments." },
   { "name": "node_class_action:add", "description": "Mark an action as compatible with a node class." },
   { "name": "node_class_action:remove", "description": "Remove an action's compatibility with a node class." },
