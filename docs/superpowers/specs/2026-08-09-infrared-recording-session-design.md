@@ -236,6 +236,97 @@ type InfraredTestCaseState struct {
 }
 ```
 
+## Infrastructure and application flow
+
+**Async execution.** `RECORDING → ANALYZING`, `ANALYZING → FUNCTION_GENERATING`, and
+`FUNCTION_GENERATING → TEST_CASES_GENERATING` are each triggered by a background
+goroutine rather than blocking the triggering HTTP request — an LLM call with thinking
+enabled can run well past a minute, too long to hold a connection open. The session's
+`Status` field is the progress marker; there is no separate job-queue dependency (Redis
+is present in the stack but unused for queuing, and a goroutine + DB status is sufficient
+for a staff-only, low-concurrency workflow). A crash mid-step leaves the session in its
+current status for a manual retry rather than losing an in-flight job silently.
+
+**Live status updates.** The frontend subscribes to session/case status changes via a
+new broadcaster following the existing `infrastructure/broadcaster/telemetry/gorilla.go`
+pattern (websocket, already used for live telemetry), rather than polling. This matters
+most during `RECORDING`, where staff are actively watching for the cursor to advance.
+
+**LLM provider abstraction.** The three LLM-backed steps (case-script writing,
+encoder/decoder+README generation, test-case generation) go through a provider-agnostic
+contract rather than a hardcoded Anthropic client, so the active provider (Claude or
+OpenAI) can be switched without a code change or redeploy:
+
+```go
+// internal/domain/contracts/llm — dependency-free, per existing domain conventions
+package llm
+
+type Client interface {
+	GenerateText(ctx context.Context, req GenerateTextRequest) (GenerateTextResult, error)
+}
+
+type GenerateTextRequest struct {
+	System          string
+	Prompt          string
+	MaxOutputTokens int32
+	ResponseSchema  json.RawMessage // nil = free-form text/code; set = structured JSON output
+}
+
+type GenerateTextResult struct {
+	Text  string // free-form text/code, or a JSON string matching ResponseSchema
+	Usage LLMUsage
+}
+```
+
+One method, two modes: case-script and test-case generation pass a `ResponseSchema` (JSON
+schema for the structured fields being requested); encoder/decoder+README generation
+leaves it nil and expects free-form code/text back. There is deliberately no
+cross-provider "effort" concept in the contract — a provider adapter's internal tuning
+(e.g. the Claude adapter running case-script/test-case calls at medium effort with
+adaptive thinking, and the coder-generation call at high/xhigh effort) is an
+implementation detail, not something exposed uniformly across providers that don't share
+the concept.
+
+```go
+type LLMProvider string
+
+const (
+	LLMProviderClaude LLMProvider = "CLAUDE"
+	LLMProviderOpenAI LLMProvider = "OPENAI"
+)
+
+type LLMProviderConfig struct {
+	Id              uuid.UUID
+	Provider        LLMProvider
+	Model           string
+	APIKeyEncrypted []byte
+	BaseURL         *string
+	UpdatedAt       time.Time
+}
+```
+
+A single active `LLMProviderConfig` row, admin-read (key redacted) / write via a new
+endpoint, key encrypted at rest consistent with how other secrets in the codebase are
+stored. Resolution is per-call, not a startup singleton — each generation step asks a
+factory for "the current client" rather than holding one built once in
+`composition/main/driver.go`:
+
+```go
+type ClientFactory struct {
+	repo LLMProviderConfigRepository
+}
+
+func (f *ClientFactory) Current(ctx context.Context) (llm.Client, error) {
+	// load config, decrypt key, construct the matching adapter
+	// (Anthropic SDK or OpenAI SDK) implementing llm.Client
+}
+```
+
+Changing the active provider/credential takes effect on the very next generation step,
+with no restart. This abstraction is intentionally general-purpose — it lives outside
+the IR domain packages so any future feature needing an LLM call can reuse it, with IR
+recording as its first consumer.
+
 ## Retry semantics
 
 Two distinct grains, both explicit rather than inferred:
@@ -278,3 +369,11 @@ the session.
   the "internal, no staff step" framing above.
 - MQTT topic/message shape for both directions (receive during `RECORDING`, transmit
   during `TESTING`) — not addressed here, belongs in the implementation plan.
+- Exact prompt contracts (system/user prompt content, JSON schema shape for structured
+  calls) for each of the three LLM steps — the `llm.Client` contract shape is settled;
+  what each step actually sends through it is not.
+- OpenAI adapter specifics (which OpenAI API surface — Chat Completions vs Responses —
+  and its structured-output mechanism) — deferred to the implementation plan; the
+  contract is provider-agnostic by design so this doesn't block the Claude adapter.
+- Admin endpoint shape for reading/writing `LLMProviderConfig` (auth scope, whether it's
+  part of existing settings infrastructure or a new one).
