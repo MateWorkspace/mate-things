@@ -18,7 +18,7 @@ type stubLlmConfigRepository struct {
 func (s *stubLlmConfigRepository) Get(_ context.Context) (*domainmodels.LlmConfig, error) {
 	return s.config, s.err
 }
-func (s *stubLlmConfigRepository) Upsert(_ context.Context, _ domainmodels.LlmProvider, _ string, _ []byte, _ *string) (uuid.UUID, error) {
+func (s *stubLlmConfigRepository) Upsert(_ context.Context, _ domainmodels.LlmProvider, _ string, _ []byte, _ *string, _ *uuid.UUID) (uuid.UUID, error) {
 	panic("not used by this test")
 }
 

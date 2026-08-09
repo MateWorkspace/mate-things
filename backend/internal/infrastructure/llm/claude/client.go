@@ -31,6 +31,10 @@ func NewClient(apiKey string, baseURL *string, model string) domaincontractsllm.
 }
 
 func (c *claudeClient) GenerateText(ctx context.Context, req domaincontractsllm.GenerateTextRequest) (domaincontractsllm.GenerateTextResult, error) {
+	if req.MaxOutputTokens <= 0 {
+		return domaincontractsllm.GenerateTextResult{}, fmt.Errorf("MaxOutputTokens must be greater than zero, got %d", req.MaxOutputTokens)
+	}
+
 	params := anthropic.MessageNewParams{
 		Model:     anthropic.Model(c.model),
 		MaxTokens: int64(req.MaxOutputTokens),

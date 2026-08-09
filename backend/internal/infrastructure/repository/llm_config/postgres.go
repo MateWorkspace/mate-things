@@ -40,15 +40,15 @@ func (p *postgresImpl) Get(ctx context.Context) (*domainmodels.LlmConfig, error)
 	config, err := scanPgxLlmConfig(p.Dt.QueryRow(ctx, query, args...))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, infrastructurerepositoryshared.NotFound("llm_config not found", err)
+			return nil, nil
 		}
 		return nil, infrastructurerepositoryshared.MapPgxError("failed to read llm_config", err)
 	}
 	return &config, nil
 }
 
-func (p *postgresImpl) Upsert(ctx context.Context, provider domainmodels.LlmProvider, model string, apiKeyEncrypted []byte, baseURL *string) (id uuid.UUID, err error) {
-	query, args, err := p.queryUpsert(provider, model, apiKeyEncrypted, baseURL)
+func (p *postgresImpl) Upsert(ctx context.Context, provider domainmodels.LlmProvider, model string, apiKeyEncrypted []byte, baseURL *string, updatedBy *uuid.UUID) (id uuid.UUID, err error) {
+	query, args, err := p.queryUpsert(provider, model, apiKeyEncrypted, baseURL, updatedBy)
 	if err != nil {
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build llm_config upsert query", err)
 	}
@@ -63,7 +63,7 @@ func (p *postgresImpl) Upsert(ctx context.Context, provider domainmodels.LlmProv
 func scanPgxLlmConfig(row pgx.Row) (domainmodels.LlmConfig, error) {
 	var config domainmodels.LlmConfig
 	var provider string
-	err := row.Scan(&config.Id, &provider, &config.Model, &config.ApiKeyEncrypted, &config.BaseURL, &config.UpdatedAt)
+	err := row.Scan(&config.Id, &provider, &config.Model, &config.ApiKeyEncrypted, &config.BaseURL, &config.UpdatedAt, &config.UpdatedBy)
 	config.Provider = domainmodels.LlmProvider(provider)
 	return config, err
 }

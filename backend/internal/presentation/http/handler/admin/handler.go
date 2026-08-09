@@ -249,10 +249,11 @@ func (h *handler) LlmConfigPut(c *echo.Context) error {
 	}
 
 	if err := h.llmConfigUseCase.Update(c.Request().Context(), domainusecasesadmin.UpdateLlmConfigRequest{
-		Provider: req.Provider,
-		Model:    req.Model,
-		ApiKey:   req.ApiKey,
-		BaseURL:  req.BaseURL,
+		Provider:  req.Provider,
+		Model:     req.Model,
+		ApiKey:    req.ApiKey,
+		BaseURL:   req.BaseURL,
+		UpdatedBy: presentationhttputils.ActorId(c),
 	}); err != nil {
 		return presentationhttputils.Error(c, err)
 	}

@@ -6,6 +6,7 @@ CREATE TABLE llm_config (
     base_url TEXT,
     singleton BOOLEAN NOT NULL DEFAULT TRUE UNIQUE,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by UUID,
     CONSTRAINT chk_llm_config_singleton CHECK (singleton = TRUE),
     CONSTRAINT chk_llm_config_provider CHECK (provider IN ('CLAUDE', 'OPENAI'))
 );

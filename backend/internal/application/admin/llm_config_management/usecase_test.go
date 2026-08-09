@@ -22,7 +22,7 @@ type recordingLlmConfigRepository struct {
 func (r *recordingLlmConfigRepository) Get(_ context.Context) (*domainmodels.LlmConfig, error) {
 	return r.getConfig, nil
 }
-func (r *recordingLlmConfigRepository) Upsert(_ context.Context, provider domainmodels.LlmProvider, model string, apiKeyEncrypted []byte, _ *string) (uuid.UUID, error) {
+func (r *recordingLlmConfigRepository) Upsert(_ context.Context, provider domainmodels.LlmProvider, model string, apiKeyEncrypted []byte, _ *string, _ *uuid.UUID) (uuid.UUID, error) {
 	r.upsertCalls++
 	r.upsertedProv = provider
 	r.upsertedModel = model
@@ -92,5 +92,18 @@ func TestGetReturnsConfigUnchanged(t *testing.T) {
 	}
 	if got.Provider != domainmodels.LlmProviderOpenAI || got.Model != "gpt-test" {
 		t.Fatalf("Get() = %+v, want the repository's config back unchanged", got)
+	}
+}
+
+func TestGetReturnsNilWhenNoConfigExists(t *testing.T) {
+	repository := &recordingLlmConfigRepository{getConfig: nil}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &noopLogger{})
+
+	got, err := usecase.Get(context.Background())
+	if err != nil {
+		t.Fatalf("Get() error = %v, want nil", err)
+	}
+	if got != nil {
+		t.Fatalf("Get() = %+v, want nil when the repository has no config yet", got)
 	}
 }

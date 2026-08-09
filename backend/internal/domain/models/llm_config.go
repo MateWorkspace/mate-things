@@ -20,4 +20,5 @@ type LlmConfig struct {
 	ApiKeyEncrypted []byte
 	BaseURL         *string
 	UpdatedAt       time.Time
+	UpdatedBy       *uuid.UUID
 }

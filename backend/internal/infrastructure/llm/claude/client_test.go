@@ -44,6 +44,28 @@ func TestGenerateTextFreeForm(t *testing.T) {
 	}
 }
 
+func TestGenerateTextRejectsZeroMaxOutputTokens(t *testing.T) {
+	var requestCount int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestCount++
+	}))
+	defer server.Close()
+
+	baseURL := server.URL
+	client := NewClient("test-api-key", &baseURL, "claude-opus-5")
+
+	_, err := client.GenerateText(context.Background(), domaincontractsllm.GenerateTextRequest{
+		Prompt:          "Describe the case.",
+		MaxOutputTokens: 0,
+	})
+	if err == nil {
+		t.Fatalf("GenerateText() error = nil, want an error for MaxOutputTokens = 0")
+	}
+	if requestCount != 0 {
+		t.Fatalf("GenerateText() hit the server %d times, want 0", requestCount)
+	}
+}
+
 func TestGenerateTextStructuredSendsOutputConfigFormat(t *testing.T) {
 	var capturedBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

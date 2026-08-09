@@ -17,8 +17,10 @@ type Client interface {
 }
 
 type GenerateTextRequest struct {
-	System          string
-	Prompt          string
+	System string
+	Prompt string
+	// MaxOutputTokens must be greater than zero; both provider APIs reject a
+	// request with max_tokens set to 0.
 	MaxOutputTokens int32
 	ResponseSchema  json.RawMessage
 }

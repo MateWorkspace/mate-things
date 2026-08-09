@@ -14,6 +14,7 @@ type LlmConfigResponse struct {
 	BaseURL   *string    `json:"base_url,omitempty" example:"https://api.anthropic.com"`
 	ApiKeySet bool       `json:"api_key_set" example:"true"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+	UpdatedBy *string    `json:"updated_by,omitempty" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 }
 
 func LlmConfig(model *domainmodels.LlmConfig) LlmConfigResponse {
@@ -27,5 +28,6 @@ func LlmConfig(model *domainmodels.LlmConfig) LlmConfigResponse {
 		BaseURL:   model.BaseURL,
 		ApiKeySet: len(model.ApiKeyEncrypted) > 0,
 		UpdatedAt: &updatedAt,
+		UpdatedBy: UUIDPtrString(model.UpdatedBy),
 	}
 }

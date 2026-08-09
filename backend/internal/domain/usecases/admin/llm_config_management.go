@@ -4,6 +4,7 @@ import (
 	"context"
 
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	"github.com/google/uuid"
 )
 
 type LlmConfigManagement interface {
@@ -12,8 +13,9 @@ type LlmConfigManagement interface {
 }
 
 type UpdateLlmConfigRequest struct {
-	Provider domainmodels.LlmProvider
-	Model    string
-	ApiKey   string
-	BaseURL  *string
+	Provider  domainmodels.LlmProvider
+	Model     string
+	ApiKey    string
+	BaseURL   *string
+	UpdatedBy *uuid.UUID
 }

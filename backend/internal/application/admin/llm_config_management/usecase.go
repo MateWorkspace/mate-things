@@ -62,7 +62,7 @@ func (u *usecase) Update(ctx context.Context, request domainusecasesadmin.Update
 		return err
 	}
 
-	if _, err := u.repository.Upsert(ctx, provider, model, encryptedApiKey, baseURL); err != nil {
+	if _, err := u.repository.Upsert(ctx, provider, model, encryptedApiKey, baseURL, request.UpdatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to upsert llm config", domainmodels.LoggerMeta{"err": err})
 		return err
 	}

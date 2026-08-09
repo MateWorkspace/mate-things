@@ -175,7 +175,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 
 	llmEncryptor, err := infrastructureutilityencryption.NewAESGCMImpl(config.LlmEncryptionKey)
 	if err != nil {
-		return fmt.Errorf("failed to construct llm encryptor: %w", err)
+		return fmt.Errorf("failed to construct llm encryptor (check BE_LLM_ENCRYPTION_KEY is set to exactly 32 bytes): %w", err)
 	}
 	llmClientFactory := infrastructurellm.NewClientFactory(llmConfigRepository, llmEncryptor)
 

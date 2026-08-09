@@ -31,6 +31,18 @@ const docTemplate = `{
                 "summary": "Action Log List",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "RFC3339 timestamp",
                         "name": "executed_at_start",
@@ -53,13 +65,25 @@ const docTemplate = `{
                         "description": "node id",
                         "name": "node_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "execution id",
+                        "name": "execution_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "action status (UNEXECUTED, UNRESPONDED, FAILED, SUCCESS)",
+                        "name": "status",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionLogResponse"
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionLogResponse"
                         }
                     },
                     "400": {
@@ -124,6 +148,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "node id",
                         "name": "node_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "execution id",
+                        "name": "execution_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "action status (UNEXECUTED, UNRESPONDED, FAILED, SUCCESS)",
+                        "name": "status",
                         "in": "query"
                     }
                 ],
@@ -653,6 +689,443 @@ const docTemplate = `{
                     },
                     "504": {
                         "description": "Request Timeout",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/api-keys": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - API Keys"
+                ],
+                "summary": "API Key List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search by user name or username",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "active, inactive, or any",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ApiKeyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generates a new API key for a user. The raw key is only ever returned here - store it now, it cannot be retrieved again.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - API Keys"
+                ],
+                "summary": "API Key Generate",
+                "parameters": [
+                    {
+                        "description": "request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ApiKeyPostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ApiKeySecretResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Already Exists",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/api-keys/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - API Keys"
+                ],
+                "summary": "API Key Delete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/api-keys/{id}/regenerate": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Issues a fresh value for an existing API key, reactivating it if it was revoked. The raw key is only ever returned here.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - API Keys"
+                ],
+                "summary": "API Key Regenerate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ApiKeyRegenerateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ApiKeySecretResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/api-keys/{id}/revoke": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Marks the API key inactive without deleting it. Regenerate reactivates it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - API Keys"
+                ],
+                "summary": "API Key Revoke",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/llm-config": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - LLM Config"
+                ],
+                "summary": "LLM Config",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.LlmConfigResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - LLM Config"
+                ],
+                "summary": "LLM Config",
+                "parameters": [
+                    {
+                        "description": "request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.LlmConfigPutRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
                         }
@@ -3892,6 +4365,213 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/node-class-actions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Node Class Actions"
+                ],
+                "summary": "Node Class Action List",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "node class id",
+                        "name": "node_class_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "action id",
+                        "name": "action_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeClassActionDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/node-class-actions/by-pair": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Node Class Actions"
+                ],
+                "summary": "Node Class Action Get By Pair",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "node class id",
+                        "name": "node_class_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "action id",
+                        "name": "action_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassActionDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/node-class-actions/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Node Class Actions"
+                ],
+                "summary": "Node Class Action Get By ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassActionDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/node-classes": {
             "get": {
                 "security": [
@@ -4273,6 +4953,207 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Already Exists",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/node-classes/{id}/actions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Node Classes"
+                ],
+                "summary": "Node Class Actions Get",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/node-classes/{node_class_id}/actions/{action_id}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Node Classes"
+                ],
+                "summary": "Node Class Action",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "node_class_id",
+                        "name": "node_class_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "action_id",
+                        "name": "action_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.IdResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Already Exists",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Node Classes"
+                ],
+                "summary": "Node Class Action Delete By Pair",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "node_class_id",
+                        "name": "node_class_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "action_id",
+                        "name": "action_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Invalid Format",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
                         }
@@ -5586,7 +6467,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/telemetry-records": {
+        "/v1/telemetry": {
             "get": {
                 "security": [
                     {
@@ -5755,6 +6636,157 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/v1/telemetry/broadcast": {
+            "get": {
+                "description": "Upgrades to a websocket connection and streams every telemetry",
+                "tags": [
+                    "Telemetry"
+                ],
+                "summary": "Telemetry Broadcast Register",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "access token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "node device id",
+                        "name": "node_device_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "metric name",
+                        "name": "metric_name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/telemetry/broadcast/sessions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Telemetry"
+                ],
+                "summary": "Telemetry Broadcast Session List",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_BroadcastSessionTelemetryResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/telemetry/latest": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Telemetry"
+                ],
+                "summary": "Telemetry Record Get Latest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "node device id",
+                        "name": "node_device_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "metric name",
+                        "name": "metric_name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.TelemetryRecordResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Access Denied",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -5771,6 +6803,17 @@ const docTemplate = `{
                 "ActionStatusUnresponded",
                 "ActionStatusFailed",
                 "ActionStatusSuccess"
+            ]
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_domain_models.LlmProvider": {
+            "type": "string",
+            "enum": [
+                "CLAUDE",
+                "OPENAI"
+            ],
+            "x-enum-varnames": [
+                "LlmProviderClaude",
+                "LlmProviderOpenAI"
             ]
         },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ActionDispatchRequest": {
@@ -5800,10 +6843,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "brew_espresso"
                 },
-                "node_class_id": {
-                    "type": "string",
-                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
-                },
                 "payload_schema_name": {
                     "type": "string",
                     "example": "brew_command"
@@ -5825,10 +6864,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "brew_espresso"
                 },
-                "node_class_id": {
-                    "type": "string",
-                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
-                },
                 "payload_schema_name": {
                     "type": "string",
                     "example": "brew_command"
@@ -5836,6 +6871,28 @@ const docTemplate = `{
                 "payload_schema_version": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ApiKeyPostRequest": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string",
+                    "example": "2027-01-01T00:00:00Z"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.ApiKeyRegenerateRequest": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string",
+                    "example": "2027-01-01T00:00:00Z"
                 }
             }
         },
@@ -5883,6 +6940,31 @@ const docTemplate = `{
                 "node_class_id": {
                     "type": "string",
                     "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_request.LlmConfigPutRequest": {
+            "type": "object",
+            "properties": {
+                "api_key": {
+                    "type": "string",
+                    "example": "sk-ant-..."
+                },
+                "base_url": {
+                    "type": "string",
+                    "example": "https://api.anthropic.com"
+                },
+                "model": {
+                    "type": "string",
+                    "example": "claude-opus-5"
+                },
+                "provider": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_domain_models.LlmProvider"
+                        }
+                    ],
+                    "example": "CLAUDE"
                 }
             }
         },
@@ -6174,6 +7256,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Shot pulled: 93.5C for 28s. Crema looked great."
                 },
+                "action_name": {
+                    "type": "string",
+                    "example": "pull_espresso_shot"
+                },
                 "action_status": {
                     "allOf": [
                         {
@@ -6198,9 +7284,17 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 4821
                 },
+                "node_device_id": {
+                    "type": "string",
+                    "example": "AC276E5E030C"
+                },
                 "node_id": {
                     "type": "string",
                     "example": "5e8a1c3f-2b7d-4f6a-9c1e-3a8b6d2f4e09"
+                },
+                "node_name": {
+                    "type": "string",
+                    "example": "Kitchen Espresso Machine"
                 },
                 "payload": {
                     "type": "object"
@@ -6210,6 +7304,10 @@ const docTemplate = `{
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse": {
             "type": "object",
             "properties": {
+                "compatible_node_class_count": {
+                    "type": "integer",
+                    "example": 3
+                },
                 "created_at": {
                     "type": "string",
                     "example": "2026-06-15T09:30:00Z"
@@ -6228,7 +7326,7 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string",
-                    "example": "Pulls a double shot at the requested temperature and duration."
+                    "example": "Runs a timed espresso extraction on the target node."
                 },
                 "id": {
                     "type": "string",
@@ -6236,15 +7334,11 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "brew_espresso"
-                },
-                "node_class_id": {
-                    "type": "string",
-                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
+                    "example": "pull_espresso_shot"
                 },
                 "payload_schema_name": {
                     "type": "string",
-                    "example": "brew_command"
+                    "example": "pull_espresso_shot"
                 },
                 "payload_schema_version": {
                     "type": "integer",
@@ -6263,13 +7357,90 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionLogResponse": {
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ApiKeyResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-06-15T09:30:00Z"
+                },
+                "expires_at": {
+                    "type": "string",
+                    "example": "2027-01-01T00:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "key_last_four": {
+                    "type": "string",
+                    "example": "a91f"
+                },
+                "revoked_at": {
+                    "type": "string",
+                    "example": "2026-07-20T11:00:00Z"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-07-01T14:05:00Z"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "7a3c2e10-4b1a-4b8e-9f3a-2b6e7c9d1a04"
+                },
+                "user_name": {
+                    "type": "string",
+                    "example": "Grace Hopper"
+                },
+                "user_username": {
+                    "type": "string",
+                    "example": "grace.hopper"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ApiKeySecretResponse": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "example": "mate_9f2ac1b4e7d3..."
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.BroadcastSessionTelemetryResponse": {
+            "type": "object",
+            "properties": {
+                "connected_at": {
+                    "type": "string",
+                    "example": "2026-07-28T08:14:58Z"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "metric_name": {
+                    "type": "string",
+                    "example": "water_temperature_celsius"
+                },
+                "node_device_id": {
+                    "type": "string",
+                    "example": "ESP32-BARISTA-07"
+                },
+                "remote_addr": {
+                    "type": "string",
+                    "example": "172.18.0.1:53214"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.CountDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_BroadcastSessionTelemetryResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionLogResponse"
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.BroadcastSessionTelemetryResponse"
                     }
                 },
                 "total_items": {
@@ -6443,6 +7614,34 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.LlmConfigResponse": {
+            "type": "object",
+            "properties": {
+                "api_key_set": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "base_url": {
+                    "type": "string",
+                    "example": "https://api.anthropic.com"
+                },
+                "model": {
+                    "type": "string",
+                    "example": "claude-opus-5"
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "CLAUDE"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                }
+            }
+        },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.LoginResponse": {
             "type": "object",
             "properties": {
@@ -6465,6 +7664,45 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.UserResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassActionDetailResponse": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionResponse"
+                },
+                "node_class": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassResponse"
+                },
+                "node_class_action": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassActionResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassActionResponse": {
+            "type": "object",
+            "properties": {
+                "action_id": {
+                    "type": "string",
+                    "example": "6d9e2f5a-8b1c-4d3e-9f6a-2c5d8e1f4b07"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-08-03T09:00:00Z"
+                },
+                "created_by": {
+                    "type": "string",
+                    "example": "e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a4d7f1c9-3e6b-4a8d-9c2f-5b1e7d4a6c02"
+                },
+                "node_class_id": {
+                    "type": "string",
+                    "example": "3f1c9a2e-6d4b-4e7a-8c2f-1a9b3d5e7f01"
                 }
             }
         },
@@ -6626,6 +7864,20 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionLogResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ActionLogResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ActionResponse": {
             "type": "object",
             "properties": {
@@ -6640,6 +7892,20 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_ApiKeyResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.ApiKeyResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
         "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_FirmwareResponse": {
             "type": "object",
             "properties": {
@@ -6647,6 +7913,20 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.FirmwareResponse"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageResponse"
+                }
+            }
+        },
+        "github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.PageDataResponse-github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response_NodeClassActionDetailResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_MateWorkspace_mate-things_backend_internal_presentation_http_response.NodeClassActionDetailResponse"
                     }
                 },
                 "page": {

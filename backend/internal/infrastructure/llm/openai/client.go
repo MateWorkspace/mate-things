@@ -30,6 +30,10 @@ func NewClient(apiKey string, baseURL *string, model string) domaincontractsllm.
 }
 
 func (c *openAIClient) GenerateText(ctx context.Context, req domaincontractsllm.GenerateTextRequest) (domaincontractsllm.GenerateTextResult, error) {
+	if req.MaxOutputTokens <= 0 {
+		return domaincontractsllm.GenerateTextResult{}, fmt.Errorf("MaxOutputTokens must be greater than zero, got %d", req.MaxOutputTokens)
+	}
+
 	params := openai.ChatCompletionNewParams{
 		Model: c.model,
 		Messages: []openai.ChatCompletionMessageParamUnion{
