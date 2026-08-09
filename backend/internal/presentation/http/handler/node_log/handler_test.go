@@ -132,22 +132,25 @@ func TestNodeLogHandlersAcceptEverySupportedLevel(t *testing.T) {
 
 func TestNodeLogHandlersRejectInvalidTimeFiltersBeforeDelegation(t *testing.T) {
 	tests := []struct {
-		name   string
-		method string
-		target string
-		invoke func(*handler, *echo.Context) error
+		name        string
+		method      string
+		target      string
+		invoke      func(*handler, *echo.Context) error
+		wantMessage string
 	}{
 		{
-			name:   "GET invalid start",
-			method: http.MethodGet,
-			target: "/api/v1/node-logs?logged_at_start=yesterday",
-			invoke: (*handler).NodeLogGetList,
+			name:        "GET invalid start",
+			method:      http.MethodGet,
+			target:      "/api/v1/node-logs?logged_at_start=yesterday",
+			invoke:      (*handler).NodeLogGetList,
+			wantMessage: "logged_at_start must be a valid RFC3339 timestamp",
 		},
 		{
-			name:   "DELETE invalid end",
-			method: http.MethodDelete,
-			target: "/api/v1/node-logs?logged_at_end=2026-07-30",
-			invoke: (*handler).NodeLogDelete,
+			name:        "DELETE invalid end",
+			method:      http.MethodDelete,
+			target:      "/api/v1/node-logs?logged_at_end=2026-07-30",
+			invoke:      (*handler).NodeLogDelete,
+			wantMessage: "logged_at_end must be a valid RFC3339 timestamp",
 		},
 	}
 
@@ -161,7 +164,10 @@ func TestNodeLogHandlersRejectInvalidTimeFiltersBeforeDelegation(t *testing.T) {
 				t.Fatalf("handler error = %v", err)
 			}
 
-			assertInvalidFilterResponse(t, recorder)
+			response := assertInvalidFilterResponse(t, recorder)
+			if response.Message != test.wantMessage {
+				t.Errorf("message = %q, want %q", response.Message, test.wantMessage)
+			}
 			if query.readCalls != 0 || query.deleteCalls != 0 {
 				t.Fatalf("use case calls = read %d, delete %d; want none", query.readCalls, query.deleteCalls)
 			}
@@ -204,8 +210,8 @@ func TestNodeLogHandlersRejectUnsupportedLevelsBeforeDelegation(t *testing.T) {
 			if query.readCalls != 0 || query.deleteCalls != 0 {
 				t.Fatalf("use case calls = read %d, delete %d; want none", query.readCalls, query.deleteCalls)
 			}
-			if response.Details != "level must be one of NONE, ERROR, WARN, INFO, DEBUG" {
-				t.Errorf("details = %q, want supported-level validation detail", response.Details)
+			if response.Message != "level must be one of NONE, ERROR, WARN, INFO, DEBUG" {
+				t.Errorf("message = %q, want supported-level validation message", response.Message)
 			}
 		})
 	}
@@ -213,25 +219,22 @@ func TestNodeLogHandlersRejectUnsupportedLevelsBeforeDelegation(t *testing.T) {
 
 func TestNodeLogHandlersRenderUseCaseErrors(t *testing.T) {
 	tests := []struct {
-		name        string
-		method      string
-		query       *nodeLogQueryFake
-		invoke      func(*handler, *echo.Context) error
-		wantMessage string
+		name   string
+		method string
+		query  *nodeLogQueryFake
+		invoke func(*handler, *echo.Context) error
 	}{
 		{
-			name:        "GET read failure",
-			method:      http.MethodGet,
-			query:       &nodeLogQueryFake{readErr: errors.New("database unavailable")},
-			invoke:      (*handler).NodeLogGetList,
-			wantMessage: "Unable to load node logs right now. Please try again.",
+			name:   "GET read failure",
+			method: http.MethodGet,
+			query:  &nodeLogQueryFake{readErr: errors.New("database unavailable")},
+			invoke: (*handler).NodeLogGetList,
 		},
 		{
-			name:        "DELETE failure",
-			method:      http.MethodDelete,
-			query:       &nodeLogQueryFake{deleteErr: errors.New("database unavailable")},
-			invoke:      (*handler).NodeLogDelete,
-			wantMessage: "Unable to delete node logs right now. Please try again.",
+			name:   "DELETE failure",
+			method: http.MethodDelete,
+			query:  &nodeLogQueryFake{deleteErr: errors.New("database unavailable")},
+			invoke: (*handler).NodeLogDelete,
 		},
 	}
 
@@ -244,6 +247,11 @@ func TestNodeLogHandlersRenderUseCaseErrors(t *testing.T) {
 				t.Fatalf("handler error = %v", err)
 			}
 
+			// The use case's raw error ("database unavailable") is a plain
+			// error, not a *domainmodels.Error, so presentationhttputils.Error
+			// falls through to the generic 500 mapping — it never echoes
+			// internal error text or a per-call-site message to the client,
+			// by design (see error.go's errorMappings).
 			if recorder.Code != http.StatusInternalServerError {
 				t.Fatalf("status = %d, want %d", recorder.Code, http.StatusInternalServerError)
 			}
@@ -252,11 +260,9 @@ func TestNodeLogHandlersRenderUseCaseErrors(t *testing.T) {
 			if response.Error != "Internal Server Error" {
 				t.Errorf("error = %q, want %q", response.Error, "Internal Server Error")
 			}
-			if response.Message != test.wantMessage {
-				t.Errorf("message = %q, want %q", response.Message, test.wantMessage)
-			}
-			if response.Details != "database unavailable" {
-				t.Errorf("details = %q, want %q", response.Details, "database unavailable")
+			wantMessage := "Something went wrong on our end. Please try again later."
+			if response.Message != wantMessage {
+				t.Errorf("message = %q, want %q", response.Message, wantMessage)
 			}
 		})
 	}
@@ -292,7 +298,6 @@ type nodeLogResponse struct {
 type nodeLogErrorResponse struct {
 	Error   string `json:"error"`
 	Message string `json:"message"`
-	Details string `json:"details"`
 }
 
 func (f *nodeLogQueryFake) ReadByFilter(_ context.Context, request domainusecasesnodelog.ReadNodeLogByFilterRequest) ([]domainmodels.NodeLog, int, error) {
@@ -376,9 +381,6 @@ func assertInvalidFilterResponse(t *testing.T, recorder *httptest.ResponseRecord
 	decodeNodeLogJSON(t, recorder, &response)
 	if response.Error != "Invalid Format" {
 		t.Errorf("error = %q, want %q", response.Error, "Invalid Format")
-	}
-	if response.Message != "One or more of the filters provided is invalid." {
-		t.Errorf("message = %q, want invalid-filter message", response.Message)
 	}
 	return response
 }
