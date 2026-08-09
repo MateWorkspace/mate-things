@@ -9,8 +9,9 @@ import (
 )
 
 type GeneratedCase struct {
-	Step   int32
-	States map[uuid.UUID]string
+	Step        int32
+	States      map[uuid.UUID]string
+	Description string
 }
 
 // Generate enumerates one baseline case (the first value of every state,
