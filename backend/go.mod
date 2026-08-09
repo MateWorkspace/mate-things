@@ -3,10 +3,12 @@ module github.com/MateWorkspace/mate-things/backend
 go 1.26.5
 
 require (
+	github.com/anthropics/anthropic-sdk-go v1.62.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/labstack/echo/v5 v5.3.1
 	github.com/minio/minio-go/v7 v7.2.1
+	github.com/openai/openai-go v1.12.0
 	github.com/rs/zerolog v1.35.1
 	github.com/swaggo/echo-swagger/v2 v2.0.1
 	github.com/swaggo/swag v1.16.6
@@ -15,7 +17,6 @@ require (
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/anthropics/anthropic-sdk-go v1.62.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
