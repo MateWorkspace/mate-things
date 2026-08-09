@@ -137,6 +137,16 @@ type TelemetryHandler interface {
 	TelemetryBroadcastSessionList(c *echo.Context) error
 }
 
+type InfraredHandler interface {
+	RecordSessionPost(c *echo.Context) error
+	RecordSessionGetById(c *echo.Context) error
+	RecordSessionCasesGetList(c *echo.Context) error
+	InfraredRecordSessionBroadcastRegister(c *echo.Context) error
+	RecordCaseRawAccept(c *echo.Context) error
+	RecordCaseRawDiscard(c *echo.Context) error
+	RecordCaseRetry(c *echo.Context) error
+}
+
 type NodeLogHandler interface {
 	NodeLogGetList(c *echo.Context) error
 	NodeLogDelete(c *echo.Context) error
@@ -155,6 +165,7 @@ type Args struct {
 	Telemetry     TelemetryHandler
 	NodeLog       NodeLogHandler
 	Preferences   PreferencesHandler
+	Infrared      InfraredHandler
 	Token         domaincontractsutility.Token
 	ApiKeyAuth    domainusecasesauth.ApiKey
 	MinioProxy    http.Handler
@@ -186,6 +197,7 @@ func Route(e *echo.Echo, args Args) {
 	routeTelemetry(v1, args.Telemetry, permission)
 	routeNodeLog(v1, args.NodeLog, permission)
 	routePreferences(v1, args.Preferences, permission)
+	routeInfrared(v1, args.Infrared, permission)
 
 	// Presigned S3-style GET/HEAD passthrough to MinIO - no auth middleware,
 	// the signed query string is the auth. Not under /api: this is a raw
@@ -331,4 +343,14 @@ func routeNodeLog(v1 *echo.Group, handler NodeLogHandler, permission PermissionM
 
 func routePreferences(v1 *echo.Group, handler PreferencesHandler, permission PermissionMiddleware) {
 	v1.PATCH("/preferences/:resource/:id", handler.PreferencesPatch, permission("preferences:set"))
+}
+
+func routeInfrared(v1 *echo.Group, handler InfraredHandler, permission PermissionMiddleware) {
+	v1.POST("/infrared/record-sessions", handler.RecordSessionPost, permission("infrared_record_session:add"))
+	v1.GET("/infrared/record-sessions/:id", handler.RecordSessionGetById, permission("infrared_record_session:get"))
+	v1.GET("/infrared/record-sessions/:id/cases", handler.RecordSessionCasesGetList, permission("infrared_record_session:get"))
+	v1.GET("/infrared/record-sessions/:id/broadcast", handler.InfraredRecordSessionBroadcastRegister, permission("infrared_record_session:get"))
+	v1.POST("/infrared/record-cases/:caseId/raw/:rawId/accept", handler.RecordCaseRawAccept, permission("infrared_record_session:set"))
+	v1.POST("/infrared/record-cases/:caseId/raw/:rawId/discard", handler.RecordCaseRawDiscard, permission("infrared_record_session:set"))
+	v1.POST("/infrared/record-cases/:caseId/retry", handler.RecordCaseRetry, permission("infrared_record_session:set"))
 }

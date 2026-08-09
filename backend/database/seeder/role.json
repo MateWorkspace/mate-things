@@ -22,7 +22,8 @@
       "broadcast_session:get",
       "node_log:get", "node_log:remove",
       "preferences:set",
-      "llm_config:get", "llm_config:set"
+      "llm_config:get", "llm_config:set",
+      "infrared_record_session:get", "infrared_record_session:add", "infrared_record_session:set"
     ]
   },
   {
@@ -45,7 +46,8 @@
       "broadcast_session:get",
       "node_log:get", "node_log:remove",
       "preferences:set",
-      "llm_config:get", "llm_config:set"
+      "llm_config:get", "llm_config:set",
+      "infrared_record_session:get", "infrared_record_session:add", "infrared_record_session:set"
     ]
   },
   {

@@ -74,5 +74,9 @@
   { "name": "node_log:get", "description": "View node logs." },
   { "name": "node_log:remove", "description": "Delete node logs." },
 
-  { "name": "preferences:set", "description": "Update preferences on a resource." }
+  { "name": "preferences:set", "description": "Update preferences on a resource." },
+
+  { "name": "infrared_record_session:get", "description": "View infrared record sessions and their cases." },
+  { "name": "infrared_record_session:add", "description": "Start an infrared record session." },
+  { "name": "infrared_record_session:set", "description": "Accept or discard captured infrared raw data, or retry a record case." }
 ]
