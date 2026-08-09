@@ -1840,8 +1840,10 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	domaincontractsbroadcaster "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/broadcaster"
+	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
 	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
@@ -1933,6 +1935,27 @@ func (f *fakeCaseRepository) CreateRaw(_ context.Context, caseId uuid.UUID, rawD
 	f.createRawCalls++
 	return uuid.New(), nil
 }
+func (f *fakeCaseRepository) CreateWithStates(_ context.Context, _ uuid.UUID, _ int32, _ string, _ []domainmodels.InfraredStateDeviceRecordState) (uuid.UUID, error) {
+	return uuid.New(), nil
+}
+
+// fakeLlmClient/fakeLlmClientFactory stand in for the merged prior plan's
+// llm.Client/ClientFactory so Start's background goroutine can complete
+// (or fail deterministically) without ever making a real provider call.
+type fakeLlmClient struct{}
+
+func (f *fakeLlmClient) GenerateText(_ context.Context, _ domaincontractsllm.GenerateTextRequest) (domaincontractsllm.GenerateTextResult, error) {
+	return domaincontractsllm.GenerateTextResult{Text: `[{"case_index": 0, "description": "baseline", "order": 1}]`}, nil
+}
+
+type fakeLlmClientFactory struct{ err error }
+
+func (f *fakeLlmClientFactory) Current(_ context.Context) (domaincontractsllm.Client, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return &fakeLlmClient{}, nil
+}
 
 type fakeBroadcaster struct {
 	domaincontractsbroadcaster.InfraredRecordSession
@@ -1975,10 +1998,16 @@ func TestStartCreatesDeviceDefinitionsAndSessionThenKicksOffCaseGeneration(t *te
 	sessionRepo := &fakeSessionRepository{}
 	deviceRepo := &fakeDeviceRepository{}
 	definitionRepo := &fakeDefinitionRepository{}
+	// llmFactory must NOT be nil here: Start launches a background goroutine
+	// that reaches u.llmFactory.Current(ctx) shortly after this call returns,
+	// and calling a method on a nil interface panics — inside a goroutine,
+	// that panic crashes the whole test binary, not just this test. Giving
+	// it a factory that fails fast (rather than nil) makes the async path
+	// end at a harmless FAILED transition instead.
 	usecase := NewUsecaseImpl(
 		sessionRepo, deviceRepo, definitionRepo,
 		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
-		nil, &fakeNodeRepository{}, &noopLogger{},
+		&fakeLlmClientFactory{err: errors.New("llm not configured for this test")}, &fakeNodeRepository{}, &noopLogger{},
 	)
 
 	nodeId := uuid.New()
@@ -2012,6 +2041,47 @@ func TestStartCreatesDeviceDefinitionsAndSessionThenKicksOffCaseGeneration(t *te
 	}
 	if !found {
 		t.Fatalf("status updates = %v, want to include CASES_GENERATING", sessionRepo.statusUpdates)
+	}
+}
+
+func TestStartEventuallySubscribesToIrCaptureAndTransitionsToRecording(t *testing.T) {
+	nodeId := uuid.New()
+	deviceId := "AC276E5E030C"
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{NodeId: nodeId}}
+	caseRepo := &fakeCaseRepository{}
+	subscriptions := &fakeSubscriptions{}
+	nodeRepo := &fakeNodeRepository{result: &domainmodels.Node{Id: nodeId, DeviceId: deviceId}}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, subscriptions,
+		&fakeLlmClientFactory{}, nodeRepo, &noopLogger{},
+	)
+
+	_, err := usecase.Start(context.Background(), domainusecasesinfrared.StartRecordSessionRequest{
+		NodeId: nodeId, Brand: "Polytron", Model: "PAC-09HDN",
+	})
+	if err != nil {
+		t.Fatalf("Start() error = %v, want nil", err)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) && len(subscriptions.subscribedDeviceIds) == 0 {
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	if len(subscriptions.subscribedDeviceIds) != 1 || subscriptions.subscribedDeviceIds[0] != deviceId {
+		t.Fatalf("subscribedDeviceIds = %v, want [%q]", subscriptions.subscribedDeviceIds, deviceId)
+	}
+
+	found := false
+	for _, s := range sessionRepo.statusUpdates {
+		if s == domainmodels.InfraredRecordingStateRecording {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("status updates = %v, want to include RECORDING", sessionRepo.statusUpdates)
 	}
 }
 
@@ -2243,12 +2313,21 @@ func (u *usecase) runCaseGeneration(sessionId uuid.UUID, deviceId uuid.UUID, dev
 	}
 
 	session, err := u.session.GetById(ctx, sessionId)
-	if err == nil && session != nil {
-		// TODO(B-later): fetch the node's DeviceId and call
-		// u.subscriptions.IrCapture(ctx, node.DeviceId) here once the node
-		// repository lookup is wired in — deferred to Task 15's composition
-		// wiring, which has the node repository available to inject.
-		_ = session
+	if err != nil || session == nil {
+		u.logger.Error(ctx, tag, "failed to look up session before subscribing to ir capture", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	node, err := u.node.ReadById(ctx, session.NodeId)
+	if err != nil || node == nil {
+		u.logger.Error(ctx, tag, "failed to look up node before subscribing to ir capture", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "node_id": session.NodeId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	if err := u.subscriptions.IrCapture(ctx, node.DeviceId); err != nil {
+		u.logger.Error(ctx, tag, "failed to subscribe to ir capture topic", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "device_id": node.DeviceId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
 	}
 
 	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateRecording)
