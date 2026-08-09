@@ -7,6 +7,7 @@ import (
 	applicationactionexecution "github.com/MateWorkspace/mate-things/backend/internal/application/action/execution"
 	applicationactionhistory "github.com/MateWorkspace/mate-things/backend/internal/application/action/history"
 	applicationadminapikeymanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/api_key_management"
+	applicationadminllmconfigmanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/llm_config_management"
 	applicationadminpermissionmanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/permission_management"
 	applicationadminrolemanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/role_management"
 	applicationadminschemaregistry "github.com/MateWorkspace/mate-things/backend/internal/application/admin/schema_registry"
@@ -73,6 +74,7 @@ type application struct {
 	adminSchemaRegistry       domainusecasesadmin.SchemaRegistry
 	adminUserManagement       domainusecasesadmin.UserManagement
 	adminApiKeyManagement     domainusecasesadmin.ApiKeyManagement
+	adminLlmConfigManagement  domainusecasesadmin.LlmConfigManagement
 
 	authSession domainusecasesauth.Session
 	authApiKey  domainusecasesauth.ApiKey
@@ -150,6 +152,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	adminSchemaRegistry := applicationadminschemaregistry.NewUsecaseImpl(payloadSchemaRepoCache, l.infra.logger)
 	adminUserManagement := applicationadminusermanagement.NewUsecaseImpl(userRepoCache, l.infra.password, l.infra.logger)
 	adminApiKeyManagement := applicationadminapikeymanagement.NewUsecaseImpl(apiKeyRepoCache, l.infra.apiKeyGenerator, l.infra.logger)
+	adminLlmConfigManagement := applicationadminllmconfigmanagement.NewUsecaseImpl(l.infra.llmConfigRepository, l.infra.llmEncryptor, l.infra.logger)
 
 	authSession := applicationauthsession.NewUsecaseImpl(
 		userRepoCache,
@@ -251,6 +254,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		adminSchemaRegistry:       adminSchemaRegistry,
 		adminUserManagement:       adminUserManagement,
 		adminApiKeyManagement:     adminApiKeyManagement,
+		adminLlmConfigManagement:  adminLlmConfigManagement,
 
 		authSession: authSession,
 		authApiKey:  authApiKey,

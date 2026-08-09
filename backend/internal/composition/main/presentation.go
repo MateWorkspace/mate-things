@@ -38,6 +38,7 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 		l.app.adminSchemaRegistry,
 		l.app.adminUserManagement,
 		l.app.adminApiKeyManagement,
+		l.app.adminLlmConfigManagement,
 	)
 	nodeHandler := presentationhttphandlernode.NewHandler(
 		l.app.nodeClassManagement,

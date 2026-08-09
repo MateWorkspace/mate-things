@@ -2,6 +2,7 @@ package compositionmain
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/MateWorkspace/mate-things/backend/internal/config"
@@ -13,6 +14,7 @@ import (
 	domaincontractsstorage "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/storage"
 	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	infrastructurebroadcastertelemetry "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/broadcaster/telemetry"
 	infrastructurecacheaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/action"
 	infrastructurecacheapikey "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/api_key"
 	infrastructurecachefirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/firmware"
@@ -25,6 +27,7 @@ import (
 	infrastructurecacherolepermission "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/role_permission"
 	infrastructurecacheshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/shared"
 	infrastructurecacheuser "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/user"
+	infrastructurellm "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/llm"
 	infrastructureloggerleveled "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/logger/leveled"
 	infrastructurenodepublish "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/node/publish"
 	infrastructurenodesubscriptions "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/node/subscriptions"
@@ -33,6 +36,7 @@ import (
 	infrastructurerepositoryapikey "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/api_key"
 	infrastructurerepositoryfirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/firmware"
 	infrastructurerepositoryfirmwareconfigparameter "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/firmware_config_parameter"
+	infrastructurerepositoryllmconfig "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/llm_config"
 	infrastructurerepositorynode "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node"
 	infrastructurerepositorynodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class"
 	infrastructurerepositorynodeclassaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class_action"
@@ -46,10 +50,10 @@ import (
 	infrastructurerepositoryuser "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/user"
 	infrastructurestoragefirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/storage/firmware"
 	infrastructureutilityapikey "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/apikey"
+	infrastructureutilityencryption "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/encryption"
 	infrastructureutilitypassword "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/password"
 	infrastructureutilitypayloadschemavalidator "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/payload_schema_validator"
 	infrastructureutilitytoken "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/token"
-	infrastructurebroadcastertelemetry "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/broadcaster/telemetry"
 	infrastructureutilitytransactor "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/transactor"
 )
 
@@ -68,6 +72,7 @@ type infrastructure struct {
 	nodeLogRepository                 domaincontractsrepository.NodeLog
 	nodeClassRepository               domaincontractsrepository.NodeClass
 	nodeClassActionRepository         domaincontractsrepository.NodeClassAction
+	llmConfigRepository               domaincontractsrepository.LlmConfig
 	payloadSchemaRepository           domaincontractsrepository.PayloadSchema
 	permissionRepository              domaincontractsrepository.Permission
 	roleRepository                    domaincontractsrepository.Role
@@ -98,6 +103,9 @@ type infrastructure struct {
 	token                  domaincontractsutility.Token
 	payloadSchemaValidator domaincontractsutility.PayloadSchemaValidator
 	apiKeyGenerator        domaincontractsutility.ApiKey
+	llmEncryptor           domaincontractsutility.Encryptor
+
+	llmClientFactory *infrastructurellm.ClientFactory
 }
 
 func (l *launcher) newInfrastructure(ctx context.Context) error {
@@ -126,6 +134,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	nodeLogRepository := infrastructurerepositorynodelog.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeClassRepository := infrastructurerepositorynodeclass.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeClassActionRepository := infrastructurerepositorynodeclassaction.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	llmConfigRepository := infrastructurerepositoryllmconfig.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	payloadSchemaRepository := infrastructurerepositorypayloadschema.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	permissionRepository := infrastructurerepositorypermission.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	roleRepository := infrastructurerepositoryrole.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -164,6 +173,12 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	payloadSchemaValidator := infrastructureutilitypayloadschemavalidator.NewValidatorImpl()
 	apiKeyGenerator := infrastructureutilityapikey.NewGeneratorImpl()
 
+	llmEncryptor, err := infrastructureutilityencryption.NewAESGCMImpl(config.LlmEncryptionKey)
+	if err != nil {
+		return fmt.Errorf("failed to construct llm encryptor: %w", err)
+	}
+	llmClientFactory := infrastructurellm.NewClientFactory(llmConfigRepository, llmEncryptor)
+
 	l.infra = &infrastructure{
 		logger: logger,
 
@@ -179,6 +194,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		nodeLogRepository:                 nodeLogRepository,
 		nodeClassRepository:               nodeClassRepository,
 		nodeClassActionRepository:         nodeClassActionRepository,
+		llmConfigRepository:               llmConfigRepository,
 		payloadSchemaRepository:           payloadSchemaRepository,
 		permissionRepository:              permissionRepository,
 		roleRepository:                    roleRepository,
@@ -209,6 +225,9 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		token:                  token,
 		payloadSchemaValidator: payloadSchemaValidator,
 		apiKeyGenerator:        apiKeyGenerator,
+		llmEncryptor:           llmEncryptor,
+
+		llmClientFactory: llmClientFactory,
 	}
 
 	logger.Info(ctx, tag, "Infrastructure initialized", domainmodels.LoggerMeta{})
