@@ -102,3 +102,9 @@ type InfraredStateDeviceRecordRaw struct {
 	Status                          InfraredRecordRawStatus
 	DiscardedReason                 *string
 }
+
+type InfraredRecordSessionEvent struct {
+	SessionId           uuid.UUID
+	RecordingState      string
+	CurrentRecordCaseId *uuid.UUID
+}
