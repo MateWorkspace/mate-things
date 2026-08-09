@@ -720,7 +720,7 @@ git commit -m "feat: add InfraredDeviceType/InfraredState repositories and wire 
 
 **Interfaces:**
 - Consumes: `domainmodels.InfraredDevice`, `domainmodels.InfraredStateDeviceDefinition` (Task 1).
-- Produces: `domaincontractsrepository.InfraredDevice` with `Create(ctx, infraredDeviceTypeId uuid.UUID, brand string, model string) (id uuid.UUID, err error)` and `GetById(ctx, id uuid.UUID) (*domainmodels.InfraredDevice, error)`; `domaincontractsrepository.InfraredStateDeviceDefinition` with `CreateMany(ctx, infraredDeviceId uuid.UUID, definitions []domainmodels.InfraredStateDeviceDefinition) error` and `ListByDeviceId(ctx, infraredDeviceId uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error)`.
+- Produces: `domaincontractsrepository.InfraredDevice` with `Create(ctx, infraredDeviceTypeId uuid.UUID, brand string, model string) (id uuid.UUID, err error)` and `GetById(ctx, id uuid.UUID) (*domainmodels.InfraredDevice, error)`; `domaincontractsrepository.InfraredStateDeviceDefinition` with `CreateMany(ctx, definitions []domainmodels.InfraredStateDeviceDefinition) error` (each definition carries its own `InfraredDeviceId` field — Task 1) and `ListByDeviceId(ctx, infraredDeviceId uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error)`.
 
 No dedicated test, same convention as Task 4.
 
