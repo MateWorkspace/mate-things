@@ -185,6 +185,7 @@ func Route(e *echo.Echo, args Args) {
 	// API can't set an Authorization header, so the token travels as a
 	// query param) — it can't run under the standard Auth middleware.
 	routeTelemetryBroadcastRegister(publicV1, args.Telemetry)
+	routeInfraredBroadcastRegister(publicV1, args.Infrared)
 
 	v1 := api.Group("/v1")
 	v1.Use(presentationhttpmiddleware.Auth(args.Token, args.ApiKeyAuth))
@@ -345,11 +346,14 @@ func routePreferences(v1 *echo.Group, handler PreferencesHandler, permission Per
 	v1.PATCH("/preferences/:resource/:id", handler.PreferencesPatch, permission("preferences:set"))
 }
 
+func routeInfraredBroadcastRegister(v1 *echo.Group, handler InfraredHandler) {
+	v1.GET("/infrared/record-sessions/:id/broadcast", handler.InfraredRecordSessionBroadcastRegister)
+}
+
 func routeInfrared(v1 *echo.Group, handler InfraredHandler, permission PermissionMiddleware) {
 	v1.POST("/infrared/record-sessions", handler.RecordSessionPost, permission("infrared_record_session:add"))
 	v1.GET("/infrared/record-sessions/:id", handler.RecordSessionGetById, permission("infrared_record_session:get"))
 	v1.GET("/infrared/record-sessions/:id/cases", handler.RecordSessionCasesGetList, permission("infrared_record_session:get"))
-	v1.GET("/infrared/record-sessions/:id/broadcast", handler.InfraredRecordSessionBroadcastRegister, permission("infrared_record_session:get"))
 	v1.POST("/infrared/record-cases/:caseId/raw/:rawId/accept", handler.RecordCaseRawAccept, permission("infrared_record_session:set"))
 	v1.POST("/infrared/record-cases/:caseId/raw/:rawId/discard", handler.RecordCaseRawDiscard, permission("infrared_record_session:set"))
 	v1.POST("/infrared/record-cases/:caseId/retry", handler.RecordCaseRetry, permission("infrared_record_session:set"))
