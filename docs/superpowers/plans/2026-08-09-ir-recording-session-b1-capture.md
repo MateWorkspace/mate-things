@@ -2512,6 +2512,7 @@ import (
 	"net/http"
 
 	domaincontractsbroadcaster "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/broadcaster"
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
 	domainusecasesinfrared "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/infrared"
 	presentationhttprequest "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/request"
 	presentationhttpresponse "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/response"
@@ -2521,20 +2522,24 @@ import (
 
 type handler struct {
 	recordSessionUseCase domainusecasesinfrared.RecordSessionManagement
-	broadcaster           domaincontractsbroadcaster.InfraredRecordSession
+	broadcaster          domaincontractsbroadcaster.InfraredRecordSession
+	token                domaincontractsutility.Token
 }
 
 func NewHandler(
 	recordSessionUseCase domainusecasesinfrared.RecordSessionManagement,
 	broadcaster domaincontractsbroadcaster.InfraredRecordSession,
+	token domaincontractsutility.Token,
 ) *handler {
-	return &handler{recordSessionUseCase: recordSessionUseCase, broadcaster: broadcaster}
+	return &handler{recordSessionUseCase: recordSessionUseCase, broadcaster: broadcaster, token: token}
 }
 ```
 
+`token domaincontractsutility.Token` is required on the struct because `InfraredRecordSessionBroadcastRegister` (already merged in Task 9's `broadcast_handler.go`) calls `h.token.ValidateAccess(accessToken)` — that file was written against this exact field name/type (matching `handler/telemetry/handler.go`'s own `token domaincontractsutility.Token` field), so it must be added here, not invented differently.
+
 Write `RecordSessionPost` (binds `StartRecordSessionRequest`, parses the two UUID fields and each definition's `InfraredStateId` via `presentationhttputils.RequiredUUID`, calls `Start`, returns `201` with `{"id": "..."}`), `RecordSessionGetById`, `RecordSessionCasesGetList`, `RecordCaseRawAccept`, `RecordCaseRawDiscard` (binds `DiscardRawRequest`), `RecordCaseRetry` — each following `handler/admin/handler.go`'s exact validate-bind-delegate-respond shape and swagger comment block.
 
-`InfraredRecordSessionBroadcastRegister` (from Task 9) is completed here — it references `h.broadcaster`, which now exists on the struct.
+`InfraredRecordSessionBroadcastRegister` (from Task 9) is completed here — it references `h.broadcaster` and `h.token`, both of which now exist on the struct.
 
 - [ ] **Step 3: Register routes and permissions**
 
