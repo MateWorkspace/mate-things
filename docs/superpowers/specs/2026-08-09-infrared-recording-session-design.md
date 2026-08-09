@@ -82,8 +82,16 @@ any active state → FAILED (staff abandons the session)
   delta) and re-orders `Step` to minimize button presses.
 - `RECORDING`: staff works through cases in `Step` order, tracked by
   `InfraredRecordSession.CurrentRecordCaseId`. Each case needs 2 accepted raw captures
-  (for volatile-bit/clock detection) before it's `ACCEPTED` and the cursor advances.
-  Automatically moves to `ANALYZING` once every case is `ACCEPTED`.
+  (for volatile-bit/clock detection) before it's `ACCEPTED`; the cursor then advances to
+  the case with the next-higher `Step` (or to `null`, once none remain, which is what
+  triggers `RECORDING → ANALYZING`).
+
+  `Step` is append-only and monotonic for the lifetime of the session — the initial
+  enumeration takes `1..N`, and any later round of cases appended after a test failure
+  takes `N+1..N+k`, and so on. Steps are never renumbered or reused. This is what makes
+  `CurrentRecordCaseId` an unambiguous, cheap-to-update cursor across retry rounds, and
+  makes "last accepted case" a stable query (`... WHERE Status = 'ACCEPTED' ORDER BY
+  Step DESC LIMIT 1`) without needing to track which round a case belongs to separately.
 - `ANALYZING` (internal, no staff step): deterministic Phases 0–4 — frame segmentation,
   volatile-bit detection, checksum discovery via delta-intersection, per-state bit
   attribution. Output is an internal payload (template, volatile mask, checksum
@@ -240,9 +248,11 @@ Two distinct grains, both explicit rather than inferred:
   never more than one valid capture pair per case at a time — the analyzer never has to
   choose between ambiguous "most recent" raws.
 - **Failed test case:** session returns to `RECORDING` with new `RecordCase` rows
-  appended to the same session (never a new session, never deleting prior cases).
-  Re-analysis and re-generation produce a new `InfraredStateCoder` row, so every
-  generation attempt within a session remains inspectable.
+  appended to the same session (never a new session, never deleting prior cases), taking
+  the next available `Step` values per the monotonic rule above.
+  `CurrentRecordCaseId` is set to the first of the newly appended cases. Re-analysis and
+  re-generation produce a new `InfraredStateCoder` row, so every generation attempt
+  within a session remains inspectable.
 
 ## Sanity-checking captures in flight
 
