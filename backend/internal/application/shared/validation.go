@@ -8,6 +8,7 @@ package applicationshared
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/url"
 	"regexp"
@@ -322,6 +323,43 @@ func RequiredURL(value string, field string) (string, error) {
 	}
 
 	return value, nil
+}
+
+var validLlmProviders = map[domainmodels.LlmProvider]struct{}{
+	domainmodels.LlmProviderClaude: {},
+	domainmodels.LlmProviderOpenAI: {},
+}
+
+func RequiredLlmProvider(value domainmodels.LlmProvider, field string) (domainmodels.LlmProvider, error) {
+	if _, ok := validLlmProviders[value]; !ok {
+		return "", domainmodels.NewError(fmt.Sprintf("%s must be one of CLAUDE, OPENAI", field), domainmodels.ErrTypeValidation, nil)
+	}
+	return value, nil
+}
+
+func RequiredLlmModel(value string, field string) (string, error) {
+	if value == "" {
+		return "", domainmodels.NewError(fmt.Sprintf("%s is required", field), domainmodels.ErrTypeValidation, nil)
+	}
+	return value, nil
+}
+
+func RequiredLlmApiKey(value string, field string) (string, error) {
+	if value == "" {
+		return "", domainmodels.NewError(fmt.Sprintf("%s is required", field), domainmodels.ErrTypeValidation, nil)
+	}
+	return value, nil
+}
+
+func OptionalLlmBaseURL(value *string, field string) (*string, error) {
+	if value == nil {
+		return nil, nil
+	}
+	url, err := RequiredURL(*value, field)
+	if err != nil {
+		return nil, err
+	}
+	return &url, nil
 }
 
 var validPayloadSchemaDefinitionTypes = map[domainmodels.PayloadSchemaDefinitionType]bool{
