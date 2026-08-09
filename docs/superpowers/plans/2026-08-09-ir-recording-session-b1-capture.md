@@ -1883,7 +1883,7 @@ type fakeNodeRepository struct {
 	result *domainmodels.Node
 }
 
-func (f *fakeNodeRepository) GetByDeviceId(_ context.Context, _ string) (*domainmodels.Node, error) {
+func (f *fakeNodeRepository) ReadByDeviceId(_ context.Context, _ string) (*domainmodels.Node, error) {
 	return f.result, nil
 }
 
@@ -2322,7 +2322,7 @@ func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
 func (u *usecase) CaptureIrRaw(ctx context.Context, request domainusecasesinfrared.CaptureIrRawRequest) error {
 	const tag = "infrared/record_session_management/CaptureIrRaw"
 
-	node, err := u.node.GetByDeviceId(ctx, request.NodeDeviceId)
+	node, err := u.node.ReadByDeviceId(ctx, request.NodeDeviceId)
 	if err != nil || node == nil {
 		u.logger.Warn(ctx, tag, "ir capture from unknown node", domainmodels.LoggerMeta{"device_id": request.NodeDeviceId})
 		return nil
@@ -2356,7 +2356,7 @@ func (u *usecase) CaptureIrRaw(ctx context.Context, request domainusecasesinfrar
 }
 ```
 
-`u.node.GetByDeviceId` is a placeholder method name for this draft — before writing this method for real, grep the actual `domaincontractsrepository.Node` (or equivalent) interface for its real device-lookup method name and signature, and use that exact name instead (it is confirmed to exist, since `internal/domain/models/node.go`'s `DeviceId` field is used for MQTT addressing elsewhere in this codebase — this task is finding and reusing it, not inventing a new one). If the real repository's `Node` type or lookup method differs in shape from the sketch above (e.g. returns an error type this file needs to import differently), adapt accordingly — the logic (look up node, find its active session, persist the raw capture against the current case, broadcast) is what this task must preserve, not the exact placeholder names.
+`u.node.ReadByDeviceId` (confirmed the real method name and signature on `domaincontractsrepository.Node`: `ReadByDeviceId(ctx context.Context, deviceId string) (*domainmodels.Node, error)` — already updated above and in the test file's `fakeNodeRepository` fake in Step 2, both of which previously said the placeholder `GetByDeviceId`). If the real repository's `Node` type differs from what's assumed here in some other way, adapt accordingly — the logic (look up node, find its active session, persist the raw capture against the current case, broadcast) is what this task must preserve.
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
