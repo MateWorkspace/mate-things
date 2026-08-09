@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 )
 
-//go:embed permission.json role.json node_class.json payload_schema.json action.json user.json
+//go:embed permission.json role.json node_class.json payload_schema.json action.json user.json infrared_device_type.json infrared_state.json
 var files embed.FS
 
 type Permission struct {
@@ -47,25 +47,39 @@ type User struct {
 	Password string  `json:"password"`
 }
 
+type InfraredDeviceType struct {
+	Name string `json:"name"`
+}
+
+type InfraredState struct {
+	DeviceTypeName string `json:"device_type_name"`
+	Name           string `json:"name"`
+	Type           string `json:"type"`
+}
+
 type Data struct {
-	Permissions    []Permission
-	Roles          []Role
-	NodeClasses    []NodeClass
-	PayloadSchemas []PayloadSchema
-	Actions        []Action
-	Users          []User
+	Permissions         []Permission
+	Roles               []Role
+	NodeClasses         []NodeClass
+	PayloadSchemas      []PayloadSchema
+	Actions             []Action
+	Users               []User
+	InfraredDeviceTypes []InfraredDeviceType
+	InfraredStates      []InfraredState
 }
 
 func Load() (Data, error) {
 	var data Data
 
 	targets := map[string]any{
-		"permission.json":     &data.Permissions,
-		"role.json":           &data.Roles,
-		"node_class.json":     &data.NodeClasses,
-		"payload_schema.json": &data.PayloadSchemas,
-		"action.json":         &data.Actions,
-		"user.json":           &data.Users,
+		"permission.json":           &data.Permissions,
+		"role.json":                 &data.Roles,
+		"node_class.json":           &data.NodeClasses,
+		"payload_schema.json":       &data.PayloadSchemas,
+		"action.json":               &data.Actions,
+		"user.json":                 &data.Users,
+		"infrared_device_type.json": &data.InfraredDeviceTypes,
+		"infrared_state.json":       &data.InfraredStates,
 	}
 
 	for name, out := range targets {

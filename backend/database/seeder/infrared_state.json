@@ -1,0 +1,7 @@
+[
+  { "device_type_name": "Air Conditioner", "name": "POWER", "type": "ENUM" },
+  { "device_type_name": "Air Conditioner", "name": "MODE", "type": "ENUM" },
+  { "device_type_name": "Air Conditioner", "name": "FAN_SPEED", "type": "ENUM" },
+  { "device_type_name": "Air Conditioner", "name": "TEMPERATURE", "type": "RANGE" },
+  { "device_type_name": "Air Conditioner", "name": "SWING", "type": "ENUM" }
+]
