@@ -1,6 +1,8 @@
 package domainmodels
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -16,20 +18,40 @@ type InfraredDevice struct {
 	Model                string
 }
 
+const (
+	InfraredRecordingStateDraft               = "DRAFT"
+	InfraredRecordingStateCasesGenerating     = "CASES_GENERATING"
+	InfraredRecordingStateRecording           = "RECORDING"
+	InfraredRecordingStateAnalyzing           = "ANALYZING"
+	InfraredRecordingStateFunctionGenerating  = "FUNCTION_GENERATING"
+	InfraredRecordingStateTestCasesGenerating = "TEST_CASES_GENERATING"
+	InfraredRecordingStateTesting             = "TESTING"
+	InfraredRecordingStateCompleted           = "COMPLETED"
+	InfraredRecordingStateFailed              = "FAILED"
+)
+
 type InfraredRecordSession struct {
-	Id               uuid.UUID
-	NodeId           uuid.UUID
-	InfraredDeviceId uuid.UUID
-	RecordingState   string
-	IsCompleted      bool
+	Id                  uuid.UUID
+	NodeId              uuid.UUID
+	InfraredDeviceId    uuid.UUID
+	RecordingState      string
+	CurrentRecordCaseId *uuid.UUID
+	IsCompleted         bool
+	CreatedAt           time.Time
 }
 
-// __________[ STATEFUL PART (STATE) ]__________
+type InfraredStateType string
+
+const (
+	InfraredStateTypeRange InfraredStateType = "RANGE"
+	InfraredStateTypeEnum  InfraredStateType = "ENUM"
+)
 
 type InfraredState struct {
 	Id                   uuid.UUID
 	InfraredDeviceTypeId uuid.UUID
 	Name                 string
+	Type                 InfraredStateType
 }
 
 type InfraredStateDeviceDefinition struct {
@@ -42,11 +64,20 @@ type InfraredStateDeviceDefinition struct {
 	Step             *float64
 }
 
+type InfraredRecordCaseStatus string
+
+const (
+	InfraredRecordCaseStatusPending  InfraredRecordCaseStatus = "PENDING"
+	InfraredRecordCaseStatusActive   InfraredRecordCaseStatus = "ACTIVE"
+	InfraredRecordCaseStatusAccepted InfraredRecordCaseStatus = "ACCEPTED"
+)
+
 type InfraredStateDeviceRecordCase struct {
-	Id               uuid.UUID
-	InfraredDeviceId uuid.UUID
-	Step             int32
-	Description      string
+	Id                      uuid.UUID
+	InfraredRecordSessionId uuid.UUID
+	Step                    int32
+	Description             string
+	Status                  InfraredRecordCaseStatus
 }
 
 type InfraredStateDeviceRecordState struct {
@@ -56,8 +87,18 @@ type InfraredStateDeviceRecordState struct {
 	StateValue                      string
 }
 
+type InfraredRecordRawStatus string
+
+const (
+	InfraredRecordRawStatusCaptured  InfraredRecordRawStatus = "CAPTURED"
+	InfraredRecordRawStatusAccepted  InfraredRecordRawStatus = "ACCEPTED"
+	InfraredRecordRawStatusDiscarded InfraredRecordRawStatus = "DISCARDED"
+)
+
 type InfraredStateDeviceRecordRaw struct {
 	Id                              uuid.UUID
 	InfraredStateDeviceRecordCaseId uuid.UUID
 	RawData                         []byte
+	Status                          InfraredRecordRawStatus
+	DiscardedReason                 *string
 }
