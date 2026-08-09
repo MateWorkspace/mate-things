@@ -642,7 +642,7 @@ git commit -m "feat: add InfraredDevice/InfraredStateDeviceDefinition repositori
 
 **Interfaces:**
 - Consumes: `domainmodels.InfraredRecordSession` (Task 1).
-- Produces: `domaincontractsrepository.InfraredRecordSession` with `Create`, `GetById`, `UpdateRecordingStateById` (the generic single-method status-transition pattern from `ActionLog.UpdateStatusByExecutionId` — see `internal/infrastructure/repository/action_log/postgres.go` for the exact reference), and `UpdateCurrentRecordCaseIdById`.
+- Produces: `domaincontractsrepository.InfraredRecordSession` with `Create`, `GetById`, `GetActiveByNodeId`, `UpdateRecordingStateById` (the generic single-method status-transition pattern from `ActionLog.UpdateStatusByExecutionId` — see `internal/infrastructure/repository/action_log/postgres.go` for the exact reference), and `UpdateCurrentRecordCaseIdById`. `GetActiveByNodeId` is what Task 13's `CaptureIrRaw` will use to correlate an incoming MQTT capture (identified only by the node's device id) back to the session currently recording against it.
 
 - [ ] **Step 1: Write the domain contract**
 
@@ -659,6 +659,10 @@ import (
 type InfraredRecordSession interface {
 	Create(ctx context.Context, nodeId uuid.UUID, infraredDeviceId uuid.UUID) (id uuid.UUID, err error)
 	GetById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredRecordSession, error)
+	// GetActiveByNodeId returns the session currently RECORDING against the
+	// given node, or (nil, nil) if none is active — there is deliberately
+	// no error for the common "nothing recording right now" case.
+	GetActiveByNodeId(ctx context.Context, nodeId uuid.UUID) (*domainmodels.InfraredRecordSession, error)
 	UpdateRecordingStateById(ctx context.Context, id uuid.UUID, recordingState string, isCompleted bool) error
 	UpdateCurrentRecordCaseIdById(ctx context.Context, id uuid.UUID, currentRecordCaseId *uuid.UUID) error
 }
@@ -666,7 +670,7 @@ type InfraredRecordSession interface {
 
 - [ ] **Step 2: Write the Postgres implementation**
 
-Read `internal/infrastructure/repository/action_log/postgres.go`'s `UpdateStatusByExecutionId` and its `postgres_query.go`'s `queryUpdateStatusByExecutionId` first — `UpdateRecordingStateById` and `UpdateCurrentRecordCaseIdById` are direct analogs (a squirrel `Update(...).Set(...).Where(squirrel.Eq{"id": id})`, checking rows-affected via the command tag and returning `infrastructurerepositoryshared.NotFound(...)` if zero rows matched — confirm this check exists in the `action_log` reference and copy it; if it doesn't, a zero-rows update silently succeeding is acceptable here too, matching that reference exactly either way). `Create` inserts with `recording_state` defaulting to `'DRAFT'` at the SQL level (per the migration's `DEFAULT`) — the Go insert only supplies `id` (generated), `node_id`, `infrared_device_id`, letting every other column take its default.
+Read `internal/infrastructure/repository/action_log/postgres.go`'s `UpdateStatusByExecutionId` and its `postgres_query.go`'s `queryUpdateStatusByExecutionId` first — `UpdateRecordingStateById` and `UpdateCurrentRecordCaseIdById` are direct analogs (a squirrel `Update(...).Set(...).Where(squirrel.Eq{"id": id})`, checking rows-affected via the command tag and returning `infrastructurerepositoryshared.NotFound(...)` if zero rows matched — confirm this check exists in the `action_log` reference and copy it; if it doesn't, a zero-rows update silently succeeding is acceptable here too, matching that reference exactly either way). `Create` inserts with `recording_state` defaulting to `'DRAFT'` at the SQL level (per the migration's `DEFAULT`) — the Go insert only supplies `id` (generated), `node_id`, `infrared_device_id`, letting every other column take its default. `GetActiveByNodeId` is a `Select(...).Where(squirrel.Eq{"node_id": nodeId, "recording_state": domainmodels.InfraredRecordingStateRecording}).Limit(1)` — on `pgx.ErrNoRows`, return `(nil, nil)`, not an error (this is the normal "nothing recording" case, not a failure).
 
 - [ ] **Step 3: Verify**
 
@@ -1619,10 +1623,10 @@ git commit -m "feat: add LLM-driven case script writing and press-order"
 - Create: `backend/internal/application/infrared/record_session_management/usecase_test.go`
 
 **Interfaces:**
-- Consumes: every repository from Tasks 4–7, `applicationinfraredcasegeneration.Generate`/`WriteScript` (Tasks 8, 12), `domaincontractsbroadcaster.InfraredRecordSession` (Task 9), an LLM `ClientFactory`-shaped dependency (the merged prior plan's `infrastructurellm.ClientFactory`, injected as an interface — see Step 4 for the exact shape this usecase needs from it).
-- Produces: `domainusecasesinfrared.RecordSessionManagement` with `Start`, `GetById`, `ListCases`, `AcceptRaw`, `DiscardRaw`, `RetryCase`, `CaptureIrRaw` (the MQTT-driven entry point Task 11's handler calls).
+- Consumes: every repository from Tasks 4–7, `applicationinfraredcasegeneration.Generate`/`WriteScript` (Tasks 8, 12), `domaincontractsbroadcaster.InfraredRecordSession` (Task 9), an LLM `ClientFactory`-shaped dependency (the merged prior plan's `infrastructurellm.ClientFactory`, injected as an interface — see Step 4 for the exact shape this usecase needs from it), and the existing `domaincontractsrepository.Node` repository (find its device-lookup method — confirmed to exist, since `internal/domain/models/node.go`'s `DeviceId` field is used for MQTT addressing elsewhere).
+- Produces: `domainusecasesinfrared.RecordSessionManagement` with `Start`, `GetById`, `ListCases`, `AcceptRaw`, `DiscardRaw`, `RetryCase`, `CaptureIrRaw` (the MQTT-driven entry point Task 11's handler calls, using Task 6's `GetActiveByNodeId` to correlate the capture to a session).
 
-This is the task where the background-goroutine pattern is designed — there is no existing convention in this codebase to copy (confirmed by the earlier survey), so this task defines it.
+This is the task where the background-goroutine pattern is designed — there is no existing convention in this codebase to copy (confirmed by the earlier survey), so this task defines it. `CaptureIrRaw`'s real implementation (not a stub) is written here too, in the same task, since it needs nothing that only composition wiring can provide — Task 15 is pure wiring.
 
 - [ ] **Step 1: Write the usecase interface and request/result DTOs**
 
@@ -1721,6 +1725,18 @@ func (f *fakeSessionRepository) UpdateRecordingStateById(_ context.Context, _ uu
 func (f *fakeSessionRepository) UpdateCurrentRecordCaseIdById(_ context.Context, _ uuid.UUID, _ *uuid.UUID) error {
 	return nil
 }
+func (f *fakeSessionRepository) GetActiveByNodeId(_ context.Context, _ uuid.UUID) (*domainmodels.InfraredRecordSession, error) {
+	return f.getResult, nil
+}
+
+type fakeNodeRepository struct {
+	domaincontractsrepository.Node
+	result *domainmodels.Node
+}
+
+func (f *fakeNodeRepository) GetByDeviceId(_ context.Context, _ string) (*domainmodels.Node, error) {
+	return f.result, nil
+}
 
 type fakeDeviceRepository struct {
 	domaincontractsrepository.InfraredDevice
@@ -1758,6 +1774,15 @@ func (f *fakeStateRepository) ListByDeviceTypeId(_ context.Context, _ uuid.UUID)
 
 type fakeCaseRepository struct {
 	domaincontractsrepository.InfraredStateDeviceRecordCase
+	createRawCaseId uuid.UUID
+	createRawData   []byte
+	createRawCalls  int
+}
+
+func (f *fakeCaseRepository) CreateRaw(_ context.Context, caseId uuid.UUID, rawData []byte) (uuid.UUID, error) {
+	f.createRawCaseId, f.createRawData = caseId, rawData
+	f.createRawCalls++
+	return uuid.New(), nil
 }
 
 type fakeBroadcaster struct {
@@ -1786,7 +1811,7 @@ func TestStartRejectsEmptyBrand(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
-		nil, &noopLogger{},
+		nil, &fakeNodeRepository{}, &noopLogger{},
 	)
 
 	_, err := usecase.Start(context.Background(), domainusecasesinfrared.StartRecordSessionRequest{
@@ -1804,7 +1829,7 @@ func TestStartCreatesDeviceDefinitionsAndSessionThenKicksOffCaseGeneration(t *te
 	usecase := NewUsecaseImpl(
 		sessionRepo, deviceRepo, definitionRepo,
 		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
-		nil, &noopLogger{},
+		nil, &fakeNodeRepository{}, &noopLogger{},
 	)
 
 	nodeId := uuid.New()
@@ -1845,12 +1870,66 @@ func TestDiscardRawRequiresNonEmptyReason(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
-		nil, &noopLogger{},
+		nil, &fakeNodeRepository{}, &noopLogger{},
 	)
 
 	err := usecase.DiscardRaw(context.Background(), uuid.New(), "")
 	if !errors.Is(err, domainmodels.ErrTypeValidation) {
 		t.Fatalf("DiscardRaw() error = %v, want validation error", err)
+	}
+}
+
+func TestCaptureIrRawPersistsRawAgainstCurrentCase(t *testing.T) {
+	caseId := uuid.New()
+	sessionId := uuid.New()
+	nodeId := uuid.New()
+
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{
+		Id: sessionId, RecordingState: domainmodels.InfraredRecordingStateRecording, CurrentRecordCaseId: &caseId,
+	}}
+	caseRepo := &fakeCaseRepository{}
+	nodeRepo := &fakeNodeRepository{result: &domainmodels.Node{Id: nodeId}}
+	broadcaster := &fakeBroadcaster{}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, broadcaster, &fakeSubscriptions{},
+		nil, nodeRepo, &noopLogger{},
+	)
+
+	err := usecase.CaptureIrRaw(context.Background(), domainusecasesinfrared.CaptureIrRawRequest{
+		NodeDeviceId: "AC276E5E030C", RawData: []int32{9000, 4500, 560, 560},
+	})
+	if err != nil {
+		t.Fatalf("CaptureIrRaw() error = %v, want nil", err)
+	}
+	if caseRepo.createRawCalls != 1 {
+		t.Fatalf("CreateRaw() calls = %d, want 1", caseRepo.createRawCalls)
+	}
+	if caseRepo.createRawCaseId != caseId {
+		t.Fatalf("CreateRaw() case id = %v, want the session's CurrentRecordCaseId %v", caseRepo.createRawCaseId, caseId)
+	}
+	if len(broadcaster.sentEvents) != 1 || broadcaster.sentEvents[0].SessionId != sessionId {
+		t.Fatalf("broadcaster sent events = %+v, want one event for session %v", broadcaster.sentEvents, sessionId)
+	}
+}
+
+func TestCaptureIrRawDoesNothingWhenNodeUnknown(t *testing.T) {
+	caseRepo := &fakeCaseRepository{}
+	usecase := NewUsecaseImpl(
+		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{result: nil}, &noopLogger{},
+	)
+
+	err := usecase.CaptureIrRaw(context.Background(), domainusecasesinfrared.CaptureIrRawRequest{
+		NodeDeviceId: "unknown-device", RawData: []int32{9000},
+	})
+	if err != nil {
+		t.Fatalf("CaptureIrRaw() error = %v, want nil (unknown node is a no-op, not a failure)", err)
+	}
+	if caseRepo.createRawCalls != 0 {
+		t.Fatalf("CreateRaw() calls = %d, want 0", caseRepo.createRawCalls)
 	}
 }
 ```
@@ -1869,6 +1948,7 @@ package applicationinfraredrecordsessionmanagement
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	applicationinfraredcasegeneration "github.com/MateWorkspace/mate-things/backend/internal/application/infrared/case_generation"
@@ -1901,6 +1981,7 @@ type usecase struct {
 	broadcaster   domaincontractsbroadcaster.InfraredRecordSession
 	subscriptions domaincontractsnode.Subscriptions
 	llmFactory    LlmClientFactory
+	node          domaincontractsrepository.Node
 	logger        domaincontractslogger.Leveled
 }
 
@@ -1913,12 +1994,13 @@ func NewUsecaseImpl(
 	broadcaster domaincontractsbroadcaster.InfraredRecordSession,
 	subscriptions domaincontractsnode.Subscriptions,
 	llmFactory LlmClientFactory,
+	node domaincontractsrepository.Node,
 	logger domaincontractslogger.Leveled,
 ) domainusecasesinfrared.RecordSessionManagement {
 	return &usecase{
 		session: session, device: device, definition: definition, state: state,
 		recordCase: recordCase, broadcaster: broadcaster, subscriptions: subscriptions,
-		llmFactory: llmFactory, logger: logger,
+		llmFactory: llmFactory, node: node, logger: logger,
 	}
 }
 
@@ -2089,22 +2171,43 @@ func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
 }
 
 func (u *usecase) CaptureIrRaw(ctx context.Context, request domainusecasesinfrared.CaptureIrRawRequest) error {
-	// Deferred to Task 15's composition wiring note: correlating a
-	// NodeDeviceId back to the InfraredRecordSession currently RECORDING
-	// against that node (and its CurrentRecordCaseId) requires a node
-	// lookup by DeviceId this usecase doesn't have a repository for yet.
-	// This method's body is completed in this task using whatever node
-	// repository method already exists for that lookup (grep
-	// domaincontractsrepository.Node for a GetByDeviceId-shaped method) —
-	// inject that repository as an added constructor parameter here rather
-	// than leaving this as a stub; the plan's own "no placeholders" rule
-	// applies to this method's real implementation, written when this task
-	// is actually executed against the real Node repository interface.
-	panic("implemented in Task 13 execution against the real Node repository — see comment")
+	const tag = "infrared/record_session_management/CaptureIrRaw"
+
+	node, err := u.node.GetByDeviceId(ctx, request.NodeDeviceId)
+	if err != nil || node == nil {
+		u.logger.Warn(ctx, tag, "ir capture from unknown node", domainmodels.LoggerMeta{"device_id": request.NodeDeviceId})
+		return nil
+	}
+
+	session, err := u.session.GetActiveByNodeId(ctx, node.Id)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to look up active session for node", domainmodels.LoggerMeta{"err": err, "node_id": node.Id})
+		return err
+	}
+	if session == nil || session.CurrentRecordCaseId == nil {
+		u.logger.Warn(ctx, tag, "ir capture with no active recording case", domainmodels.LoggerMeta{"node_id": node.Id})
+		return nil
+	}
+
+	rawBytes, err := json.Marshal(request.RawData)
+	if err != nil {
+		return domainmodels.NewError("failed to encode raw ir data", domainmodels.ErrTypeFailure, err)
+	}
+	if _, err := u.recordCase.CreateRaw(ctx, *session.CurrentRecordCaseId, rawBytes); err != nil {
+		u.logger.Error(ctx, tag, "failed to persist raw capture", domainmodels.LoggerMeta{"err": err, "case_id": *session.CurrentRecordCaseId})
+		return err
+	}
+
+	if err := u.broadcaster.Send(ctx, domainmodels.InfraredRecordSessionEvent{
+		SessionId: session.Id, RecordingState: session.RecordingState, CurrentRecordCaseId: session.CurrentRecordCaseId,
+	}); err != nil {
+		u.logger.Warn(ctx, tag, "failed to broadcast raw capture", domainmodels.LoggerMeta{"err": err, "session_id": session.Id})
+	}
+	return nil
 }
 ```
 
-**This `panic` is a marker for the implementer, not a placeholder left in shipped code.** Before this task is done, the implementer must: find the existing `domaincontractsrepository.Node` (or equivalent) interface's device-lookup method (confirmed to exist, since `internal/domain/models/node.go`'s `DeviceId` field is used for MQTT addressing elsewhere), add that repository as a new constructor parameter, and write `CaptureIrRaw`'s real body: look up the node by `request.NodeDeviceId`, find the session currently `RECORDING` against that node's id (add a repository method `GetActiveByNodeId(ctx, nodeId) (*domainmodels.InfraredRecordSession, error)` to `InfraredRecordSession`'s contract and implementation in this task if one doesn't already exist), create a `RecordRaw` row against `session.CurrentRecordCaseId` via `u.recordCase.CreateRaw(...)`, and broadcast the update. Write this with the same TDD discipline as the rest of this task — a test asserting `CaptureIrRaw` creates a raw row against the correct case and does nothing (no error, no row) when no node/session match is found.
+`u.node.GetByDeviceId` is a placeholder method name for this draft — before writing this method for real, grep the actual `domaincontractsrepository.Node` (or equivalent) interface for its real device-lookup method name and signature, and use that exact name instead (it is confirmed to exist, since `internal/domain/models/node.go`'s `DeviceId` field is used for MQTT addressing elsewhere in this codebase — this task is finding and reusing it, not inventing a new one). If the real repository's `Node` type or lookup method differs in shape from the sketch above (e.g. returns an error type this file needs to import differently), adapt accordingly — the logic (look up node, find its active session, persist the raw capture against the current case, broadcast) is what this task must preserve, not the exact placeholder names.
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
@@ -2239,70 +2342,19 @@ git commit -m "feat: add infrared record session HTTP endpoints"
 
 ---
 
-### Task 15: Composition wiring, node lookup, and MQTT subscription trigger
+### Task 15: Composition wiring
 
 **Files:**
 - Modify: `backend/internal/composition/main/infrastructure.go`
 - Modify: `backend/internal/composition/main/application.go`
 - Modify: `backend/internal/composition/main/presentation.go`
-- Modify: `backend/internal/application/infrared/record_session_management/usecase.go` (complete `CaptureIrRaw` and wire the node repository, per Task 13's note)
 
 **Interfaces:**
-- Consumes: every repository, the case generator, the broadcaster, and the handler from Tasks 4–14; `infrastructurellm.ClientFactory` (merged prior plan); the existing node repository (find its `GetByDeviceId`-shaped method).
+- Consumes: every repository, the case generator, the broadcaster, and the handler from Tasks 4–14; `infrastructurellm.ClientFactory` (merged prior plan); the existing node repository (already a constructor dependency of Task 13's usecase).
 
-- [ ] **Step 1: Complete `CaptureIrRaw`**
+Pure wiring — no business logic. `CaptureIrRaw` is already fully implemented and tested as of Task 13; this task only constructs and connects everything.
 
-Add the node repository as a new constructor parameter to `usecase.go` (per Task 13's note), add `GetActiveByNodeId(ctx, nodeId uuid.UUID) (*domainmodels.InfraredRecordSession, error)` to the session repository's contract and Postgres implementation (a `WHERE node_id = ? AND recording_state = 'RECORDING'` query, `LIMIT 1`), and write `CaptureIrRaw`'s real body:
-
-```go
-func (u *usecase) CaptureIrRaw(ctx context.Context, request domainusecasesinfrared.CaptureIrRawRequest) error {
-	const tag = "infrared/record_session_management/CaptureIrRaw"
-
-	node, err := u.node.GetByDeviceId(ctx, request.NodeDeviceId)
-	if err != nil || node == nil {
-		u.logger.Warn(ctx, tag, "ir capture from unknown node", domainmodels.LoggerMeta{"device_id": request.NodeDeviceId})
-		return nil
-	}
-
-	session, err := u.session.GetActiveByNodeId(ctx, node.Id)
-	if err != nil {
-		u.logger.Error(ctx, tag, "failed to look up active session for node", domainmodels.LoggerMeta{"err": err, "node_id": node.Id})
-		return err
-	}
-	if session == nil || session.CurrentRecordCaseId == nil {
-		u.logger.Warn(ctx, tag, "ir capture with no active recording case", domainmodels.LoggerMeta{"node_id": node.Id})
-		return nil
-	}
-
-	rawBytes, err := encodeRawData(request.RawData)
-	if err != nil {
-		return err
-	}
-	if _, err := u.recordCase.CreateRaw(ctx, *session.CurrentRecordCaseId, rawBytes); err != nil {
-		u.logger.Error(ctx, tag, "failed to persist raw capture", domainmodels.LoggerMeta{"err": err, "case_id": *session.CurrentRecordCaseId})
-		return err
-	}
-
-	if err := u.broadcaster.Send(ctx, domainmodels.InfraredRecordSessionEvent{
-		SessionId: session.Id, RecordingState: session.RecordingState, CurrentRecordCaseId: session.CurrentRecordCaseId,
-	}); err != nil {
-		u.logger.Warn(ctx, tag, "failed to broadcast raw capture", domainmodels.LoggerMeta{"err": err, "session_id": session.Id})
-	}
-	return nil
-}
-
-func encodeRawData(rawData []int32) ([]byte, error) {
-	payload, err := json.Marshal(rawData)
-	if err != nil {
-		return nil, domainmodels.NewError("failed to encode raw ir data", domainmodels.ErrTypeFailure, err)
-	}
-	return payload, nil
-}
-```
-
-Add the corresponding constructor parameter and `import "encoding/json"`. Write one test in `usecase_test.go` (replacing the `panic` version's test gap): `TestCaptureIrRawPersistsRawAgainstCurrentCase` using a hand-written fake node repository and a session repository fake returning a non-nil `GetActiveByNodeId` result with a `CurrentRecordCaseId` set — assert `recordCase.CreateRaw` was called with that exact case id and the JSON-encoded `RawData`.
-
-- [ ] **Step 2: Wire everything into the composition root**
+- [ ] **Step 1: Wire everything into the composition root**
 
 In `infrastructure.go`, construct every new repository (`infraredDeviceTypeRepository`, `infraredStateRepository`, `infraredDeviceRepository`, `infraredStateDeviceDefinitionRepository`, `infraredRecordSessionRepository`, `infraredStateDeviceRecordCaseRepository`) and the broadcaster (`infraredRecordSessionBroadcaster := infrastructurebroadcasterinfraredrecordsession.NewGorillaImpl(config.HttpCorsAllowedOrigins)`), following the exact one-field-plus-one-constructor-line pattern used for every existing entity in that file.
 
@@ -2310,23 +2362,19 @@ In `application.go`, construct the usecase: `infraredRecordSessionManagement := 
 
 In `presentation.go`, construct the handler: `infraredHandler := presentationhttphandlerinfrared.NewHandler(l.app.infraredRecordSessionManagement, l.infra.infraredRecordSessionBroadcaster)`, and pass it (plus the `mqttHandler` struct's new `InfraredRecordSession` field from Task 11) into wherever the MQTT `Handler` and HTTP route registration are constructed.
 
-- [ ] **Step 3: Verify**
+- [ ] **Step 2: Verify**
 
 Run: `cd backend && go build ./... && go vet ./... && gofmt -l . && go test -count=1 ./...`
 Expected: no build/vet/gofmt output; every test from Tasks 1–15 passes; the only failures anywhere are pre-existing ones already known to be unrelated to this plan (confirm via `git log` that any failing package's test file predates this plan's first commit).
 
-- [ ] **Step 4: Manual smoke check (best-effort)**
+- [ ] **Step 3: Manual smoke check (best-effort)**
 
 If a local Postgres + this backend running is available: `POST /v1/infrared/record-sessions` with a body naming a real node and the seeded Air Conditioner device type plus five definitions, confirm a `202`-equivalent response (or whatever status Task 14 chose) with a session id, then `GET /v1/infrared/record-sessions/:id` a few seconds later and confirm `recording_state` has moved to `RECORDING` (or `FAILED`, if no LLM provider is configured — check `GET /v1/admin/llm-config` first, from the prior plan, and configure one if `api_key_set` is `false`). If no environment is available, skip and say so — same as the prior plan's Task 11.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add backend/internal/composition/main/ \
-        backend/internal/application/infrared/record_session_management/usecase.go \
-        backend/internal/application/infrared/record_session_management/usecase_test.go \
-        backend/internal/domain/contracts/repository/infrared_record_session.go \
-        backend/internal/infrastructure/repository/infrared_record_session/
+git add backend/internal/composition/main/
 git commit -m "feat: wire IR recording session capture pipeline into composition root"
 ```
 
@@ -2335,5 +2383,5 @@ git commit -m "feat: wire IR recording session capture pipeline into composition
 ## Self-review notes
 
 - **Spec coverage:** every element of the design spec's B1-scoped pipeline (form submission → device/definition creation → deterministic case enumeration → LLM script/ordering → MQTT capture → misclick retry via case/raw status → live status via websocket) has a task. Analysis, function generation, goja, test-case generation, and the TESTING loop are explicitly out of scope for B1 and are named as such in the Goal.
-- **Placeholder scan:** the one `panic(...)` in Task 13's `CaptureIrRaw` draft is explicitly called out as a marker completed within that same task's execution (per its own instructions), not a shipped stub — and Task 15 shows the exact real implementation that replaces it, so no task in this plan actually ends with unimplemented logic.
-- **Type consistency:** `domainmodels.InfraredRecordSession`/`InfraredStateDeviceRecordCase`/etc. (Task 1) are used with identical field names across every repository, usecase, and HTTP task. `applicationinfraredcasegeneration.GeneratedCase` (Task 8) gains its `Description` field in Task 12, and every later reference to it (Task 13) already expects that field. `domainusecasesinfrared.RecordSessionManagement`'s method set (Task 13) matches the handler methods built against it in Task 14 one-to-one.
+- **Placeholder scan:** no shipped stub or `panic` remains — `CaptureIrRaw` is fully implemented and tested in Task 13 itself (an earlier draft of this plan split it across Task 13 and Task 15, which was a real self-contradiction caught by the pre-execution conflict scan and fixed before dispatch: the method needs nothing composition-layer-specific, so it belongs in the same task as the rest of the usecase, and Task 15 is pure wiring).
+- **Type consistency:** `domainmodels.InfraredRecordSession`/`InfraredStateDeviceRecordCase`/etc. (Task 1) are used with identical field names across every repository, usecase, and HTTP task. `applicationinfraredcasegeneration.GeneratedCase` (Task 8) gains its `Description` field in Task 12, and every later reference to it (Task 13) already expects that field. `domainusecasesinfrared.RecordSessionManagement`'s method set (Task 13) matches the handler methods built against it in Task 14 one-to-one. `domaincontractsrepository.InfraredRecordSession.GetActiveByNodeId` (Task 6) and `NewUsecaseImpl`'s final 10-parameter signature (Task 13) are used identically by Task 15's wiring line.
