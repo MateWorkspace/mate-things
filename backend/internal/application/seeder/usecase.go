@@ -14,17 +14,19 @@ import (
 )
 
 type usecase struct {
-	permission      domaincontractsrepository.Permission
-	role            domaincontractsrepository.Role
-	rolePermission  domaincontractsrepository.RolePermission
-	nodeClass       domaincontractsrepository.NodeClass
-	nodeClassAction domaincontractsrepository.NodeClassAction
-	payloadSchema   domaincontractsrepository.PayloadSchema
-	action          domaincontractsrepository.Action
-	user            domaincontractsrepository.User
-	password        domaincontractsutility.Password
-	logger          domaincontractslogger.Leveled
-	data            seederdata.Data
+	permission         domaincontractsrepository.Permission
+	role               domaincontractsrepository.Role
+	rolePermission     domaincontractsrepository.RolePermission
+	nodeClass          domaincontractsrepository.NodeClass
+	nodeClassAction    domaincontractsrepository.NodeClassAction
+	payloadSchema      domaincontractsrepository.PayloadSchema
+	action             domaincontractsrepository.Action
+	user               domaincontractsrepository.User
+	infraredDeviceType domaincontractsrepository.InfraredDeviceType
+	infraredState      domaincontractsrepository.InfraredState
+	password           domaincontractsutility.Password
+	logger             domaincontractslogger.Leveled
+	data               seederdata.Data
 }
 
 func NewUsecaseImpl(
@@ -36,22 +38,26 @@ func NewUsecaseImpl(
 	payloadSchema domaincontractsrepository.PayloadSchema,
 	action domaincontractsrepository.Action,
 	user domaincontractsrepository.User,
+	infraredDeviceType domaincontractsrepository.InfraredDeviceType,
+	infraredState domaincontractsrepository.InfraredState,
 	password domaincontractsutility.Password,
 	logger domaincontractslogger.Leveled,
 	data seederdata.Data,
 ) domainusecasesseeder.Seeder {
 	return &usecase{
-		permission:      permission,
-		role:            role,
-		rolePermission:  rolePermission,
-		nodeClass:       nodeClass,
-		nodeClassAction: nodeClassAction,
-		payloadSchema:   payloadSchema,
-		action:          action,
-		user:            user,
-		password:        password,
-		logger:          logger,
-		data:            data,
+		permission:         permission,
+		role:               role,
+		rolePermission:     rolePermission,
+		nodeClass:          nodeClass,
+		nodeClassAction:    nodeClassAction,
+		payloadSchema:      payloadSchema,
+		action:             action,
+		user:               user,
+		infraredDeviceType: infraredDeviceType,
+		infraredState:      infraredState,
+		password:           password,
+		logger:             logger,
+		data:               data,
 	}
 }
 
@@ -89,6 +95,15 @@ func (u *usecase) Run(ctx context.Context) error {
 	}
 
 	if err := u.seedUsers(ctx, roleIds); err != nil {
+		return err
+	}
+
+	deviceTypeIds, err := u.seedInfraredDeviceTypes(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := u.seedInfraredStates(ctx, deviceTypeIds); err != nil {
 		return err
 	}
 
@@ -470,6 +485,83 @@ func (u *usecase) seedUsers(ctx context.Context, roleIds map[string]uuid.UUID) e
 		}
 
 		u.logger.Info(ctx, tag, "user created", domainmodels.LoggerMeta{"username": user.Username})
+	}
+
+	return nil
+}
+
+func (u *usecase) seedInfraredDeviceTypes(ctx context.Context) (map[string]uuid.UUID, error) {
+	const tag = "seeder/seedInfraredDeviceTypes"
+
+	ids := make(map[string]uuid.UUID, len(u.data.InfraredDeviceTypes))
+	for _, deviceType := range u.data.InfraredDeviceTypes {
+		existing, err := u.infraredDeviceType.ReadByName(ctx, deviceType.Name)
+		if err == nil {
+			u.logger.Debug(ctx, tag, "infrared device type already exists, skipping", domainmodels.LoggerMeta{"name": deviceType.Name})
+			ids[deviceType.Name] = existing.Id
+			continue
+		}
+		if !errors.Is(err, domainmodels.ErrTypeNotFound) {
+			u.logger.Error(ctx, tag, "failed to read infrared device type", domainmodels.LoggerMeta{
+				"err":  err,
+				"name": deviceType.Name,
+			})
+			return nil, err
+		}
+
+		id, err := u.infraredDeviceType.Create(ctx, deviceType.Name)
+		if err != nil {
+			u.logger.Error(ctx, tag, "failed to create infrared device type", domainmodels.LoggerMeta{
+				"err":  err,
+				"name": deviceType.Name,
+			})
+			return nil, err
+		}
+
+		u.logger.Info(ctx, tag, "infrared device type created", domainmodels.LoggerMeta{"name": deviceType.Name})
+		ids[deviceType.Name] = id
+	}
+
+	return ids, nil
+}
+
+func (u *usecase) seedInfraredStates(ctx context.Context, deviceTypeIds map[string]uuid.UUID) error {
+	const tag = "seeder/seedInfraredStates"
+
+	for _, state := range u.data.InfraredStates {
+		deviceTypeId, ok := deviceTypeIds[state.DeviceTypeName]
+		if !ok {
+			err := domainmodels.NewError("infrared device type not found for infrared_state seeding", domainmodels.ErrTypeNotFound, nil)
+			u.logger.Error(ctx, tag, "unknown infrared device type", domainmodels.LoggerMeta{
+				"err":         err,
+				"device_type": state.DeviceTypeName,
+			})
+			return err
+		}
+
+		existing, err := u.infraredState.ReadByDeviceTypeIdAndName(ctx, deviceTypeId, state.Name)
+		if err == nil {
+			u.logger.Debug(ctx, tag, "infrared state already exists, skipping", domainmodels.LoggerMeta{"name": state.Name})
+			_ = existing
+			continue
+		}
+		if !errors.Is(err, domainmodels.ErrTypeNotFound) {
+			u.logger.Error(ctx, tag, "failed to read infrared state", domainmodels.LoggerMeta{
+				"err":  err,
+				"name": state.Name,
+			})
+			return err
+		}
+
+		if _, err := u.infraredState.Create(ctx, deviceTypeId, state.Name, domainmodels.InfraredStateType(state.Type)); err != nil {
+			u.logger.Error(ctx, tag, "failed to create infrared state", domainmodels.LoggerMeta{
+				"err":  err,
+				"name": state.Name,
+			})
+			return err
+		}
+
+		u.logger.Info(ctx, tag, "infrared state created", domainmodels.LoggerMeta{"name": state.Name})
 	}
 
 	return nil

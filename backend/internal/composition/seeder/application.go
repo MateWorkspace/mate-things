@@ -31,6 +31,8 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		l.infra.payloadSchemaRepository,
 		l.infra.actionRepository,
 		l.infra.userRepository,
+		l.infra.infraredDeviceTypeRepository,
+		l.infra.infraredStateRepository,
 		l.infra.password,
 		l.infra.logger,
 		data,

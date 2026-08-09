@@ -11,6 +11,8 @@ import (
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	infrastructureloggerleveled "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/logger/leveled"
 	infrastructurerepositoryaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/action"
+	infrastructurerepositoryinfrareddevicetype "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_device_type"
+	infrastructurerepositoryinfraredstate "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state"
 	infrastructurerepositorynodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class"
 	infrastructurerepositorynodeclassaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class_action"
 	infrastructurerepositorypayloadschema "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/payload_schema"
@@ -24,14 +26,16 @@ import (
 type infrastructure struct {
 	logger domaincontractslogger.Leveled
 
-	actionRepository          domaincontractsrepository.Action
-	nodeClassRepository       domaincontractsrepository.NodeClass
-	nodeClassActionRepository domaincontractsrepository.NodeClassAction
-	payloadSchemaRepository   domaincontractsrepository.PayloadSchema
-	permissionRepository      domaincontractsrepository.Permission
-	roleRepository            domaincontractsrepository.Role
-	rolePermissionRepository  domaincontractsrepository.RolePermission
-	userRepository            domaincontractsrepository.User
+	actionRepository             domaincontractsrepository.Action
+	infraredDeviceTypeRepository domaincontractsrepository.InfraredDeviceType
+	infraredStateRepository      domaincontractsrepository.InfraredState
+	nodeClassRepository          domaincontractsrepository.NodeClass
+	nodeClassActionRepository    domaincontractsrepository.NodeClassAction
+	payloadSchemaRepository      domaincontractsrepository.PayloadSchema
+	permissionRepository         domaincontractsrepository.Permission
+	roleRepository               domaincontractsrepository.Role
+	rolePermissionRepository     domaincontractsrepository.RolePermission
+	userRepository               domaincontractsrepository.User
 
 	password domaincontractsutility.Password
 }
@@ -51,6 +55,8 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	sqrDollar := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
 	actionRepository := infrastructurerepositoryaction.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredDeviceTypeRepository := infrastructurerepositoryinfrareddevicetype.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredStateRepository := infrastructurerepositoryinfraredstate.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeClassRepository := infrastructurerepositorynodeclass.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeClassActionRepository := infrastructurerepositorynodeclassaction.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	payloadSchemaRepository := infrastructurerepositorypayloadschema.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -64,14 +70,16 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	l.infra = &infrastructure{
 		logger: logger,
 
-		actionRepository:          actionRepository,
-		nodeClassRepository:       nodeClassRepository,
-		nodeClassActionRepository: nodeClassActionRepository,
-		payloadSchemaRepository:   payloadSchemaRepository,
-		permissionRepository:      permissionRepository,
-		roleRepository:            roleRepository,
-		rolePermissionRepository:  rolePermissionRepository,
-		userRepository:            userRepository,
+		actionRepository:             actionRepository,
+		infraredDeviceTypeRepository: infraredDeviceTypeRepository,
+		infraredStateRepository:      infraredStateRepository,
+		nodeClassRepository:          nodeClassRepository,
+		nodeClassActionRepository:    nodeClassActionRepository,
+		payloadSchemaRepository:      payloadSchemaRepository,
+		permissionRepository:         permissionRepository,
+		roleRepository:               roleRepository,
+		rolePermissionRepository:     rolePermissionRepository,
+		userRepository:               userRepository,
 
 		password: password,
 	}
