@@ -2593,7 +2593,7 @@ In `infrastructure.go`, construct every new repository (`infraredDeviceTypeRepos
 
 In `application.go`, construct the usecase: `infraredRecordSessionManagement := applicationinfraredrecordsessionmanagement.NewUsecaseImpl(l.infra.infraredRecordSessionRepository, l.infra.infraredDeviceRepository, l.infra.infraredStateDeviceDefinitionRepository, l.infra.infraredStateRepository, l.infra.infraredStateDeviceRecordCaseRepository, l.infra.infraredRecordSessionBroadcaster, l.infra.nodeSubscriptions, l.infra.llmClientFactory, l.infra.nodeRepository, l.infra.logger)` — matching whatever exact parameter order Task 13/Step 1's final constructor signature ends up with.
 
-In `presentation.go`, construct the handler: `infraredHandler := presentationhttphandlerinfrared.NewHandler(l.app.infraredRecordSessionManagement, l.infra.infraredRecordSessionBroadcaster)`, and pass it (plus the `mqttHandler` struct's new `InfraredRecordSession` field from Task 11) into wherever the MQTT `Handler` and HTTP route registration are constructed.
+In `presentation.go`, construct the handler: `infraredHandler := presentationhttphandlerinfrared.NewHandler(l.app.infraredRecordSessionManagement, l.infra.infraredRecordSessionBroadcaster, l.infra.token)` (the third argument matches the `token domaincontractsutility.Token` field Task 14 added to the handler struct for `InfraredRecordSessionBroadcastRegister`'s own auth check — `l.infra.token` is the same dependency already passed to `presentationhttphandlertelemetry.NewHandler` in this same file), and pass it (plus the `mqttHandler` struct's new `InfraredRecordSession` field from Task 11) into wherever the MQTT `Handler` and HTTP route registration are constructed.
 
 - [ ] **Step 2: Verify**
 
