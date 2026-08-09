@@ -430,7 +430,7 @@ git commit -m "feat: add infrared device/definition/session/case/state/raw table
 
 ---
 
-### Task 4: Reference-data repositories (InfraredDeviceType, InfraredState)
+### Task 4: Reference-data repositories (InfraredDeviceType, InfraredState) and seed wiring
 
 **Files:**
 - Create: `backend/internal/domain/contracts/repository/infrared_device_type.go`
@@ -439,12 +439,14 @@ git commit -m "feat: add infrared device/definition/session/case/state/raw table
 - Create: `backend/internal/infrastructure/repository/infrared_device_type/postgres_query.go`
 - Create: `backend/internal/infrastructure/repository/infrared_state/postgres.go`
 - Create: `backend/internal/infrastructure/repository/infrared_state/postgres_query.go`
+- Modify: `backend/internal/application/seeder/usecase.go`
+- Modify: `backend/internal/composition/seeder/infrastructure.go`, `backend/internal/composition/seeder/application.go`
 
 **Interfaces:**
-- Consumes: `domainmodels.InfraredDeviceType`, `domainmodels.InfraredState` (Task 1); `infrastructurerepositoryshared.BasePostgres`/`MapPgxError`/`QueryBuildError` (existing).
-- Produces: `domaincontractsrepository.InfraredDeviceType` with `List(ctx) ([]domainmodels.InfraredDeviceType, error)`; `domaincontractsrepository.InfraredState` with `ListByDeviceTypeId(ctx, deviceTypeId uuid.UUID) ([]domainmodels.InfraredState, error)`.
+- Consumes: `domainmodels.InfraredDeviceType`, `domainmodels.InfraredState` (Task 1); `infrastructurerepositoryshared.BasePostgres`/`MapPgxError`/`QueryBuildError` (existing); `seederdata.Data.InfraredDeviceTypes`/`InfraredStates` (Task 2, already loadable but not yet persisted — this task closes that gap).
+- Produces: `domaincontractsrepository.InfraredDeviceType` with `List(ctx) ([]domainmodels.InfraredDeviceType, error)`, `ReadByName(ctx, name string) (domainmodels.InfraredDeviceType, error)`, `Create(ctx, name string) (uuid.UUID, error)`; `domaincontractsrepository.InfraredState` with `ListByDeviceTypeId(ctx, deviceTypeId uuid.UUID) ([]domainmodels.InfraredState, error)`, `ReadByDeviceTypeIdAndName(ctx, deviceTypeId uuid.UUID, name string) (domainmodels.InfraredState, error)`, `Create(ctx, deviceTypeId uuid.UUID, name string, stateType domainmodels.InfraredStateType) (uuid.UUID, error)`.
 
-Read-only reference data seeded once (Task 2) — no `Create`/`Update`/`Delete`. No dedicated test, per this codebase's repository-layer convention (matches `internal/infrastructure/repository/llm_config/` from the prior plan — no test file there either).
+Reference data is read-mostly at runtime (`List`/`ListByDeviceTypeId` are what later tasks consume), but Task 2 only made the seed JSON parseable into `seederdata.Data` — nothing persisted it. This task closes that gap: it adds the minimal `ReadByName`/`Create` pair each repository needs for idempotent seeding (mirroring `permission`'s `ReadByName`+`Create` pattern in `internal/infrastructure/repository/permission/postgres.go`), plus the seed-usecase functions and composition wiring that actually call them. No `Update`/`Delete` — this data is never edited after seeding. No dedicated repository test, per this codebase's convention (matches `internal/infrastructure/repository/llm_config/` — no test file there either); the seed usecase functions ARE covered by the existing `internal/application/seeder` test conventions if one exists for sibling `seedX` functions — check for `usecase_test.go` in that package and follow its pattern if present, otherwise no dedicated test is required (matching `seedPermissions`/`seedRoles`, which have none either).
 
 - [ ] **Step 1: Write the domain contracts**
 
@@ -457,10 +459,13 @@ import (
 	"context"
 
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	"github.com/google/uuid"
 )
 
 type InfraredDeviceType interface {
 	List(ctx context.Context) ([]domainmodels.InfraredDeviceType, error)
+	ReadByName(ctx context.Context, name string) (*domainmodels.InfraredDeviceType, error)
+	Create(ctx context.Context, name string) (id uuid.UUID, err error)
 }
 ```
 
@@ -478,24 +483,31 @@ import (
 
 type InfraredState interface {
 	ListByDeviceTypeId(ctx context.Context, infraredDeviceTypeId uuid.UUID) ([]domainmodels.InfraredState, error)
+	ReadByDeviceTypeIdAndName(ctx context.Context, infraredDeviceTypeId uuid.UUID, name string) (*domainmodels.InfraredState, error)
+	Create(ctx context.Context, infraredDeviceTypeId uuid.UUID, name string, stateType domainmodels.InfraredStateType) (id uuid.UUID, err error)
 }
 ```
 
+`ReadByName`/`ReadByDeviceTypeIdAndName` return `(nil, domainmodels.ErrTypeNotFound-wrapped-error)` when absent — follow `permission.ReadByName`'s exact not-found convention in `backend/internal/infrastructure/repository/permission/postgres.go` (wraps `pgx.ErrNoRows` via `infrastructurerepositoryshared.NotFound(...)`), since the seed usecase (Step 3 below) branches on `errors.Is(err, domainmodels.ErrTypeNotFound)` exactly like `seedPermissions` does.
+
 - [ ] **Step 2: Write both Postgres implementations**
 
-Follow the exact `BasePostgres` + squirrel pattern in `backend/internal/infrastructure/repository/llm_config/postgres.go` (read it first — constructor signature, `p.SqrD.Select(...)`, `p.Dt.Query`/`QueryRow`, `MapPgxError`/`QueryBuildError` usage). `infrared_device_type/postgres.go`:
+Follow the exact `BasePostgres` + squirrel pattern in `backend/internal/infrastructure/repository/llm_config/postgres.go` and the `ReadByName`/`Create` shapes in `backend/internal/infrastructure/repository/permission/postgres.go` (read both first — constructor signature, `p.SqrD.Select(...)`, `p.Dt.Query`/`QueryRow`, `MapPgxError`/`QueryBuildError`/`NotFound` usage). `infrared_device_type/postgres.go`:
 
 ```go
 package infrastructurerepositoryinfrareddevicetype
 
 import (
 	"context"
+	"errors"
 
 	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	infrastructurerepositoryshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/shared"
 	"github.com/MateWorkspace/mate-things/backend/pkg/pgxdt"
 	"github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type postgresImpl struct {
@@ -538,25 +550,162 @@ func (p *postgresImpl) List(ctx context.Context) ([]domainmodels.InfraredDeviceT
 	}
 	return result, nil
 }
+
+func (p *postgresImpl) ReadByName(ctx context.Context, name string) (*domainmodels.InfraredDeviceType, error) {
+	query, args, err := p.SqrD.Select("id", "name").From("infrared_device_type").Where(squirrel.Eq{"name": name}).ToSql()
+	if err != nil {
+		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build infrared_device_type read query", err)
+	}
+
+	var item domainmodels.InfraredDeviceType
+	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&item.Id, &item.Name); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, infrastructurerepositoryshared.NotFound("infrared_device_type not found", err)
+		}
+		return nil, infrastructurerepositoryshared.MapPgxError("failed to read infrared_device_type", err)
+	}
+	return &item, nil
+}
+
+func (p *postgresImpl) Create(ctx context.Context, name string) (id uuid.UUID, err error) {
+	query, args, err := p.SqrD.Insert("infrared_device_type").Columns("name").Values(name).Suffix("RETURNING id").ToSql()
+	if err != nil {
+		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create infrared_device_type query", err)
+	}
+
+	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&id); err != nil {
+		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create infrared_device_type", err)
+	}
+	return id, nil
+}
 ```
 
-`infrared_device_type/postgres_query.go` can stay empty of standalone query-builder functions for this task (the single query is inline above) — if the reviewer of this task's PR prefers matching the two-file split exactly, move the `Select(...).ToSql()` call into a `queryList()` method in `postgres_query.go` instead, mirroring `llm_config`'s split precisely.
+`infrared_device_type/postgres_query.go` can stay empty of standalone query-builder functions for this task (the queries are inline above) — if the reviewer of this task's PR prefers matching the two-file split exactly, move the `Select(...).ToSql()`/`Insert(...).ToSql()` calls into `postgres_query.go` methods instead, mirroring `llm_config`'s split precisely.
 
-Write `infrared_state/postgres.go` the same way, with `ListByDeviceTypeId` filtering `WHERE infrared_device_type_id = ?` via `p.SqrD.Select(...).Where(squirrel.Eq{"infrared_device_type_id": infraredDeviceTypeId})`, scanning the extra `type` column into a `string` and casting to `domainmodels.InfraredStateType`.
+Write `infrared_state/postgres.go` the same way: `ListByDeviceTypeId` filters `WHERE infrared_device_type_id = ?` via `p.SqrD.Select(...).Where(squirrel.Eq{"infrared_device_type_id": infraredDeviceTypeId})`, scanning the extra `type` column into a `string` and casting to `domainmodels.InfraredStateType`; `ReadByDeviceTypeIdAndName` filters on both `infrared_device_type_id` and `name` with the same not-found convention as above; `Create` inserts `infrared_device_type_id`, `name`, `type` and returns the generated `id`, taking `stateType domainmodels.InfraredStateType` and casting it to `string` for the `type` column value.
 
-- [ ] **Step 3: Verify**
+- [ ] **Step 3: Add seed-usecase functions**
 
-Run: `cd backend && go build ./... && go vet ./... && gofmt -l internal/domain/contracts/repository/ internal/infrastructure/repository/infrared_device_type/ internal/infrastructure/repository/infrared_state/`
+In `backend/internal/application/seeder/usecase.go`: add `infraredDeviceType domaincontractsrepository.InfraredDeviceType` and `infraredState domaincontractsrepository.InfraredState` fields to the `usecase` struct and `NewUsecaseImpl`'s parameter list (append after the existing `user` parameter, before `password`), threading them through the struct literal exactly like the other repository fields.
+
+Add two new methods, following `seedPermissions`'s exact idempotent-lookup-then-create shape:
+
+```go
+func (u *usecase) seedInfraredDeviceTypes(ctx context.Context) (map[string]uuid.UUID, error) {
+	const tag = "seeder/seedInfraredDeviceTypes"
+
+	ids := make(map[string]uuid.UUID, len(u.data.InfraredDeviceTypes))
+	for _, deviceType := range u.data.InfraredDeviceTypes {
+		existing, err := u.infraredDeviceType.ReadByName(ctx, deviceType.Name)
+		if err == nil {
+			u.logger.Debug(ctx, tag, "infrared device type already exists, skipping", domainmodels.LoggerMeta{"name": deviceType.Name})
+			ids[deviceType.Name] = existing.Id
+			continue
+		}
+		if !errors.Is(err, domainmodels.ErrTypeNotFound) {
+			u.logger.Error(ctx, tag, "failed to read infrared device type", domainmodels.LoggerMeta{
+				"err":  err,
+				"name": deviceType.Name,
+			})
+			return nil, err
+		}
+
+		id, err := u.infraredDeviceType.Create(ctx, deviceType.Name)
+		if err != nil {
+			u.logger.Error(ctx, tag, "failed to create infrared device type", domainmodels.LoggerMeta{
+				"err":  err,
+				"name": deviceType.Name,
+			})
+			return nil, err
+		}
+
+		u.logger.Info(ctx, tag, "infrared device type created", domainmodels.LoggerMeta{"name": deviceType.Name})
+		ids[deviceType.Name] = id
+	}
+
+	return ids, nil
+}
+
+func (u *usecase) seedInfraredStates(ctx context.Context, deviceTypeIds map[string]uuid.UUID) error {
+	const tag = "seeder/seedInfraredStates"
+
+	for _, state := range u.data.InfraredStates {
+		deviceTypeId, ok := deviceTypeIds[state.DeviceTypeName]
+		if !ok {
+			err := domainmodels.NewError("infrared device type not found for infrared_state seeding", domainmodels.ErrTypeNotFound, nil)
+			u.logger.Error(ctx, tag, "unknown infrared device type", domainmodels.LoggerMeta{
+				"err":         err,
+				"device_type": state.DeviceTypeName,
+			})
+			return err
+		}
+
+		existing, err := u.infraredState.ReadByDeviceTypeIdAndName(ctx, deviceTypeId, state.Name)
+		if err == nil {
+			u.logger.Debug(ctx, tag, "infrared state already exists, skipping", domainmodels.LoggerMeta{"name": state.Name})
+			_ = existing
+			continue
+		}
+		if !errors.Is(err, domainmodels.ErrTypeNotFound) {
+			u.logger.Error(ctx, tag, "failed to read infrared state", domainmodels.LoggerMeta{
+				"err":  err,
+				"name": state.Name,
+			})
+			return err
+		}
+
+		if _, err := u.infraredState.Create(ctx, deviceTypeId, state.Name, domainmodels.InfraredStateType(state.Type)); err != nil {
+			u.logger.Error(ctx, tag, "failed to create infrared state", domainmodels.LoggerMeta{
+				"err":  err,
+				"name": state.Name,
+			})
+			return err
+		}
+
+		u.logger.Info(ctx, tag, "infrared state created", domainmodels.LoggerMeta{"name": state.Name})
+	}
+
+	return nil
+}
+```
+
+Wire both into `Run(ctx)`, right after `seedUsers` (order doesn't matter relative to the existing chain — infrared reference data has no dependency on permissions/roles/users):
+
+```go
+	deviceTypeIds, err := u.seedInfraredDeviceTypes(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := u.seedInfraredStates(ctx, deviceTypeIds); err != nil {
+		return err
+	}
+```
+
+- [ ] **Step 4: Wire composition**
+
+In `backend/internal/composition/seeder/infrastructure.go`: construct `infraredDeviceTypeRepository := infrastructurerepositoryinfrareddevicetype.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)` and the equivalent for `infrared_state`, add both as fields on the infra struct, following the exact placement/pattern of `permissionRepository`.
+
+In `backend/internal/composition/seeder/application.go`: pass `l.infra.infraredDeviceTypeRepository` and `l.infra.infraredStateRepository` into `applicationseeder.NewUsecaseImpl(...)` at the position matching Step 3's new parameter order (after `l.infra.userRepository`, before `l.infra.password`).
+
+- [ ] **Step 5: Verify**
+
+Run: `cd backend && go build ./... && go vet ./... && gofmt -l internal/domain/contracts/repository/ internal/infrastructure/repository/infrared_device_type/ internal/infrastructure/repository/infrared_state/ internal/application/seeder/ internal/composition/seeder/`
 Expected: no output.
 
-- [ ] **Step 4: Commit**
+If a database is reachable in this environment, additionally run the seeder (per Task 2's Step 6 command) and confirm via `psql`: `SELECT name FROM infrared_device_type;` returns "Air Conditioner"; `SELECT name, type FROM infrared_state ORDER BY name;` returns the five seeded states. If no database is reachable, note that this end-to-end check was skipped and why — the build/vet/gofmt check is still mandatory and must be clean.
+
+- [ ] **Step 6: Commit**
 
 ```bash
 git add backend/internal/domain/contracts/repository/infrared_device_type.go \
         backend/internal/domain/contracts/repository/infrared_state.go \
         backend/internal/infrastructure/repository/infrared_device_type/ \
-        backend/internal/infrastructure/repository/infrared_state/
-git commit -m "feat: add InfraredDeviceType/InfraredState read repositories"
+        backend/internal/infrastructure/repository/infrared_state/ \
+        backend/internal/application/seeder/usecase.go \
+        backend/internal/composition/seeder/infrastructure.go \
+        backend/internal/composition/seeder/application.go
+git commit -m "feat: add InfraredDeviceType/InfraredState repositories and wire seed persistence"
 ```
 
 ---
@@ -2385,3 +2534,4 @@ git commit -m "feat: wire IR recording session capture pipeline into composition
 - **Spec coverage:** every element of the design spec's B1-scoped pipeline (form submission → device/definition creation → deterministic case enumeration → LLM script/ordering → MQTT capture → misclick retry via case/raw status → live status via websocket) has a task. Analysis, function generation, goja, test-case generation, and the TESTING loop are explicitly out of scope for B1 and are named as such in the Goal.
 - **Placeholder scan:** no shipped stub or `panic` remains — `CaptureIrRaw` is fully implemented and tested in Task 13 itself (an earlier draft of this plan split it across Task 13 and Task 15, which was a real self-contradiction caught by the pre-execution conflict scan and fixed before dispatch: the method needs nothing composition-layer-specific, so it belongs in the same task as the rest of the usecase, and Task 15 is pure wiring).
 - **Type consistency:** `domainmodels.InfraredRecordSession`/`InfraredStateDeviceRecordCase`/etc. (Task 1) are used with identical field names across every repository, usecase, and HTTP task. `applicationinfraredcasegeneration.GeneratedCase` (Task 8) gains its `Description` field in Task 12, and every later reference to it (Task 13) already expects that field. `domainusecasesinfrared.RecordSessionManagement`'s method set (Task 13) matches the handler methods built against it in Task 14 one-to-one. `domaincontractsrepository.InfraredRecordSession.GetActiveByNodeId` (Task 6) and `NewUsecaseImpl`'s final 10-parameter signature (Task 13) are used identically by Task 15's wiring line.
+- **Seed-persistence gap (found during execution, fixed):** the original Task 4 specified only read-only `List`/`ListByDeviceTypeId` repository methods, while Task 2 only made the seed JSON parseable into `seederdata.Data` — nothing in the plan as originally written ever called a `Create` to actually persist the seeded "Air Conditioner" device type/states. Fixed by amending Task 4 to add `ReadByName`/`Create` to both repositories plus `seedInfraredDeviceTypes`/`seedInfraredStates` usecase functions and composition wiring, so the seed data lands in the database end-to-end.
