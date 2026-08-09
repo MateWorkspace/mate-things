@@ -14,6 +14,7 @@ import (
 	applicationadminusermanagement "github.com/MateWorkspace/mate-things/backend/internal/application/admin/user_management"
 	applicationauthapikey "github.com/MateWorkspace/mate-things/backend/internal/application/auth/api_key"
 	applicationauthsession "github.com/MateWorkspace/mate-things/backend/internal/application/auth/session"
+	applicationinfraredrecordsessionmanagement "github.com/MateWorkspace/mate-things/backend/internal/application/infrared/record_session_management"
 	applicationnodeclassmanagement "github.com/MateWorkspace/mate-things/backend/internal/application/node/class_management"
 	applicationnodeconfigparameter "github.com/MateWorkspace/mate-things/backend/internal/application/node/config_parameter"
 	applicationnodeconfigvalue "github.com/MateWorkspace/mate-things/backend/internal/application/node/config_value"
@@ -44,6 +45,7 @@ import (
 	domainusecasesaction "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/action"
 	domainusecasesadmin "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/admin"
 	domainusecasesauth "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/auth"
+	domainusecasesinfrared "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/infrared"
 	domainusecasesnode "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node"
 	domainusecasesnodelog "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/node_log"
 	domainusecasespreferences "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/preferences"
@@ -78,6 +80,8 @@ type application struct {
 
 	authSession domainusecasesauth.Session
 	authApiKey  domainusecasesauth.ApiKey
+
+	infraredRecordSessionManagement domainusecasesinfrared.RecordSessionManagement
 
 	nodeClassManagement    domainusecasesnode.ClassManagement
 	nodeConfigParameter    domainusecasesnode.ConfigParameter
@@ -166,6 +170,19 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		userRepoCache,
 		roleRepoCache,
 		l.infra.apiKeyGenerator,
+		l.infra.logger,
+	)
+
+	infraredRecordSessionManagement := applicationinfraredrecordsessionmanagement.NewUsecaseImpl(
+		l.infra.infraredRecordSessionRepository,
+		l.infra.infraredDeviceRepository,
+		l.infra.infraredStateDeviceDefinitionRepository,
+		l.infra.infraredStateRepository,
+		l.infra.infraredStateDeviceRecordCaseRepository,
+		l.infra.infraredRecordSessionBroadcaster,
+		l.infra.nodeSubscriptions,
+		l.infra.llmClientFactory,
+		l.infra.nodeRepository,
 		l.infra.logger,
 	)
 
@@ -258,6 +275,8 @@ func (l *launcher) newApplication(ctx context.Context) error {
 
 		authSession: authSession,
 		authApiKey:  authApiKey,
+
+		infraredRecordSessionManagement: infraredRecordSessionManagement,
 
 		nodeClassManagement:    nodeClassManagement,
 		nodeConfigParameter:    nodeConfigParameter,

@@ -14,6 +14,7 @@ import (
 	domaincontractsstorage "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/storage"
 	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
+	infrastructurebroadcasterinfraredrecordsession "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/broadcaster/infrared_record_session"
 	infrastructurebroadcastertelemetry "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/broadcaster/telemetry"
 	infrastructurecacheaction "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/action"
 	infrastructurecacheapikey "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/api_key"
@@ -36,6 +37,12 @@ import (
 	infrastructurerepositoryapikey "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/api_key"
 	infrastructurerepositoryfirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/firmware"
 	infrastructurerepositoryfirmwareconfigparameter "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/firmware_config_parameter"
+	infrastructurerepositoryinfrareddevice "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_device"
+	infrastructurerepositoryinfrareddevicetype "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_device_type"
+	infrastructurerepositoryinfraredrecordsession "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_record_session"
+	infrastructurerepositoryinfraredstate "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state"
+	infrastructurerepositoryinfraredstatedevicedefinition "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state_device_definition"
+	infrastructurerepositoryinfraredstatedevicerecordcase "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state_device_record_case"
 	infrastructurerepositoryllmconfig "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/llm_config"
 	infrastructurerepositorynode "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node"
 	infrastructurerepositorynodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class"
@@ -62,23 +69,29 @@ type infrastructure struct {
 
 	transactor domaincontractsutility.Transactor
 
-	actionRepository                  domaincontractsrepository.Action
-	actionLogRepository               domaincontractsrepository.ActionLog
-	apiKeyRepository                  domaincontractsrepository.ApiKey
-	firmwareRepository                domaincontractsrepository.Firmware
-	firmwareConfigParameterRepository domaincontractsrepository.FirmwareConfigParameter
-	nodeRepository                    domaincontractsrepository.Node
-	nodeConfigValueRepository         domaincontractsrepository.NodeConfigValue
-	nodeLogRepository                 domaincontractsrepository.NodeLog
-	nodeClassRepository               domaincontractsrepository.NodeClass
-	nodeClassActionRepository         domaincontractsrepository.NodeClassAction
-	llmConfigRepository               domaincontractsrepository.LlmConfig
-	payloadSchemaRepository           domaincontractsrepository.PayloadSchema
-	permissionRepository              domaincontractsrepository.Permission
-	roleRepository                    domaincontractsrepository.Role
-	rolePermissionRepository          domaincontractsrepository.RolePermission
-	telemetryRecordRepository         domaincontractsrepository.TelemetryRecord
-	userRepository                    domaincontractsrepository.User
+	actionRepository                        domaincontractsrepository.Action
+	actionLogRepository                     domaincontractsrepository.ActionLog
+	apiKeyRepository                        domaincontractsrepository.ApiKey
+	firmwareRepository                      domaincontractsrepository.Firmware
+	firmwareConfigParameterRepository       domaincontractsrepository.FirmwareConfigParameter
+	infraredDeviceTypeRepository            domaincontractsrepository.InfraredDeviceType
+	infraredStateRepository                 domaincontractsrepository.InfraredState
+	infraredDeviceRepository                domaincontractsrepository.InfraredDevice
+	infraredStateDeviceDefinitionRepository domaincontractsrepository.InfraredStateDeviceDefinition
+	infraredRecordSessionRepository         domaincontractsrepository.InfraredRecordSession
+	infraredStateDeviceRecordCaseRepository domaincontractsrepository.InfraredStateDeviceRecordCase
+	nodeRepository                          domaincontractsrepository.Node
+	nodeConfigValueRepository               domaincontractsrepository.NodeConfigValue
+	nodeLogRepository                       domaincontractsrepository.NodeLog
+	nodeClassRepository                     domaincontractsrepository.NodeClass
+	nodeClassActionRepository               domaincontractsrepository.NodeClassAction
+	llmConfigRepository                     domaincontractsrepository.LlmConfig
+	payloadSchemaRepository                 domaincontractsrepository.PayloadSchema
+	permissionRepository                    domaincontractsrepository.Permission
+	roleRepository                          domaincontractsrepository.Role
+	rolePermissionRepository                domaincontractsrepository.RolePermission
+	telemetryRecordRepository               domaincontractsrepository.TelemetryRecord
+	userRepository                          domaincontractsrepository.User
 
 	actionCache          domaincontractscache.Action
 	apiKeyCache          domaincontractscache.ApiKey
@@ -97,7 +110,8 @@ type infrastructure struct {
 	nodePublisher     domaincontractsnode.Publish
 	nodeSubscriptions domaincontractsnode.Subscriptions
 
-	telemetryBroadcaster domaincontractsbroadcaster.Telemetry
+	telemetryBroadcaster             domaincontractsbroadcaster.Telemetry
+	infraredRecordSessionBroadcaster domaincontractsbroadcaster.InfraredRecordSession
 
 	password               domaincontractsutility.Password
 	token                  domaincontractsutility.Token
@@ -129,6 +143,12 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	apiKeyRepository := infrastructurerepositoryapikey.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	firmwareRepository := infrastructurerepositoryfirmware.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	firmwareConfigParameterRepository := infrastructurerepositoryfirmwareconfigparameter.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredDeviceTypeRepository := infrastructurerepositoryinfrareddevicetype.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredStateRepository := infrastructurerepositoryinfraredstate.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredDeviceRepository := infrastructurerepositoryinfrareddevice.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredStateDeviceDefinitionRepository := infrastructurerepositoryinfraredstatedevicedefinition.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredRecordSessionRepository := infrastructurerepositoryinfraredrecordsession.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredStateDeviceRecordCaseRepository := infrastructurerepositoryinfraredstatedevicerecordcase.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeRepository := infrastructurerepositorynode.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeConfigValueRepository := infrastructurerepositorynodeconfigvalue.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeLogRepository := infrastructurerepositorynodelog.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -163,6 +183,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	nodePublisher := infrastructurenodepublish.NewMqttImpl(l.drv.mqttClient)
 	nodeSubscriptions := infrastructurenodesubscriptions.NewMqttImpl(l.drv.mqttClient)
 	telemetryBroadcaster := infrastructurebroadcastertelemetry.NewGorillaImpl(config.HttpCorsAllowedOrigins)
+	infraredRecordSessionBroadcaster := infrastructurebroadcasterinfraredrecordsession.NewGorillaImpl(config.HttpCorsAllowedOrigins)
 	password := infrastructureutilitypassword.NewBcryptImpl(config.PasswordBcryptCost)
 	token := infrastructureutilitytoken.NewJwtImpl(
 		config.TokenAccessSecret,
@@ -184,23 +205,29 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 
 		transactor: transactor,
 
-		actionRepository:                  actionRepository,
-		actionLogRepository:               actionLogRepository,
-		apiKeyRepository:                  apiKeyRepository,
-		firmwareRepository:                firmwareRepository,
-		firmwareConfigParameterRepository: firmwareConfigParameterRepository,
-		nodeRepository:                    nodeRepository,
-		nodeConfigValueRepository:         nodeConfigValueRepository,
-		nodeLogRepository:                 nodeLogRepository,
-		nodeClassRepository:               nodeClassRepository,
-		nodeClassActionRepository:         nodeClassActionRepository,
-		llmConfigRepository:               llmConfigRepository,
-		payloadSchemaRepository:           payloadSchemaRepository,
-		permissionRepository:              permissionRepository,
-		roleRepository:                    roleRepository,
-		rolePermissionRepository:          rolePermissionRepository,
-		telemetryRecordRepository:         telemetryRecordRepository,
-		userRepository:                    userRepository,
+		actionRepository:                        actionRepository,
+		actionLogRepository:                     actionLogRepository,
+		apiKeyRepository:                        apiKeyRepository,
+		firmwareRepository:                      firmwareRepository,
+		firmwareConfigParameterRepository:       firmwareConfigParameterRepository,
+		infraredDeviceTypeRepository:            infraredDeviceTypeRepository,
+		infraredStateRepository:                 infraredStateRepository,
+		infraredDeviceRepository:                infraredDeviceRepository,
+		infraredStateDeviceDefinitionRepository: infraredStateDeviceDefinitionRepository,
+		infraredRecordSessionRepository:         infraredRecordSessionRepository,
+		infraredStateDeviceRecordCaseRepository: infraredStateDeviceRecordCaseRepository,
+		nodeRepository:                          nodeRepository,
+		nodeConfigValueRepository:               nodeConfigValueRepository,
+		nodeLogRepository:                       nodeLogRepository,
+		nodeClassRepository:                     nodeClassRepository,
+		nodeClassActionRepository:               nodeClassActionRepository,
+		llmConfigRepository:                     llmConfigRepository,
+		payloadSchemaRepository:                 payloadSchemaRepository,
+		permissionRepository:                    permissionRepository,
+		roleRepository:                          roleRepository,
+		rolePermissionRepository:                rolePermissionRepository,
+		telemetryRecordRepository:               telemetryRecordRepository,
+		userRepository:                          userRepository,
 
 		actionCache:          actionCache,
 		apiKeyCache:          apiKeyCache,
@@ -219,7 +246,8 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		nodePublisher:     nodePublisher,
 		nodeSubscriptions: nodeSubscriptions,
 
-		telemetryBroadcaster: telemetryBroadcaster,
+		telemetryBroadcaster:             telemetryBroadcaster,
+		infraredRecordSessionBroadcaster: infraredRecordSessionBroadcaster,
 
 		password:               password,
 		token:                  token,

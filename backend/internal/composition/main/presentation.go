@@ -9,6 +9,7 @@ import (
 	presentationhttphandleraction "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/action"
 	presentationhttphandleradmin "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/admin"
 	presentationhttphandlerauth "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/auth"
+	presentationhttphandlerinfrared "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/infrared"
 	presentationhttphandlernode "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/node"
 	presentationhttphandlernodelog "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/node_log"
 	presentationhttphandlerpreferences "github.com/MateWorkspace/mate-things/backend/internal/presentation/http/handler/preferences"
@@ -56,9 +57,15 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 	telemetryHandler := presentationhttphandlertelemetry.NewHandler(l.app.telemetryQuery, l.app.telemetryBroadcast, l.infra.token)
 	nodeLogHandler := presentationhttphandlernodelog.NewHandler(l.app.nodeLogQuery)
 	preferencesHandler := presentationhttphandlerpreferences.NewHandler(l.app.preferencesUpdate)
+	infraredHandler := presentationhttphandlerinfrared.NewHandler(
+		l.app.infraredRecordSessionManagement,
+		l.infra.infraredRecordSessionBroadcaster,
+		l.infra.token,
+	)
 	presentationmqtthandler.New(
 		l.infra.logger,
 		l.app.nodeMessagingCallback,
+		l.app.infraredRecordSessionManagement,
 	)
 
 	l.drv.echo.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
@@ -97,6 +104,7 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 		Telemetry:     telemetryHandler,
 		NodeLog:       nodeLogHandler,
 		Preferences:   preferencesHandler,
+		Infrared:      infraredHandler,
 		Token:         l.infra.token,
 		ApiKeyAuth:    l.app.authApiKey,
 		MinioProxy:    presentationhttpproxy.NewMinioProxy(config.MinioEndpoint, config.MinioUseSsl),
