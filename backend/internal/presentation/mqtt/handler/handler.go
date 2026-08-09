@@ -9,7 +9,7 @@ import (
 type Handler struct {
 	Logger                domaincontractslogger.Leveled
 	MessagingCallback     domainusecasesnode.MessagingCallback
-	InfraredRecordSession domainusecasesinfrared.RecordSession
+	InfraredRecordSession domainusecasesinfrared.RecordSessionManagement
 }
 
 var H *Handler
@@ -17,7 +17,7 @@ var H *Handler
 func New(
 	logger domaincontractslogger.Leveled,
 	messagingCallback domainusecasesnode.MessagingCallback,
-	infraredRecordSession domainusecasesinfrared.RecordSession,
+	infraredRecordSession domainusecasesinfrared.RecordSessionManagement,
 ) *Handler {
 	H = &Handler{
 		Logger:                logger,
