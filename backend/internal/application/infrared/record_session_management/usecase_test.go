@@ -152,6 +152,28 @@ func (f *fakeCoderRepository) GetBySessionId(_ context.Context, _ uuid.UUID) (*d
 	return f.getResult, nil
 }
 
+type fakeTestCaseRepository struct {
+	domaincontractsrepository.InfraredTestCase
+	mu                 sync.Mutex
+	createdTestCaseIds []uuid.UUID
+}
+
+func (f *fakeTestCaseRepository) CreateWithStates(_ context.Context, _ uuid.UUID, _ int32, _ string, _ []domainmodels.InfraredTestCaseState) (uuid.UUID, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	id := uuid.New()
+	f.createdTestCaseIds = append(f.createdTestCaseIds, id)
+	return id, nil
+}
+
+// CreatedTestCaseIds returns a snapshot, safe to read while the background
+// goroutine may still be appending to createdTestCaseIds concurrently.
+func (f *fakeTestCaseRepository) CreatedTestCaseIds() []uuid.UUID {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]uuid.UUID(nil), f.createdTestCaseIds...)
+}
+
 type fakeCaseRepository struct {
 	domaincontractsrepository.InfraredStateDeviceRecordCase
 	mu              sync.Mutex
@@ -247,13 +269,23 @@ func (f *fakeLlmClient) GenerateText(_ context.Context, _ domaincontractsllm.Gen
 }
 
 type fakeLlmClientFactory struct {
-	err          error
-	responseText string
+	err           error
+	responseText  string   // existing field — single-response tests keep using this
+	responseTexts []string // if set, Current() returns these in order, one per call
+	callIndex     int
 }
 
 func (f *fakeLlmClientFactory) Current(_ context.Context) (domaincontractsllm.Client, error) {
 	if f.err != nil {
 		return nil, f.err
+	}
+	if len(f.responseTexts) > 0 {
+		i := f.callIndex
+		if i >= len(f.responseTexts) {
+			i = len(f.responseTexts) - 1
+		}
+		f.callIndex++
+		return &fakeLlmClient{text: f.responseTexts[i]}, nil
 	}
 	text := f.responseText
 	if text == "" {
@@ -309,7 +341,7 @@ func TestStartRejectsEmptyBrand(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
-		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	_, err := usecase.Start(context.Background(), domainusecasesinfrared.StartRecordSessionRequest{
@@ -333,7 +365,7 @@ func TestStartCreatesDeviceDefinitionsAndSessionThenKicksOffCaseGeneration(t *te
 	usecase := NewUsecaseImpl(
 		sessionRepo, deviceRepo, definitionRepo,
 		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
-		&fakeLlmClientFactory{err: errors.New("llm not configured for this test")}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		&fakeLlmClientFactory{err: errors.New("llm not configured for this test")}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	nodeId := uuid.New()
@@ -382,7 +414,7 @@ func TestStartEventuallySubscribesToIrCaptureAndTransitionsToRecording(t *testin
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, subscriptions,
-		&fakeLlmClientFactory{}, nodeRepo, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		&fakeLlmClientFactory{}, nodeRepo, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	_, err := usecase.Start(context.Background(), domainusecasesinfrared.StartRecordSessionRequest{
@@ -418,7 +450,7 @@ func TestDiscardRawRequiresNonEmptyReason(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
-		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	err := usecase.DiscardRaw(context.Background(), uuid.New(), "")
@@ -442,7 +474,7 @@ func TestCaptureIrRawPersistsRawAgainstCurrentCase(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, broadcaster, &fakeSubscriptions{},
-		nil, nodeRepo, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		nil, nodeRepo, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	err := usecase.CaptureIrRaw(context.Background(), domainusecasesinfrared.CaptureIrRawRequest{
@@ -467,7 +499,7 @@ func TestCaptureIrRawDoesNothingWhenNodeUnknown(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
-		nil, &fakeNodeRepository{result: nil}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		nil, &fakeNodeRepository{result: nil}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	err := usecase.CaptureIrRaw(context.Background(), domainusecasesinfrared.CaptureIrRawRequest{
@@ -492,7 +524,7 @@ func TestRunCaseGenerationSetsFirstCaseAsSessionCurrentCase(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, subscriptions,
-		&fakeLlmClientFactory{}, nodeRepo, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		&fakeLlmClientFactory{}, nodeRepo, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	_, err := usecase.Start(context.Background(), domainusecasesinfrared.StartRecordSessionRequest{
@@ -529,7 +561,7 @@ func TestSetCurrentCaseRejectsCaseFromDifferentSession(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
-		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	err := usecase.SetCurrentCase(context.Background(), sessionId, caseId)
@@ -553,7 +585,7 @@ func TestSetCurrentCaseSetsSessionCurrentCase(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, broadcaster, &fakeSubscriptions{},
-		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	if err := usecase.SetCurrentCase(context.Background(), sessionId, caseId); err != nil {
@@ -583,7 +615,7 @@ func TestRetryCaseSetsCurrentCase(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
-		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	if err := usecase.RetryCase(context.Background(), caseId); err != nil {
@@ -619,7 +651,7 @@ func TestAcceptRawAdvancesCursorToNextPendingCase(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
-		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	if err := usecase.AcceptRaw(context.Background(), rawId); err != nil {
@@ -662,7 +694,7 @@ func TestAcceptRawTriggersAnalyzingWhenNoPendingCaseRemains(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
-		&fakeLlmClientFactory{err: errors.New("llm not configured for this test")}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		&fakeLlmClientFactory{err: errors.New("llm not configured for this test")}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	if err := usecase.AcceptRaw(context.Background(), rawId); err != nil {
@@ -699,7 +731,7 @@ func TestAcceptRawDoesNotAdvanceCursorBeforeSecondRawAccepted(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
-		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &noopLogger{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	if err := usecase.AcceptRaw(context.Background(), rawId); err != nil {
@@ -713,7 +745,7 @@ func TestAcceptRawDoesNotAdvanceCursorBeforeSecondRawAccepted(t *testing.T) {
 	}
 }
 
-func TestRunAnalysisAndGenerationPersistsCoderAndStaysInFunctionGenerating(t *testing.T) {
+func TestRunAnalysisAndGenerationPersistsCoderAndAdvancesToTestCaseGeneration(t *testing.T) {
 	sessionId := uuid.New()
 	powerId := uuid.New()
 
@@ -754,11 +786,20 @@ func TestRunAnalysisAndGenerationPersistsCoderAndStaysInFunctionGenerating(t *te
 			{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "ON"},
 		},
 	}
-	coderRepo := &fakeCoderRepository{}
-	// WriteCoder expects a JSON object shaped like coderResponse, not the
-	// case-generation array fakeLlmClientFactory defaults to.
-	llmFactory := &fakeLlmClientFactory{responseText: `{"encoder_source": "function encode(state) { return [9000, 4500]; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "summary", "detail_readme": "detail"}`}
+	// GetBySessionId backs runTestCaseGeneration's own coder lookup (launched
+	// as a goroutine right after runAnalysisAndGeneration persists this same
+	// coder) — must be non-nil or that job fails fast before ever reaching
+	// WriteTestCases.
+	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: uuid.New(), SummaryReadme: "summary", DetailReadme: "detail"}}
+	// WriteCoder expects a JSON object shaped like coderResponse, then
+	// WriteTestCases (runTestCaseGeneration, called next) expects a JSON
+	// array — fakeLlmClientFactory.responseTexts feeds them in that order.
+	llmFactory := &fakeLlmClientFactory{responseTexts: []string{
+		`{"encoder_source": "function encode(state) { return [9000, 4500]; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "summary", "detail_readme": "detail"}`,
+		`[{"description": "d1", "states": {"POWER": "ON"}}]`,
+	}}
 	encoderRunner := &fakeEncoderRunner{}
+	testCaseRepo := &fakeTestCaseRepository{}
 
 	// NewUsecaseImpl returns the domainusecasesinfrared.RecordSessionManagement
 	// interface, but runAnalysisAndGeneration is unexported — assert back to
@@ -770,7 +811,7 @@ func TestRunAnalysisAndGenerationPersistsCoderAndStaysInFunctionGenerating(t *te
 	impl := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
 		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
-		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &noopLogger{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, testCaseRepo, &noopLogger{},
 	).(*usecase)
 
 	impl.runAnalysisAndGeneration(sessionId)
@@ -793,6 +834,14 @@ func TestRunAnalysisAndGenerationPersistsCoderAndStaysInFunctionGenerating(t *te
 		t.Fatalf("RunEncoder() received state = %v, want %v (name-keyed, not uuid-keyed)", encoderRunner.receivedState, wantState)
 	}
 
+	// runAnalysisAndGeneration now launches runTestCaseGeneration as a
+	// goroutine right after persisting the coder — give it a moment to reach
+	// its own terminal transition before asserting on it.
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) && len(testCaseRepo.CreatedTestCaseIds()) == 0 {
+		time.Sleep(5 * time.Millisecond)
+	}
+
 	found := false
 	for _, s := range sessionRepo.StatusUpdates() {
 		if s == domainmodels.InfraredRecordingStateFunctionGenerating {
@@ -801,6 +850,16 @@ func TestRunAnalysisAndGenerationPersistsCoderAndStaysInFunctionGenerating(t *te
 	}
 	if !found {
 		t.Fatalf("status updates = %v, want to include FUNCTION_GENERATING", sessionRepo.StatusUpdates())
+	}
+
+	found = false
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateTesting {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("status updates = %v, want to include TESTING (runTestCaseGeneration closes the FUNCTION_GENERATING -> TEST_CASES_GENERATING boundary)", sessionRepo.StatusUpdates())
 	}
 }
 
@@ -847,7 +906,7 @@ func TestRunAnalysisAndGenerationFailsSessionWhenEncoderThrows(t *testing.T) {
 	impl := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
 		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
-		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &noopLogger{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &fakeTestCaseRepository{}, &noopLogger{},
 	).(*usecase)
 
 	impl.runAnalysisAndGeneration(sessionId)
@@ -873,11 +932,72 @@ func TestGetCoderBySessionIdDelegatesToRepository(t *testing.T) {
 	usecase := NewUsecaseImpl(
 		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
 		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
-		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, &noopLogger{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, &fakeTestCaseRepository{}, &noopLogger{},
 	)
 
 	got, err := usecase.GetCoderBySessionId(context.Background(), sessionId)
 	if err != nil || got != want {
 		t.Fatalf("GetCoderBySessionId() = %v, %v, want %v, nil", got, err, want)
+	}
+}
+
+func TestRunTestCaseGenerationPersistsOneTestCasePerPlanAndTransitionsToTesting(t *testing.T) {
+	sessionId := uuid.New()
+	coderId := uuid.New()
+	powerId := uuid.New()
+
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}}
+	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: coderId, SummaryReadme: "s", DetailReadme: "d"}}
+	testCaseRepo := &fakeTestCaseRepository{}
+	llmFactory := &fakeLlmClientFactory{responseText: `[{"description": "d1", "states": {"POWER": "ON"}}, {"description": "d2", "states": {"POWER": "OFF"}}]`}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		stateRepo, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &noopLogger{},
+	).(*usecase)
+
+	impl.runTestCaseGeneration(sessionId, coderId)
+
+	if len(testCaseRepo.CreatedTestCaseIds()) != 2 {
+		t.Fatalf("created test case ids = %v, want 2", testCaseRepo.CreatedTestCaseIds())
+	}
+	found := false
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateTesting {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("status updates = %v, want to include TESTING", sessionRepo.StatusUpdates())
+	}
+}
+
+func TestRunTestCaseGenerationFailsSessionWhenLlmErrors(t *testing.T) {
+	sessionId := uuid.New()
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: uuid.New()}}
+	testCaseRepo := &fakeTestCaseRepository{}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{err: errors.New("llm down")}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &noopLogger{},
+	).(*usecase)
+
+	impl.runTestCaseGeneration(sessionId, uuid.New())
+
+	if len(testCaseRepo.CreatedTestCaseIds()) != 0 {
+		t.Fatal("test cases were created despite the llm call failing")
+	}
+	found := false
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateFailed {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("status updates = %v, want to include FAILED", sessionRepo.StatusUpdates())
 	}
 }

@@ -17,6 +17,7 @@ type RecordSessionManagement interface {
 	SetCurrentCase(ctx context.Context, sessionId uuid.UUID, caseId uuid.UUID) error
 	CaptureIrRaw(ctx context.Context, request CaptureIrRawRequest) error
 	GetCoderBySessionId(ctx context.Context, sessionId uuid.UUID) (*domainmodels.InfraredStateCoder, error)
+	ListTestCases(ctx context.Context, sessionId uuid.UUID) ([]TestCaseWithStates, error)
 }
 
 type StartRecordSessionRequest struct {
@@ -39,6 +40,11 @@ type CaseWithStatesAndRaw struct {
 	Case   domainmodels.InfraredStateDeviceRecordCase
 	States []domainmodels.InfraredStateDeviceRecordState
 	Raw    []domainmodels.InfraredStateDeviceRecordRaw
+}
+
+type TestCaseWithStates struct {
+	TestCase domainmodels.InfraredTestCase
+	States   []domainmodels.InfraredTestCaseState
 }
 
 type CaptureIrRawRequest struct {
