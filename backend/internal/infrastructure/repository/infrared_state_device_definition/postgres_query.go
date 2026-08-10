@@ -30,7 +30,7 @@ func (p *postgresImpl) queryCreate(definition domainmodels.InfraredStateDeviceDe
 		ToSql()
 }
 
-func (p *postgresImpl) queryListByDeviceId(infraredDeviceId uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadListByDeviceId(infraredDeviceId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredStateDeviceDefinitionColumns...).
 		From("infrared_state_device_definition").
 		Where(squirrel.Eq{"infrared_device_id": infraredDeviceId}).

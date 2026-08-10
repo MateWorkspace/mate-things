@@ -13,10 +13,7 @@ var infraredRecordCaseColumns = []string{
 	"description",
 	"status",
 	"created_at",
-	"updated_at",
 	"deleted_at",
-	"created_by",
-	"updated_by",
 	"deleted_by",
 }
 
@@ -26,10 +23,7 @@ var infraredRecordStateColumns = []string{
 	"infrared_state_id",
 	"state_value",
 	"created_at",
-	"updated_at",
 	"deleted_at",
-	"created_by",
-	"updated_by",
 	"deleted_by",
 }
 
@@ -40,30 +34,27 @@ var infraredRecordRawColumns = []string{
 	"status",
 	"discarded_reason",
 	"created_at",
-	"updated_at",
 	"deleted_at",
-	"created_by",
-	"updated_by",
 	"deleted_by",
 }
 
-func (p *postgresImpl) queryCreateCase(sessionId uuid.UUID, step int32, description string, createdBy *uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryCreateCase(sessionId uuid.UUID, step int32, description string) (query string, args []any, err error) {
 	return p.SqrD.Insert("infrared_state_device_record_case").
-		Columns("infrared_record_session_id", "step", "description", "created_by").
-		Values(sessionId, step, description, createdBy).
+		Columns("infrared_record_session_id", "step", "description").
+		Values(sessionId, step, description).
 		Suffix("RETURNING id").
 		ToSql()
 }
 
-func (p *postgresImpl) queryCreateState(caseId uuid.UUID, state domainmodels.InfraredStateDeviceRecordState, createdBy *uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryCreateState(caseId uuid.UUID, state domainmodels.InfraredStateDeviceRecordState) (query string, args []any, err error) {
 	return p.SqrD.Insert("infrared_state_device_record_state").
-		Columns("infrared_state_device_record_case_id", "infrared_state_id", "state_value", "created_by").
-		Values(caseId, state.InfraredStateId, state.StateValue, createdBy).
+		Columns("infrared_state_device_record_case_id", "infrared_state_id", "state_value").
+		Values(caseId, state.InfraredStateId, state.StateValue).
 		Suffix("RETURNING id").
 		ToSql()
 }
 
-func (p *postgresImpl) queryListBySessionId(sessionId uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadListBySessionId(sessionId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredRecordCaseColumns...).
 		From("infrared_state_device_record_case").
 		Where(squirrel.Eq{"infrared_record_session_id": sessionId}).
@@ -72,7 +63,7 @@ func (p *postgresImpl) queryListBySessionId(sessionId uuid.UUID) (query string, 
 		ToSql()
 }
 
-func (p *postgresImpl) queryGetById(id uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadById(id uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredRecordCaseColumns...).
 		From("infrared_state_device_record_case").
 		Where(squirrel.Eq{"id": id}).
@@ -80,13 +71,11 @@ func (p *postgresImpl) queryGetById(id uuid.UUID) (query string, args []any, err
 		ToSql()
 }
 
-func (p *postgresImpl) queryUpdateStatusById(id uuid.UUID, status domainmodels.InfraredRecordCaseStatus, updatedBy *uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryUpdateStatusById(id uuid.UUID, status domainmodels.InfraredRecordCaseStatus) (query string, args []any, err error) {
 	return p.SqrD.Update("infrared_state_device_record_case").
 		Where(squirrel.Eq{"id": id}).
 		Where("deleted_at IS NULL").
 		Set("status", status).
-		Set("updated_at", squirrel.Expr("CURRENT_TIMESTAMP")).
-		Set("updated_by", updatedBy).
 		ToSql()
 }
 
@@ -99,7 +88,7 @@ func (p *postgresImpl) queryDeleteById(id uuid.UUID, deletedBy *uuid.UUID) (quer
 		ToSql()
 }
 
-func (p *postgresImpl) queryListStatesByCaseId(caseId uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadListStatesByCaseId(caseId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredRecordStateColumns...).
 		From("infrared_state_device_record_state").
 		Where(squirrel.Eq{"infrared_state_device_record_case_id": caseId}).
@@ -116,15 +105,15 @@ func (p *postgresImpl) queryDeleteStateById(id uuid.UUID, deletedBy *uuid.UUID) 
 		ToSql()
 }
 
-func (p *postgresImpl) queryCreateRaw(caseId uuid.UUID, rawData []byte, createdBy *uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryCreateRaw(caseId uuid.UUID, rawData []byte) (query string, args []any, err error) {
 	return p.SqrD.Insert("infrared_state_device_record_raw").
-		Columns("infrared_state_device_record_case_id", "raw_data", "created_by").
-		Values(caseId, rawData, createdBy).
+		Columns("infrared_state_device_record_case_id", "raw_data").
+		Values(caseId, rawData).
 		Suffix("RETURNING id").
 		ToSql()
 }
 
-func (p *postgresImpl) queryListRawByCaseId(caseId uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadListRawByCaseId(caseId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredRecordRawColumns...).
 		From("infrared_state_device_record_raw").
 		Where(squirrel.Eq{"infrared_state_device_record_case_id": caseId}).
@@ -132,14 +121,12 @@ func (p *postgresImpl) queryListRawByCaseId(caseId uuid.UUID) (query string, arg
 		ToSql()
 }
 
-func (p *postgresImpl) queryUpdateRawStatusById(id uuid.UUID, status domainmodels.InfraredRecordRawStatus, discardedReason *string, updatedBy *uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryUpdateRawStatusById(id uuid.UUID, status domainmodels.InfraredRecordRawStatus, discardedReason *string) (query string, args []any, err error) {
 	return p.SqrD.Update("infrared_state_device_record_raw").
 		Where(squirrel.Eq{"id": id}).
 		Where("deleted_at IS NULL").
 		Set("status", status).
 		Set("discarded_reason", discardedReason).
-		Set("updated_at", squirrel.Expr("CURRENT_TIMESTAMP")).
-		Set("updated_by", updatedBy).
 		ToSql()
 }
 
@@ -152,7 +139,7 @@ func (p *postgresImpl) queryDeleteRawById(id uuid.UUID, deletedBy *uuid.UUID) (q
 		ToSql()
 }
 
-func (p *postgresImpl) queryGetRawById(rawId uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadRawById(rawId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredRecordRawColumns...).
 		From("infrared_state_device_record_raw").
 		Where(squirrel.Eq{"id": rawId}).

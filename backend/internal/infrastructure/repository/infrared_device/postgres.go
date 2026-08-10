@@ -43,8 +43,8 @@ func (p *postgresImpl) Create(ctx context.Context, infraredDeviceTypeId uuid.UUI
 	return id, nil
 }
 
-func (p *postgresImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredDevice, error) {
-	query, args, err := p.queryGetById(id)
+func (p *postgresImpl) ReadById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredDevice, error) {
+	query, args, err := p.queryReadById(id)
 	if err != nil {
 		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build infrared_device get query", err)
 	}

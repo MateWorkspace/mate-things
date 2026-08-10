@@ -11,15 +11,15 @@ type RecordSessionManagement interface {
 	Start(ctx context.Context, request StartRecordSessionRequest) (sessionId uuid.UUID, err error)
 	GetById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredRecordSession, error)
 	ListCases(ctx context.Context, sessionId uuid.UUID) ([]CaseWithStatesAndRaw, error)
-	AcceptRaw(ctx context.Context, rawId uuid.UUID, updatedBy *uuid.UUID) error
-	DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string, updatedBy *uuid.UUID) error
-	RetryCase(ctx context.Context, caseId uuid.UUID, updatedBy *uuid.UUID) error
-	SetCurrentCase(ctx context.Context, sessionId uuid.UUID, caseId uuid.UUID, updatedBy *uuid.UUID) error
+	AcceptRaw(ctx context.Context, rawId uuid.UUID) error
+	DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string) error
+	RetryCase(ctx context.Context, caseId uuid.UUID) error
+	SetCurrentCase(ctx context.Context, sessionId uuid.UUID, caseId uuid.UUID) error
 	CaptureIrRaw(ctx context.Context, request CaptureIrRawRequest) error
 	GetCoderBySessionId(ctx context.Context, sessionId uuid.UUID) (*domainmodels.InfraredStateCoder, error)
 	ListTestCases(ctx context.Context, sessionId uuid.UUID) ([]TestCaseWithStates, error)
 	TransmitTestCase(ctx context.Context, testCaseId uuid.UUID) error
-	RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID, passed bool, updatedBy *uuid.UUID) error
+	RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID, passed bool) error
 	DeleteRecordSessionById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 	DeleteRecordCaseById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 	DeleteRecordStateById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error

@@ -28,7 +28,7 @@ func (f *fakeDeviceTypeRepository) Create(_ context.Context, name string, create
 	}
 	return uuid.New(), nil
 }
-func (f *fakeDeviceTypeRepository) List(_ context.Context) ([]domainmodels.InfraredDeviceType, error) {
+func (f *fakeDeviceTypeRepository) ReadList(_ context.Context) ([]domainmodels.InfraredDeviceType, error) {
 	return f.listResult, nil
 }
 func (f *fakeDeviceTypeRepository) DeleteById(_ context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
@@ -64,7 +64,7 @@ func (f *fakeStateRepository) Create(_ context.Context, deviceTypeId uuid.UUID, 
 	f.createdDeviceTypeId, f.createdName, f.createdType, f.createdBy = deviceTypeId, name, stateType, createdBy
 	return uuid.New(), nil
 }
-func (f *fakeStateRepository) ListByDeviceTypeId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredState, error) {
+func (f *fakeStateRepository) ReadListByDeviceTypeId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredState, error) {
 	return f.listResult, nil
 }
 func (f *fakeStateRepository) DeleteById(_ context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
@@ -80,7 +80,7 @@ type fakeDefinitionRepository struct {
 	deleteErr  error
 }
 
-func (f *fakeDefinitionRepository) ListByDeviceId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error) {
+func (f *fakeDefinitionRepository) ReadListByDeviceId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error) {
 	return f.listResult, nil
 }
 func (f *fakeDefinitionRepository) DeleteById(_ context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {

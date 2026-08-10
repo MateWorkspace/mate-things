@@ -19,7 +19,7 @@ var infraredStateColumns = []string{
 	"deleted_by",
 }
 
-func (p *postgresImpl) queryListByDeviceTypeId(infraredDeviceTypeId uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadListByDeviceTypeId(infraredDeviceTypeId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredStateColumns...).
 		From("infrared_state").
 		Where(squirrel.Eq{"infrared_device_type_id": infraredDeviceTypeId}).

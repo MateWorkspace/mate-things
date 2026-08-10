@@ -14,10 +14,8 @@ var infraredRecordSessionColumns = []string{
 	"current_record_case_id",
 	"is_completed",
 	"created_at",
-	"updated_at",
-	"deleted_at",
 	"created_by",
-	"updated_by",
+	"deleted_at",
 	"deleted_by",
 }
 
@@ -29,7 +27,7 @@ func (p *postgresImpl) queryCreate(nodeId uuid.UUID, infraredDeviceId uuid.UUID,
 		ToSql()
 }
 
-func (p *postgresImpl) queryGetById(id uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadById(id uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredRecordSessionColumns...).
 		From("infrared_record_session").
 		Where(squirrel.Eq{"id": id}).
@@ -37,7 +35,7 @@ func (p *postgresImpl) queryGetById(id uuid.UUID) (query string, args []any, err
 		ToSql()
 }
 
-func (p *postgresImpl) queryGetActiveByNodeId(nodeId uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadActiveByNodeId(nodeId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredRecordSessionColumns...).
 		From("infrared_record_session").
 		Where(squirrel.Eq{
@@ -49,24 +47,20 @@ func (p *postgresImpl) queryGetActiveByNodeId(nodeId uuid.UUID) (query string, a
 		ToSql()
 }
 
-func (p *postgresImpl) queryUpdateRecordingStateById(id uuid.UUID, recordingState string, isCompleted bool, updatedBy *uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryUpdateRecordingStateById(id uuid.UUID, recordingState string, isCompleted bool) (query string, args []any, err error) {
 	return p.SqrD.Update("infrared_record_session").
 		Where(squirrel.Eq{"id": id}).
 		Where("deleted_at IS NULL").
 		Set("recording_state", recordingState).
 		Set("is_completed", isCompleted).
-		Set("updated_at", squirrel.Expr("CURRENT_TIMESTAMP")).
-		Set("updated_by", updatedBy).
 		ToSql()
 }
 
-func (p *postgresImpl) queryUpdateCurrentRecordCaseIdById(id uuid.UUID, currentRecordCaseId *uuid.UUID, updatedBy *uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryUpdateCurrentRecordCaseIdById(id uuid.UUID, currentRecordCaseId *uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Update("infrared_record_session").
 		Where(squirrel.Eq{"id": id}).
 		Where("deleted_at IS NULL").
 		Set("current_record_case_id", currentRecordCaseId).
-		Set("updated_at", squirrel.Expr("CURRENT_TIMESTAMP")).
-		Set("updated_by", updatedBy).
 		ToSql()
 }
 

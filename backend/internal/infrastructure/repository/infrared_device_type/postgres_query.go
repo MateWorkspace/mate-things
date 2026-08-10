@@ -16,7 +16,7 @@ var infraredDeviceTypeColumns = []string{
 	"deleted_by",
 }
 
-func (p *postgresImpl) queryList() (query string, args []any, err error) {
+func (p *postgresImpl) queryReadList() (query string, args []any, err error) {
 	return p.SqrD.Select(infraredDeviceTypeColumns...).From("infrared_device_type").Where("deleted_at IS NULL").OrderBy("name").ToSql()
 }
 

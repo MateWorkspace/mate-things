@@ -50,10 +50,8 @@ type InfraredRecordSession struct {
 	CurrentRecordCaseId *uuid.UUID
 	IsCompleted         bool
 	CreatedAt           time.Time
-	UpdatedAt           *time.Time
 	DeletedAt           *time.Time
 	CreatedBy           *uuid.UUID
-	UpdatedBy           *uuid.UUID
 	DeletedBy           *uuid.UUID
 }
 
@@ -108,10 +106,7 @@ type InfraredStateDeviceRecordCase struct {
 	Description             string
 	Status                  InfraredRecordCaseStatus
 	CreatedAt               time.Time
-	UpdatedAt               *time.Time
 	DeletedAt               *time.Time
-	CreatedBy               *uuid.UUID
-	UpdatedBy               *uuid.UUID
 	DeletedBy               *uuid.UUID
 }
 
@@ -121,10 +116,7 @@ type InfraredStateDeviceRecordState struct {
 	InfraredStateId                 uuid.UUID
 	StateValue                      string
 	CreatedAt                       time.Time
-	UpdatedAt                       *time.Time
 	DeletedAt                       *time.Time
-	CreatedBy                       *uuid.UUID
-	UpdatedBy                       *uuid.UUID
 	DeletedBy                       *uuid.UUID
 }
 
@@ -143,10 +135,7 @@ type InfraredStateDeviceRecordRaw struct {
 	Status                          InfraredRecordRawStatus
 	DiscardedReason                 *string
 	CreatedAt                       time.Time
-	UpdatedAt                       *time.Time
 	DeletedAt                       *time.Time
-	CreatedBy                       *uuid.UUID
-	UpdatedBy                       *uuid.UUID
 	DeletedBy                       *uuid.UUID
 }
 
@@ -174,10 +163,7 @@ type InfraredStateCoder struct {
 	DetailReadme            string
 	Status                  InfraredStateCoderStatus
 	CreatedAt               time.Time
-	UpdatedAt               *time.Time
 	DeletedAt               *time.Time
-	CreatedBy               *uuid.UUID
-	UpdatedBy               *uuid.UUID
 	DeletedBy               *uuid.UUID
 }
 
@@ -196,10 +182,7 @@ type InfraredTestCase struct {
 	Description          string
 	Status               InfraredTestCaseStatus
 	CreatedAt            time.Time
-	UpdatedAt            *time.Time
 	DeletedAt            *time.Time
-	CreatedBy            *uuid.UUID
-	UpdatedBy            *uuid.UUID
 	DeletedBy            *uuid.UUID
 }
 
@@ -209,9 +192,6 @@ type InfraredTestCaseState struct {
 	InfraredStateId    uuid.UUID
 	StateValue         string
 	CreatedAt          time.Time
-	UpdatedAt          *time.Time
 	DeletedAt          *time.Time
-	CreatedBy          *uuid.UUID
-	UpdatedBy          *uuid.UUID
 	DeletedBy          *uuid.UUID
 }

@@ -1,9 +1,53 @@
 package presentationhttpresponse
 
 import (
+	"time"
+
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesinfrared "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/infrared"
+	"github.com/google/uuid"
 )
+
+// CreatedDeletedAuditResponse is the audit shape for infrared_record_session:
+// it has a real creating actor (Start is always an authenticated HTTP call)
+// but every write after that is an internal state-machine transition, not an
+// edit worth an updated_by — so there is no updated_at/updated_by here at
+// all, only created and (if it happens) deleted.
+type CreatedDeletedAuditResponse struct {
+	CreatedAt time.Time  `json:"created_at" example:"2026-06-15T09:30:00Z"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty" example:"2026-07-20T11:00:00Z"`
+	CreatedBy *string    `json:"created_by,omitempty" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+	DeletedBy *string    `json:"deleted_by,omitempty" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+}
+
+func CreatedDeletedAudit(createdAt time.Time, deletedAt *time.Time, createdBy *uuid.UUID, deletedBy *uuid.UUID) CreatedDeletedAuditResponse {
+	return CreatedDeletedAuditResponse{
+		CreatedAt: createdAt,
+		DeletedAt: deletedAt,
+		CreatedBy: UUIDPtrString(createdBy),
+		DeletedBy: UUIDPtrString(deletedBy),
+	}
+}
+
+// PipelineAuditResponse is the audit shape for the pipeline/system-generated
+// infrared tables (record cases/states/raws, coders, test cases/states):
+// no human ever creates these rows (LLM/background jobs/MQTT captures do),
+// so created_by is omitted entirely — created_at survives only for
+// ordering/audit-timestamp purposes. Staff can still soft-delete any of
+// these rows through the delete endpoints, so deleted_by is kept.
+type PipelineAuditResponse struct {
+	CreatedAt time.Time  `json:"created_at" example:"2026-06-15T09:30:00Z"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty" example:"2026-07-20T11:00:00Z"`
+	DeletedBy *string    `json:"deleted_by,omitempty" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+}
+
+func PipelineAudit(createdAt time.Time, deletedAt *time.Time, deletedBy *uuid.UUID) PipelineAuditResponse {
+	return PipelineAuditResponse{
+		CreatedAt: createdAt,
+		DeletedAt: deletedAt,
+		DeletedBy: UUIDPtrString(deletedBy),
+	}
+}
 
 type InfraredRecordSessionResponse struct {
 	Id                  string  `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
@@ -12,18 +56,18 @@ type InfraredRecordSessionResponse struct {
 	RecordingState      string  `json:"recording_state" example:"RECORDING"`
 	CurrentRecordCaseId *string `json:"current_record_case_id,omitempty" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 	IsCompleted         bool    `json:"is_completed" example:"false"`
-	AuditResponse
+	CreatedDeletedAuditResponse
 }
 
 func InfraredRecordSession(model domainmodels.InfraredRecordSession) InfraredRecordSessionResponse {
 	return InfraredRecordSessionResponse{
-		Id:                  UUIDString(model.Id),
-		NodeId:              UUIDString(model.NodeId),
-		InfraredDeviceId:    UUIDString(model.InfraredDeviceId),
-		RecordingState:      model.RecordingState,
-		CurrentRecordCaseId: UUIDPtrString(model.CurrentRecordCaseId),
-		IsCompleted:         model.IsCompleted,
-		AuditResponse:       Audit(model.CreatedAt, model.UpdatedAt, model.DeletedAt, model.CreatedBy, model.UpdatedBy, model.DeletedBy),
+		Id:                          UUIDString(model.Id),
+		NodeId:                      UUIDString(model.NodeId),
+		InfraredDeviceId:            UUIDString(model.InfraredDeviceId),
+		RecordingState:              model.RecordingState,
+		CurrentRecordCaseId:         UUIDPtrString(model.CurrentRecordCaseId),
+		IsCompleted:                 model.IsCompleted,
+		CreatedDeletedAuditResponse: CreatedDeletedAudit(model.CreatedAt, model.DeletedAt, model.CreatedBy, model.DeletedBy),
 	}
 }
 
@@ -39,15 +83,15 @@ type InfraredStateDeviceRecordStateResponse struct {
 	Id              string `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 	InfraredStateId string `json:"infrared_state_id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 	StateValue      string `json:"state_value" example:"ON"`
-	AuditResponse
+	PipelineAuditResponse
 }
 
 func InfraredStateDeviceRecordState(model domainmodels.InfraredStateDeviceRecordState) InfraredStateDeviceRecordStateResponse {
 	return InfraredStateDeviceRecordStateResponse{
-		Id:              UUIDString(model.Id),
-		InfraredStateId: UUIDString(model.InfraredStateId),
-		StateValue:      model.StateValue,
-		AuditResponse:   Audit(model.CreatedAt, model.UpdatedAt, model.DeletedAt, model.CreatedBy, model.UpdatedBy, model.DeletedBy),
+		Id:                    UUIDString(model.Id),
+		InfraredStateId:       UUIDString(model.InfraredStateId),
+		StateValue:            model.StateValue,
+		PipelineAuditResponse: PipelineAudit(model.CreatedAt, model.DeletedAt, model.DeletedBy),
 	}
 }
 
@@ -63,15 +107,15 @@ type InfraredStateDeviceRecordRawResponse struct {
 	Id              string  `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 	Status          string  `json:"status" example:"CAPTURED"`
 	DiscardedReason *string `json:"discarded_reason,omitempty" example:"pressed the wrong button"`
-	AuditResponse
+	PipelineAuditResponse
 }
 
 func InfraredStateDeviceRecordRaw(model domainmodels.InfraredStateDeviceRecordRaw) InfraredStateDeviceRecordRawResponse {
 	return InfraredStateDeviceRecordRawResponse{
-		Id:              UUIDString(model.Id),
-		Status:          string(model.Status),
-		DiscardedReason: model.DiscardedReason,
-		AuditResponse:   Audit(model.CreatedAt, model.UpdatedAt, model.DeletedAt, model.CreatedBy, model.UpdatedBy, model.DeletedBy),
+		Id:                    UUIDString(model.Id),
+		Status:                string(model.Status),
+		DiscardedReason:       model.DiscardedReason,
+		PipelineAuditResponse: PipelineAudit(model.CreatedAt, model.DeletedAt, model.DeletedBy),
 	}
 }
 
@@ -90,7 +134,7 @@ type InfraredStateDeviceRecordCaseResponse struct {
 	Status      string                                   `json:"status" example:"PENDING"`
 	States      []InfraredStateDeviceRecordStateResponse `json:"states"`
 	Raw         []InfraredStateDeviceRecordRawResponse   `json:"raw"`
-	AuditResponse
+	PipelineAuditResponse
 }
 
 func InfraredStateDeviceRecordCase(
@@ -99,13 +143,13 @@ func InfraredStateDeviceRecordCase(
 	raw []domainmodels.InfraredStateDeviceRecordRaw,
 ) InfraredStateDeviceRecordCaseResponse {
 	return InfraredStateDeviceRecordCaseResponse{
-		Id:            UUIDString(model.Id),
-		Step:          model.Step,
-		Description:   model.Description,
-		Status:        string(model.Status),
-		States:        InfraredStateDeviceRecordStates(states),
-		Raw:           InfraredStateDeviceRecordRaws(raw),
-		AuditResponse: Audit(model.CreatedAt, model.UpdatedAt, model.DeletedAt, model.CreatedBy, model.UpdatedBy, model.DeletedBy),
+		Id:                    UUIDString(model.Id),
+		Step:                  model.Step,
+		Description:           model.Description,
+		Status:                string(model.Status),
+		States:                InfraredStateDeviceRecordStates(states),
+		Raw:                   InfraredStateDeviceRecordRaws(raw),
+		PipelineAuditResponse: PipelineAudit(model.CreatedAt, model.DeletedAt, model.DeletedBy),
 	}
 }
 
@@ -124,18 +168,18 @@ type InfraredStateCoderResponse struct {
 	SummaryReadme string `json:"summary_readme"`
 	DetailReadme  string `json:"detail_readme"`
 	Status        string `json:"status" example:"UNVERIFIED"`
-	AuditResponse
+	PipelineAuditResponse
 }
 
 func InfraredStateCoder(model domainmodels.InfraredStateCoder) InfraredStateCoderResponse {
 	return InfraredStateCoderResponse{
-		Id:            UUIDString(model.Id),
-		EncoderSource: model.EncoderSource,
-		DecoderSource: model.DecoderSource,
-		SummaryReadme: model.SummaryReadme,
-		DetailReadme:  model.DetailReadme,
-		Status:        string(model.Status),
-		AuditResponse: Audit(model.CreatedAt, model.UpdatedAt, model.DeletedAt, model.CreatedBy, model.UpdatedBy, model.DeletedBy),
+		Id:                    UUIDString(model.Id),
+		EncoderSource:         model.EncoderSource,
+		DecoderSource:         model.DecoderSource,
+		SummaryReadme:         model.SummaryReadme,
+		DetailReadme:          model.DetailReadme,
+		Status:                string(model.Status),
+		PipelineAuditResponse: PipelineAudit(model.CreatedAt, model.DeletedAt, model.DeletedBy),
 	}
 }
 
@@ -143,17 +187,17 @@ type InfraredTestCaseStateResponse struct {
 	Id              string `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 	InfraredStateId string `json:"infrared_state_id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 	StateValue      string `json:"state_value" example:"ON"`
-	AuditResponse
+	PipelineAuditResponse
 }
 
 func InfraredTestCaseStates(models []domainmodels.InfraredTestCaseState) []InfraredTestCaseStateResponse {
 	responses := make([]InfraredTestCaseStateResponse, len(models))
 	for i, model := range models {
 		responses[i] = InfraredTestCaseStateResponse{
-			Id:              UUIDString(model.Id),
-			InfraredStateId: UUIDString(model.InfraredStateId),
-			StateValue:      model.StateValue,
-			AuditResponse:   Audit(model.CreatedAt, model.UpdatedAt, model.DeletedAt, model.CreatedBy, model.UpdatedBy, model.DeletedBy),
+			Id:                    UUIDString(model.Id),
+			InfraredStateId:       UUIDString(model.InfraredStateId),
+			StateValue:            model.StateValue,
+			PipelineAuditResponse: PipelineAudit(model.CreatedAt, model.DeletedAt, model.DeletedBy),
 		}
 	}
 	return responses
@@ -165,19 +209,19 @@ type InfraredTestCaseResponse struct {
 	Description string                          `json:"description" example:"Confirm the unit powers on."`
 	Status      string                          `json:"status" example:"PENDING"`
 	States      []InfraredTestCaseStateResponse `json:"states"`
-	AuditResponse
+	PipelineAuditResponse
 }
 
 func InfraredTestCases(models []domainusecasesinfrared.TestCaseWithStates) []InfraredTestCaseResponse {
 	responses := make([]InfraredTestCaseResponse, len(models))
 	for i, m := range models {
 		responses[i] = InfraredTestCaseResponse{
-			Id:            UUIDString(m.TestCase.Id),
-			Step:          m.TestCase.Step,
-			Description:   m.TestCase.Description,
-			Status:        string(m.TestCase.Status),
-			States:        InfraredTestCaseStates(m.States),
-			AuditResponse: Audit(m.TestCase.CreatedAt, m.TestCase.UpdatedAt, m.TestCase.DeletedAt, m.TestCase.CreatedBy, m.TestCase.UpdatedBy, m.TestCase.DeletedBy),
+			Id:                    UUIDString(m.TestCase.Id),
+			Step:                  m.TestCase.Step,
+			Description:           m.TestCase.Description,
+			Status:                string(m.TestCase.Status),
+			States:                InfraredTestCaseStates(m.States),
+			PipelineAuditResponse: PipelineAudit(m.TestCase.CreatedAt, m.TestCase.DeletedAt, m.TestCase.DeletedBy),
 		}
 	}
 	return responses

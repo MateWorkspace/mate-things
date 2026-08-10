@@ -44,8 +44,8 @@ func (p *postgresImpl) CreateMany(ctx context.Context, definitions []domainmodel
 	return nil
 }
 
-func (p *postgresImpl) ListByDeviceId(ctx context.Context, infraredDeviceId uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error) {
-	query, args, err := p.queryListByDeviceId(infraredDeviceId)
+func (p *postgresImpl) ReadListByDeviceId(ctx context.Context, infraredDeviceId uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error) {
+	query, args, err := p.queryReadListByDeviceId(infraredDeviceId)
 	if err != nil {
 		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build infrared_state_device_definition list query", err)
 	}

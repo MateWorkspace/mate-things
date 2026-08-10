@@ -166,7 +166,7 @@ func (h *handler) RecordCaseRawAccept(c *echo.Context) error {
 		return presentationhttputils.Error(c, err)
 	}
 
-	if err := h.recordSessionUseCase.AcceptRaw(c.Request().Context(), rawId, presentationhttputils.ActorId(c)); err != nil {
+	if err := h.recordSessionUseCase.AcceptRaw(c.Request().Context(), rawId); err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
@@ -200,7 +200,7 @@ func (h *handler) RecordCaseRawDiscard(c *echo.Context) error {
 		return err
 	}
 
-	if err := h.recordSessionUseCase.DiscardRaw(c.Request().Context(), rawId, req.Reason, presentationhttputils.ActorId(c)); err != nil {
+	if err := h.recordSessionUseCase.DiscardRaw(c.Request().Context(), rawId, req.Reason); err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
@@ -226,7 +226,7 @@ func (h *handler) RecordCaseRetry(c *echo.Context) error {
 		return presentationhttputils.Error(c, err)
 	}
 
-	if err := h.recordSessionUseCase.RetryCase(c.Request().Context(), caseId, presentationhttputils.ActorId(c)); err != nil {
+	if err := h.recordSessionUseCase.RetryCase(c.Request().Context(), caseId); err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
@@ -257,7 +257,7 @@ func (h *handler) RecordSessionCaseCurrentPost(c *echo.Context) error {
 		return presentationhttputils.Error(c, err)
 	}
 
-	if err := h.recordSessionUseCase.SetCurrentCase(c.Request().Context(), sessionId, caseId, presentationhttputils.ActorId(c)); err != nil {
+	if err := h.recordSessionUseCase.SetCurrentCase(c.Request().Context(), sessionId, caseId); err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 
@@ -373,7 +373,7 @@ func (h *handler) TestCaseResultPost(c *echo.Context) error {
 		return err
 	}
 
-	if err := h.recordSessionUseCase.RecordTestCaseResult(c.Request().Context(), id, req.Passed, presentationhttputils.ActorId(c)); err != nil {
+	if err := h.recordSessionUseCase.RecordTestCaseResult(c.Request().Context(), id, req.Passed); err != nil {
 		return presentationhttputils.Error(c, err)
 	}
 

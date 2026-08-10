@@ -35,7 +35,7 @@ func scanInfraredRecordSession(row pgx.Row, item *domainmodels.InfraredRecordSes
 	return row.Scan(
 		&item.Id, &item.NodeId, &item.InfraredDeviceId, &item.RecordingState,
 		&item.CurrentRecordCaseId, &item.IsCompleted, &item.CreatedAt,
-		&item.UpdatedAt, &item.DeletedAt, &item.CreatedBy, &item.UpdatedBy, &item.DeletedBy,
+		&item.CreatedBy, &item.DeletedAt, &item.DeletedBy,
 	)
 }
 
@@ -51,8 +51,8 @@ func (p *postgresImpl) Create(ctx context.Context, nodeId uuid.UUID, infraredDev
 	return id, nil
 }
 
-func (p *postgresImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredRecordSession, error) {
-	query, args, err := p.queryGetById(id)
+func (p *postgresImpl) ReadById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredRecordSession, error) {
+	query, args, err := p.queryReadById(id)
 	if err != nil {
 		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build infrared_record_session get query", err)
 	}
@@ -67,8 +67,8 @@ func (p *postgresImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels
 	return &item, nil
 }
 
-func (p *postgresImpl) GetActiveByNodeId(ctx context.Context, nodeId uuid.UUID) (*domainmodels.InfraredRecordSession, error) {
-	query, args, err := p.queryGetActiveByNodeId(nodeId)
+func (p *postgresImpl) ReadActiveByNodeId(ctx context.Context, nodeId uuid.UUID) (*domainmodels.InfraredRecordSession, error) {
+	query, args, err := p.queryReadActiveByNodeId(nodeId)
 	if err != nil {
 		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build infrared_record_session get active query", err)
 	}
@@ -83,8 +83,8 @@ func (p *postgresImpl) GetActiveByNodeId(ctx context.Context, nodeId uuid.UUID) 
 	return &item, nil
 }
 
-func (p *postgresImpl) UpdateRecordingStateById(ctx context.Context, id uuid.UUID, recordingState string, isCompleted bool, updatedBy *uuid.UUID) error {
-	query, args, err := p.queryUpdateRecordingStateById(id, recordingState, isCompleted, updatedBy)
+func (p *postgresImpl) UpdateRecordingStateById(ctx context.Context, id uuid.UUID, recordingState string, isCompleted bool) error {
+	query, args, err := p.queryUpdateRecordingStateById(id, recordingState, isCompleted)
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build update infrared_record_session recording state query", err)
 	}
@@ -100,8 +100,8 @@ func (p *postgresImpl) UpdateRecordingStateById(ctx context.Context, id uuid.UUI
 	return nil
 }
 
-func (p *postgresImpl) UpdateCurrentRecordCaseIdById(ctx context.Context, id uuid.UUID, currentRecordCaseId *uuid.UUID, updatedBy *uuid.UUID) error {
-	query, args, err := p.queryUpdateCurrentRecordCaseIdById(id, currentRecordCaseId, updatedBy)
+func (p *postgresImpl) UpdateCurrentRecordCaseIdById(ctx context.Context, id uuid.UUID, currentRecordCaseId *uuid.UUID) error {
+	query, args, err := p.queryUpdateCurrentRecordCaseIdById(id, currentRecordCaseId)
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build update infrared_record_session current record case id query", err)
 	}

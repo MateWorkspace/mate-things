@@ -30,7 +30,7 @@ func (u *usecase) CreateDeviceType(ctx context.Context, name string, createdBy *
 }
 
 func (u *usecase) ListDeviceTypes(ctx context.Context) ([]domainmodels.InfraredDeviceType, error) {
-	return u.deviceType.List(ctx)
+	return u.deviceType.ReadList(ctx)
 }
 
 func (u *usecase) DeleteDeviceTypeById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
@@ -42,7 +42,7 @@ func (u *usecase) CreateState(ctx context.Context, deviceTypeId uuid.UUID, name 
 }
 
 func (u *usecase) ListStatesByDeviceTypeId(ctx context.Context, deviceTypeId uuid.UUID) ([]domainmodels.InfraredState, error) {
-	return u.state.ListByDeviceTypeId(ctx, deviceTypeId)
+	return u.state.ReadListByDeviceTypeId(ctx, deviceTypeId)
 }
 
 func (u *usecase) DeleteStateById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
@@ -54,7 +54,7 @@ func (u *usecase) DeleteDeviceById(ctx context.Context, id uuid.UUID, deletedBy 
 }
 
 func (u *usecase) ListDefinitionsByDeviceId(ctx context.Context, deviceId uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error) {
-	return u.definition.ListByDeviceId(ctx, deviceId)
+	return u.definition.ReadListByDeviceId(ctx, deviceId)
 }
 
 func (u *usecase) DeleteDefinitionById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {

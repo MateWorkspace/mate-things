@@ -39,8 +39,8 @@ func scanInfraredDeviceType(row pgx.Row, item *domainmodels.InfraredDeviceType) 
 	)
 }
 
-func (p *postgresImpl) List(ctx context.Context) ([]domainmodels.InfraredDeviceType, error) {
-	query, args, err := p.queryList()
+func (p *postgresImpl) ReadList(ctx context.Context) ([]domainmodels.InfraredDeviceType, error) {
+	query, args, err := p.queryReadList()
 	if err != nil {
 		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build infrared_device_type list query", err)
 	}

@@ -44,8 +44,8 @@ func scanInfraredState(row pgx.Row, item *domainmodels.InfraredState) error {
 	return nil
 }
 
-func (p *postgresImpl) ListByDeviceTypeId(ctx context.Context, infraredDeviceTypeId uuid.UUID) ([]domainmodels.InfraredState, error) {
-	query, args, err := p.queryListByDeviceTypeId(infraredDeviceTypeId)
+func (p *postgresImpl) ReadListByDeviceTypeId(ctx context.Context, infraredDeviceTypeId uuid.UUID) ([]domainmodels.InfraredState, error) {
+	query, args, err := p.queryReadListByDeviceTypeId(infraredDeviceTypeId)
 	if err != nil {
 		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build infrared_state list query", err)
 	}

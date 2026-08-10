@@ -26,7 +26,7 @@ func (p *postgresImpl) queryCreate(infraredDeviceTypeId uuid.UUID, brand string,
 		ToSql()
 }
 
-func (p *postgresImpl) queryGetById(id uuid.UUID) (query string, args []any, err error) {
+func (p *postgresImpl) queryReadById(id uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredDeviceColumns...).
 		From("infrared_device").
 		Where(squirrel.Eq{"id": id}).
