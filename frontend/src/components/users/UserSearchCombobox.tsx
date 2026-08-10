@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import Input from "@/components/ui/input";
-import { listUsers, type UserResponse } from "@/lib/api/users";
+import { searchUsersAction } from "@/lib/actions/entity-search-actions";
+import type { SearchOption } from "@/lib/actions/search-options";
 
 const RESULTS_PER_PAGE = 6;
 const DEBOUNCE_MS = 300;
@@ -15,10 +16,6 @@ interface UserSearchComboboxProps {
   defaultUserLabel?: string;
   label?: string;
   placeholder?: string;
-}
-
-function userLabel(user: UserResponse): string {
-  return `${user.name} (@${user.username})`;
 }
 
 export default function UserSearchCombobox({
@@ -33,8 +30,8 @@ export default function UserSearchCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [users, setUsers] = useState<UserResponse[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
+  const [users, setUsers] = useState<SearchOption[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState(defaultUserId ?? "");
   const [selectedLabel, setSelectedLabel] = useState(defaultUserLabel ?? "");
@@ -45,16 +42,16 @@ export default function UserSearchCombobox({
     const timeout = setTimeout(() => {
       let cancelled = false;
       setLoading(true);
-      listUsers({ search: query || undefined, page, limit: RESULTS_PER_PAGE })
+      searchUsersAction({ query, page, limit: RESULTS_PER_PAGE })
         .then((result) => {
           if (cancelled) return;
-          setUsers(result.data);
-          setTotalItems(result.page.total_items);
+          setUsers(result.items);
+          setTotalPages(result.totalPages);
         })
         .catch(() => {
           if (cancelled) return;
           setUsers([]);
-          setTotalItems(0);
+          setTotalPages(1);
         })
         .finally(() => {
           if (!cancelled) setLoading(false);
@@ -80,11 +77,9 @@ export default function UserSearchCombobox({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [open]);
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / RESULTS_PER_PAGE));
-
-  function select(user: UserResponse | null) {
-    setSelectedId(user?.id ?? "");
-    setSelectedLabel(user ? userLabel(user) : "");
+  function select(user: SearchOption | null) {
+    setSelectedId(user?.value ?? "");
+    setSelectedLabel(user?.label ?? "");
     setOpen(false);
   }
 
@@ -96,6 +91,7 @@ export default function UserSearchCombobox({
       <input type="hidden" name={name} value={selectedId} />
       <button
         type="button"
+        data-field-name={name}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => {
@@ -133,14 +129,20 @@ export default function UserSearchCombobox({
             />
           </div>
 
-          <ul className="mt-2 max-h-56 space-y-0.5 overflow-y-auto" role="listbox">
+          <ul
+            className="mt-2 max-h-56 space-y-0.5 overflow-y-auto"
+            role="listbox"
+          >
             <li>
               <button
                 type="button"
                 onClick={() => select(null)}
                 className="hover:bg-highlight/40 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
               >
-                <X aria-hidden="true" className="text-muted-foreground size-3.5" />
+                <X
+                  aria-hidden="true"
+                  className="text-muted-foreground size-3.5"
+                />
                 No user selected
               </button>
             </li>
@@ -150,17 +152,19 @@ export default function UserSearchCombobox({
               </li>
             ) : users.length ? (
               users.map((user) => (
-                <li key={user.id}>
+                <li key={user.value}>
                   <button
                     type="button"
                     role="option"
-                    aria-selected={user.id === selectedId}
+                    aria-selected={user.value === selectedId}
                     onClick={() => select(user)}
                     className={`hover:bg-highlight/40 w-full rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                      user.id === selectedId ? "bg-highlight/40 font-semibold" : ""
+                      user.value === selectedId
+                        ? "bg-highlight/40 font-semibold"
+                        : ""
                     }`}
                   >
-                    {userLabel(user)}
+                    {user.label}
                   </button>
                 </li>
               ))

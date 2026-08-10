@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import Input from "@/components/ui/input";
-import { listRoles, type RoleResponse } from "@/lib/api/roles";
+import { searchRolesAction } from "@/lib/actions/entity-search-actions";
+import type { SearchOption } from "@/lib/actions/search-options";
 
 const RESULTS_PER_PAGE = 6;
 const DEBOUNCE_MS = 300;
@@ -29,8 +30,8 @@ export default function RoleSearchCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [roles, setRoles] = useState<RoleResponse[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
+  const [roles, setRoles] = useState<SearchOption[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState(defaultRoleId ?? "");
   const [selectedName, setSelectedName] = useState(defaultRoleName ?? "");
@@ -41,16 +42,16 @@ export default function RoleSearchCombobox({
     const timeout = setTimeout(() => {
       let cancelled = false;
       setLoading(true);
-      listRoles({ search: query || undefined, page, limit: RESULTS_PER_PAGE })
+      searchRolesAction({ query, page, limit: RESULTS_PER_PAGE })
         .then((result) => {
           if (cancelled) return;
-          setRoles(result.data);
-          setTotalItems(result.page.total_items);
+          setRoles(result.items);
+          setTotalPages(result.totalPages);
         })
         .catch(() => {
           if (cancelled) return;
           setRoles([]);
-          setTotalItems(0);
+          setTotalPages(1);
         })
         .finally(() => {
           if (!cancelled) setLoading(false);
@@ -76,11 +77,9 @@ export default function RoleSearchCombobox({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [open]);
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / RESULTS_PER_PAGE));
-
-  function select(role: RoleResponse | null) {
-    setSelectedId(role?.id ?? "");
-    setSelectedName(role?.name ?? "");
+  function select(role: SearchOption | null) {
+    setSelectedId(role?.value ?? "");
+    setSelectedName(role?.label ?? "");
     setOpen(false);
   }
 
@@ -92,6 +91,7 @@ export default function RoleSearchCombobox({
       <input type="hidden" name={name} value={selectedId} />
       <button
         type="button"
+        data-field-name={name}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => {
@@ -129,14 +129,20 @@ export default function RoleSearchCombobox({
             />
           </div>
 
-          <ul className="mt-2 max-h-56 space-y-0.5 overflow-y-auto" role="listbox">
+          <ul
+            className="mt-2 max-h-56 space-y-0.5 overflow-y-auto"
+            role="listbox"
+          >
             <li>
               <button
                 type="button"
                 onClick={() => select(null)}
                 className="hover:bg-highlight/40 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
               >
-                <X aria-hidden="true" className="text-muted-foreground size-3.5" />
+                <X
+                  aria-hidden="true"
+                  className="text-muted-foreground size-3.5"
+                />
                 Any role
               </button>
             </li>
@@ -146,20 +152,22 @@ export default function RoleSearchCombobox({
               </li>
             ) : roles.length ? (
               roles.map((role) => (
-                <li key={role.id}>
+                <li key={role.value}>
                   <button
                     type="button"
                     role="option"
-                    aria-selected={role.id === selectedId}
+                    aria-selected={role.value === selectedId}
                     onClick={() => select(role)}
                     className={`hover:bg-highlight/40 w-full rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                      role.id === selectedId ? "bg-highlight/40 font-semibold" : ""
+                      role.value === selectedId
+                        ? "bg-highlight/40 font-semibold"
+                        : ""
                     }`}
                   >
-                    {role.name}
-                    {role.is_default ? (
+                    {role.label}
+                    {role.annotation ? (
                       <span className="text-muted-foreground ml-1.5 text-xs">
-                        (default)
+                        {role.annotation}
                       </span>
                     ) : null}
                   </button>

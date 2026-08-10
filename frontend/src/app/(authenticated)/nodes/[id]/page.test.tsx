@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { listActions } from "@/lib/api/actions";
+import { listAllActions } from "@/lib/api/actions";
 import {
   getFirmwareConfigParameters,
   listAvailableFirmwaresByNodeId,
@@ -12,6 +12,8 @@ import { requirePermission } from "@/lib/session";
 import { nodeFixture, USER } from "@/test/fixtures";
 
 import NodeDetailPage from "./page";
+
+vi.mock("server-only", () => ({}));
 
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(),
@@ -27,7 +29,7 @@ vi.mock("@/lib/api/firmwares", () => ({
 }));
 
 vi.mock("@/lib/api/actions", () => ({
-  listActions: vi.fn(),
+  listAllActions: vi.fn(),
 }));
 
 vi.mock("@/lib/api/node-config", () => ({
@@ -84,10 +86,7 @@ describe("NodeDetailPage", () => {
       ],
       page: { page: 1, limit: 12, total_items: 1 },
     });
-    vi.mocked(listActions).mockResolvedValue({
-      data: [],
-      page: { page: 1, limit: 48, total_items: 0 },
-    });
+    vi.mocked(listAllActions).mockResolvedValue([]);
   });
 
   afterEach(cleanup);
@@ -123,9 +122,7 @@ describe("NodeDetailPage", () => {
   it("loads compatible actions without configuration reads", async () => {
     await renderPage("actions", ["action:get"]);
 
-    expect(listActions).toHaveBeenCalledWith({
-      page: 1,
-      limit: 48,
+    expect(listAllActions).toHaveBeenCalledWith({
       node_class_id: "class-1",
     });
     expect(screen.getByText(/no compatible actions/i)).toBeVisible();

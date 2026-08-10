@@ -1,15 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   useActionState,
-  useEffect,
   useId,
+  useRef,
   useState,
   type ChangeEvent,
 } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
@@ -18,6 +19,8 @@ import type {
   FirmwareConfigSchemaItem,
   FirmwareResponse,
 } from "@/lib/api/firmwares";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
   createFirmwareAction,
@@ -47,27 +50,14 @@ interface SchemaRow extends FirmwareConfigSchemaItem {
 
 const INITIAL_STATE: FormActionState = { status: "idle" };
 
-function StateMessage({ state }: { state: FormActionState }) {
-  return (
-    <p
-      aria-live={state.status === "error" ? "assertive" : "polite"}
-      className={
-        state.status === "error"
-          ? "text-critical text-sm"
-          : "text-success text-sm"
-      }
-    >
-      {state.message}
-    </p>
-  );
-}
-
 function NodeClassField({
   defaultValue,
+  error,
   fieldId,
   nodeClasses,
 }: {
   defaultValue?: string;
+  error?: string;
   fieldId: string;
   nodeClasses: readonly FirmwareNodeClassOption[];
 }) {
@@ -81,6 +71,7 @@ function NodeClassField({
           defaultValue={defaultValue}
           required
         />
+        <FieldError>{error}</FieldError>
       </div>
     );
   }
@@ -110,14 +101,19 @@ function NodeClassField({
           </option>
         ))}
       </select>
+      <FieldError>{error}</FieldError>
     </div>
   );
 }
 
 function ConfigSchemaFields({
+  error,
   initialSchema,
+  serializedName,
 }: {
+  error?: string;
   initialSchema: readonly FirmwareConfigSchemaItem[];
+  serializedName?: string;
 }) {
   const id = useId();
   const [nextId, setNextId] = useState(initialSchema.length + 1);
@@ -141,7 +137,11 @@ function ConfigSchemaFields({
   };
 
   return (
-    <fieldset className="border-border space-y-3 rounded-xl border p-4">
+    <fieldset
+      data-field-name="config_schema"
+      tabIndex={-1}
+      className="border-border space-y-3 rounded-xl border p-4"
+    >
       <legend className="px-1 text-sm font-semibold">
         Configuration schema
       </legend>
@@ -149,6 +149,15 @@ function ConfigSchemaFields({
         Define keys the node can configure. Supported types are string, uint32,
         and bool.
       </p>
+      {serializedName ? (
+        <input
+          type="hidden"
+          name={serializedName}
+          value={JSON.stringify(
+            rows.map(({ key, value_type }) => ({ key, value_type })),
+          )}
+        />
+      ) : null}
 
       {rows.map((row, index) => (
         <div
@@ -214,6 +223,74 @@ function ConfigSchemaFields({
         <Plus aria-hidden="true" className="size-4" />
         Add configuration parameter
       </Button>
+      <FieldError>{error}</FieldError>
+    </fieldset>
+  );
+}
+
+type SchemaIntentMode = "keep" | "replace" | "clear";
+
+function SchemaIntentFields({
+  error,
+  initialSchema,
+  intentError,
+}: {
+  error?: string;
+  initialSchema: readonly FirmwareConfigSchemaItem[];
+  intentError?: string;
+}) {
+  const id = useId();
+  const [mode, setMode] = useState<SchemaIntentMode>("keep");
+
+  return (
+    <fieldset
+      data-field-name="schema_intent"
+      tabIndex={-1}
+      className="border-border space-y-3 rounded-xl border p-4"
+    >
+      <legend className="px-1 text-sm font-semibold">
+        Configuration schema handling
+      </legend>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {(["keep", "replace", "clear"] as const).map((value) => (
+          <label
+            key={value}
+            htmlFor={`${id}-${value}`}
+            className="border-border focus-within:ring-focus flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium focus-within:ring-2"
+          >
+            <input
+              id={`${id}-${value}`}
+              type="radio"
+              name="schema_intent"
+              value={value}
+              // Keep the chosen mode as the reset baseline for React actions.
+              defaultChecked={mode === value}
+              onChange={() => setMode(value)}
+            />
+            {value[0].toUpperCase() + value.slice(1)}
+          </label>
+        ))}
+      </div>
+      <FieldError>{intentError}</FieldError>
+      {mode === "keep" ? (
+        <p className="text-muted-foreground text-sm">
+          The existing configuration schema will remain unchanged.
+        </p>
+      ) : null}
+      {mode === "replace" ? (
+        <ConfigSchemaFields
+          error={error}
+          initialSchema={initialSchema}
+          serializedName="config_schema"
+        />
+      ) : null}
+      {mode === "clear" ? (
+        <p className="text-muted-foreground text-sm">
+          Clear will remove the existing configuration schema after the binary
+          is replaced.
+        </p>
+      ) : null}
+      {mode !== "replace" ? <FieldError>{error}</FieldError> : null}
     </fieldset>
   );
 }
@@ -231,12 +308,9 @@ function UploadDialog({
     createFirmwareAction,
     INITIAL_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  const formRef = useRef<HTMLFormElement>(null);
+  useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -248,13 +322,24 @@ function UploadDialog({
       onClose={close}
       title="Upload firmware"
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        ref={formRef}
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <div>
           <Label htmlFor={`${id}-name`}>Firmware name</Label>
           <Input id={`${id}-name`} name="name" required />
+          <FieldError>{state.fieldErrors?.name}</FieldError>
         </div>
-        <NodeClassField fieldId={id} nodeClasses={nodeClasses} />
+        <NodeClassField
+          error={state.fieldErrors?.node_class_id}
+          fieldId={id}
+          nodeClasses={nodeClasses}
+        />
         <div>
           <Label htmlFor={`${id}-file`}>Firmware binary</Label>
           <Input
@@ -264,19 +349,13 @@ function UploadDialog({
             accept=".bin,application/octet-stream"
             required
           />
-          {state.fieldErrors?.file ? (
-            <p className="text-critical mt-1.5 text-sm">
-              {state.fieldErrors.file}
-            </p>
-          ) : null}
+          <FieldError>{state.fieldErrors?.file}</FieldError>
         </div>
-        <ConfigSchemaFields initialSchema={[]} />
-        {state.fieldErrors?.config_schema ? (
-          <p className="text-critical text-sm">
-            {state.fieldErrors.config_schema}
-          </p>
-        ) : null}
-        <StateMessage state={state} />
+        <ConfigSchemaFields
+          error={state.fieldErrors?.config_schema}
+          initialSchema={[]}
+        />
+        <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"
@@ -310,12 +389,9 @@ function EditDialog({
     updateFirmwareAction,
     INITIAL_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  const formRef = useRef<HTMLFormElement>(null);
+  useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -327,8 +403,14 @@ function EditDialog({
       onClose={close}
       title={`Edit ${firmware.name}`}
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        ref={formRef}
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="firmware_id" value={firmware.id} />
         <div>
           <Label htmlFor={`${id}-name`}>Firmware name</Label>
@@ -338,13 +420,15 @@ function EditDialog({
             defaultValue={firmware.name}
             required
           />
+          <FieldError>{state.fieldErrors?.name}</FieldError>
         </div>
         <NodeClassField
           defaultValue={firmware.node_class_id}
+          error={state.fieldErrors?.node_class_id}
           fieldId={id}
           nodeClasses={nodeClasses}
         />
-        <StateMessage state={state} />
+        <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"
@@ -378,12 +462,9 @@ function ReplaceDialog({
     replaceFirmwareBinaryAction,
     INITIAL_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  const formRef = useRef<HTMLFormElement>(null);
+  useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -395,12 +476,19 @@ function ReplaceDialog({
       onClose={close}
       title={`Replace ${firmware.name} binary`}
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        ref={formRef}
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="firmware_id" value={firmware.id} />
         <p className="border-warning/40 bg-warning/10 rounded-xl border p-4 text-sm">
-          Replacing the binary also replaces its submitted configuration schema.
-          Existing node values remain governed by backend compatibility rules.
+          Choose separately whether to keep, replace, or clear the configuration
+          schema. Existing node values remain governed by backend compatibility
+          rules.
         </p>
         <div>
           <Label htmlFor={`${id}-file`}>Replacement firmware binary</Label>
@@ -411,19 +499,14 @@ function ReplaceDialog({
             accept=".bin,application/octet-stream"
             required
           />
-          {state.fieldErrors?.file ? (
-            <p className="text-critical mt-1.5 text-sm">
-              {state.fieldErrors.file}
-            </p>
-          ) : null}
+          <FieldError>{state.fieldErrors?.file}</FieldError>
         </div>
-        <ConfigSchemaFields initialSchema={configSchema} />
-        {state.fieldErrors?.config_schema ? (
-          <p className="text-critical text-sm">
-            {state.fieldErrors.config_schema}
-          </p>
-        ) : null}
-        <StateMessage state={state} />
+        <SchemaIntentFields
+          error={state.fieldErrors?.config_schema}
+          initialSchema={configSchema}
+          intentError={state.fieldErrors?.schema_intent}
+        />
+        <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"
@@ -456,6 +539,8 @@ function DeleteDialog({
     deleteFirmwareAction,
     INITIAL_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -467,8 +552,14 @@ function DeleteDialog({
       onClose={close}
       title={`Delete ${firmware.name}`}
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        ref={formRef}
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="firmware_id" value={firmware.id} />
         <p className="border-critical/40 bg-critical/5 rounded-xl border p-4 text-sm">
           Nodes or other dependent resources can prevent deletion. Enter the
@@ -484,13 +575,9 @@ function DeleteDialog({
             autoComplete="off"
             onChange={(event) => setConfirmation(event.target.value)}
           />
-          {state.fieldErrors?.confirmation ? (
-            <p className="text-critical mt-1.5 text-sm">
-              {state.fieldErrors.confirmation}
-            </p>
-          ) : null}
+          <FieldError>{state.fieldErrors?.confirmation}</FieldError>
         </div>
-        <StateMessage state={state} />
+        <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"

@@ -1,8 +1,9 @@
-export interface PayloadSchemaActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
+import {
+  INITIAL_ACTION_STATE,
+  type ActionState,
+} from "@/lib/forms/action-state";
 
-export const EMPTY_SCHEMA_STATE: PayloadSchemaActionState = { status: "idle" };
+export type PayloadSchemaActionState = ActionState<string>;
+
+export const EMPTY_SCHEMA_STATE: PayloadSchemaActionState =
+  INITIAL_ACTION_STATE;

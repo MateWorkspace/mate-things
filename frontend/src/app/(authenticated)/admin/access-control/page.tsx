@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
-import { listPermissions } from "@/lib/api/permissions";
-import { getRolePermissions, listRoles } from "@/lib/api/roles";
+import { listAllPermissions } from "@/lib/api/permissions";
+import { getRolePermissions, listAllRoles } from "@/lib/api/roles";
+import { firstQueryValue, parseEnumQuery } from "@/lib/query";
 import { requireAnyPermission } from "@/lib/session";
 
 import AccessCreateActions from "./_components/AccessCreateActions";
@@ -25,16 +26,19 @@ export default async function AccessControlPage({
   ]);
   const canRoles = session.permissions.has("role:get");
   const canPermissions = session.permissions.has("permission:get");
-  let tab: "roles" | "permissions" =
-    String(raw.tab) === "permissions" ? "permissions" : "roles";
+  let tab =
+    parseEnumQuery(firstQueryValue(raw.tab), [
+      "roles",
+      "permissions",
+    ] as const) ?? "roles";
   if (tab === "roles" && !canRoles && canPermissions) tab = "permissions";
   if (tab === "permissions" && !canPermissions && canRoles) tab = "roles";
   const [rolesResult, permissionsResult] = await Promise.all([
-    canRoles ? listRoles({ limit: 48 }) : Promise.resolve(null),
-    canPermissions ? listPermissions({ limit: 48 }) : Promise.resolve(null),
+    canRoles ? listAllRoles() : Promise.resolve(null),
+    canPermissions ? listAllPermissions() : Promise.resolve(null),
   ]);
-  const roleId = String(raw.role ?? "");
-  const selectedRole = rolesResult?.data.find((role) => role.id === roleId);
+  const roleId = firstQueryValue(raw.role) ?? "";
+  const selectedRole = rolesResult?.find((role) => role.id === roleId);
   const assignments =
     selectedRole && session.permissions.has("role_permission:get")
       ? await getRolePermissions(selectedRole.id)
@@ -61,13 +65,13 @@ export default async function AccessControlPage({
         selectedRole ? (
           <RoleDetails
             role={selectedRole}
-            permissions={permissionsResult?.data ?? []}
+            permissions={permissionsResult ?? []}
             selected={assignments.map((item) => item.id)}
             grants={[...session.permissions]}
           />
-        ) : rolesResult?.data.length ? (
+        ) : rolesResult?.length ? (
           <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {rolesResult.data.map((role) => (
+            {rolesResult.map((role) => (
               <RoleCard key={role.id} role={role} />
             ))}
           </section>
@@ -77,9 +81,9 @@ export default async function AccessControlPage({
             description="Create a role to start composing access."
           />
         )
-      ) : permissionsResult?.data.length ? (
+      ) : permissionsResult?.length ? (
         <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {permissionsResult.data.map((permission) => (
+          {permissionsResult.map((permission) => (
             <PermissionCard
               key={permission.id}
               permission={permission}

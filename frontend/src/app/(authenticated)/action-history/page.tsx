@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/states";
 import { getActionById } from "@/lib/api/actions";
 import { listActionLogs } from "@/lib/api/action-logs";
 import { getNodeById } from "@/lib/api/nodes";
+import { getOptionalById } from "@/lib/api/optional";
 import {
   getOutOfRangePageRedirect,
   parsePageQuery,
@@ -35,15 +36,17 @@ export default async function ActionHistoryPage({
   ]);
   const pageQuery = parsePageQuery(raw);
   const parsed = parseActionHistoryFilters(raw);
+  const canReadActions = permissions.has("action:get");
+  const canReadNodes = permissions.has("node:get");
 
   const [actionDefault, nodeDefault] = parsed.error
     ? [null, null]
     : await Promise.all([
-        parsed.filters.actionId
-          ? getActionById(parsed.filters.actionId).catch(() => null)
+        canReadActions && parsed.filters.actionId
+          ? getOptionalById(() => getActionById(parsed.filters.actionId!))
           : Promise.resolve(null),
-        parsed.filters.nodeId
-          ? getNodeById(parsed.filters.nodeId).catch(() => null)
+        canReadNodes && parsed.filters.nodeId
+          ? getOptionalById(() => getNodeById(parsed.filters.nodeId!))
           : Promise.resolve(null),
       ]);
 
@@ -101,6 +104,8 @@ export default async function ActionHistoryPage({
         }
       />
       <ActionLogFilters
+        canReadActions={canReadActions}
+        canReadNodes={canReadNodes}
         start={parsed.filters.start}
         end={parsed.filters.end}
         actionId={parsed.filters.actionId}

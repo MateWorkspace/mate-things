@@ -2,10 +2,7 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/ui/states";
 
-import type { ConnectionFilter } from "./NodeFilters";
-
 interface NodeCollectionEmptyStateProps {
-  connection: ConnectionFilter;
   firmwareId?: string;
   limit: number;
   nodeClassId?: string;
@@ -25,16 +22,13 @@ function StateLink({ children, href }: { children: string; href: string }) {
 }
 
 export default function NodeCollectionEmptyState({
-  connection,
   firmwareId,
   limit,
   nodeClassId,
   search,
   totalItems,
 }: NodeCollectionEmptyStateProps) {
-  const hasActiveFilters = Boolean(
-    search || nodeClassId || firmwareId || connection !== "all",
-  );
+  const hasActiveFilters = Boolean(search || nodeClassId || firmwareId);
   const firstPageHref = `/nodes?limit=${limit}`;
 
   if (totalItems === 0 && !hasActiveFilters) {

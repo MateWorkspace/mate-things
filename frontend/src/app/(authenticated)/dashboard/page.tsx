@@ -9,6 +9,7 @@ import FleetMetricCard from "./_components/FleetMetricCard";
 import RecentWarnings from "./_components/RecentWarnings";
 import UrgentAttention from "./_components/UrgentAttention";
 import {
+  DASHBOARD_NODE_SAMPLE_SIZE,
   DASHBOARD_RECENT_WINDOW_HOURS,
   loadDashboardData,
 } from "./_lib/dashboard-data";
@@ -49,6 +50,12 @@ export default async function DashboardPage() {
               Log and action signals cover the last{" "}
               {DASHBOARD_RECENT_WINDOW_HOURS} hours.
             </p>
+            {data.nodes ? (
+              <p className="text-foreground mt-2 text-sm font-semibold">
+                Connection figures are a bounded first-page sample of up to{" "}
+                {DASHBOARD_NODE_SAMPLE_SIZE} nodes, not fleet-wide totals.
+              </p>
+            ) : null}
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {data.nodes ? (
@@ -64,22 +71,22 @@ export default async function DashboardPage() {
             ) : null}
             {data.nodes ? (
               <FleetMetricCard
-                description={`${data.nodes.sampled}-node page sample`}
-                href="/nodes?connection=connected"
+                description={`Bounded first-page sample · ${data.nodes.sampled} nodes inspected`}
+                href="/nodes"
                 icon={RadioTower}
                 label="Connected"
-                status="Sampled"
+                status="Sample only"
                 statusVariant="success"
                 value={data.nodes.connected}
               />
             ) : null}
             {data.nodes ? (
               <FleetMetricCard
-                description={`${data.nodes.sampled}-node page sample`}
-                href="/nodes?connection=disconnected"
+                description={`Bounded first-page sample · ${data.nodes.sampled} nodes inspected`}
+                href="/nodes"
                 icon={CircleAlert}
                 label="Disconnected"
-                status={disconnectedCount > 0 ? "Attention" : "Clear"}
+                status={disconnectedCount > 0 ? "Sample alert" : "Sample clear"}
                 statusVariant={disconnectedCount > 0 ? "critical" : "success"}
                 value={disconnectedCount}
               />
@@ -114,6 +121,15 @@ export default async function DashboardPage() {
         </section>
       ) : null}
 
+      {disconnectedCount > 0 ? (
+        <p
+          className="border-accent bg-highlight/20 text-foreground rounded-xl border px-4 py-3 text-sm font-semibold"
+          role="note"
+        >
+          Sample-only node alerts: disconnected nodes shown below come from the
+          same bounded first-page sample, not the complete fleet.
+        </p>
+      ) : null}
       <UrgentAttention
         disconnectedNodes={data.nodes?.disconnected}
         failedActions={data.failedActions}

@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import Input from "@/components/ui/input";
-import { listNodes, type NodeResponse } from "@/lib/api/nodes";
+import { searchNodesAction } from "@/lib/actions/entity-search-actions";
+import type { SearchOption } from "@/lib/actions/search-options";
 
 const RESULTS_PER_PAGE = 6;
 const DEBOUNCE_MS = 300;
@@ -29,8 +30,8 @@ export default function NodeSearchCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [nodes, setNodes] = useState<NodeResponse[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
+  const [nodes, setNodes] = useState<SearchOption[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState(defaultNodeId ?? "");
   const [selectedName, setSelectedName] = useState(defaultNodeName ?? "");
@@ -41,16 +42,16 @@ export default function NodeSearchCombobox({
     const timeout = setTimeout(() => {
       let cancelled = false;
       setLoading(true);
-      listNodes({ search: query || undefined, page, limit: RESULTS_PER_PAGE })
+      searchNodesAction({ query, page, limit: RESULTS_PER_PAGE })
         .then((result) => {
           if (cancelled) return;
-          setNodes(result.data);
-          setTotalItems(result.page.total_items);
+          setNodes(result.items);
+          setTotalPages(result.totalPages);
         })
         .catch(() => {
           if (cancelled) return;
           setNodes([]);
-          setTotalItems(0);
+          setTotalPages(1);
         })
         .finally(() => {
           if (!cancelled) setLoading(false);
@@ -76,11 +77,9 @@ export default function NodeSearchCombobox({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [open]);
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / RESULTS_PER_PAGE));
-
-  function select(node: NodeResponse | null) {
-    setSelectedId(node?.id ?? "");
-    setSelectedName(node?.name || node?.device_id || "");
+  function select(node: SearchOption | null) {
+    setSelectedId(node?.value ?? "");
+    setSelectedName(node?.label ?? "");
     setOpen(false);
   }
 
@@ -92,6 +91,7 @@ export default function NodeSearchCombobox({
       <input type="hidden" name={name} value={selectedId} />
       <button
         type="button"
+        data-field-name={name}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => {
@@ -152,19 +152,19 @@ export default function NodeSearchCombobox({
               </li>
             ) : nodes.length ? (
               nodes.map((node) => (
-                <li key={node.id}>
+                <li key={node.value}>
                   <button
                     type="button"
                     role="option"
-                    aria-selected={node.id === selectedId}
+                    aria-selected={node.value === selectedId}
                     onClick={() => select(node)}
                     className={`hover:bg-highlight/40 w-full rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                      node.id === selectedId
+                      node.value === selectedId
                         ? "bg-highlight/40 font-semibold"
                         : ""
                     }`}
                   >
-                    {node.name || node.device_id}
+                    {node.label}
                   </button>
                 </li>
               ))

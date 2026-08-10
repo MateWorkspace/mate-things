@@ -1,43 +1,56 @@
 "use client";
 
-import { useActionState, useContext, useEffect, useRef } from "react";
+import {
+  useActionState,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
-import { ToastContext } from "@/components/ui/toast-provider";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 
 import { changePasswordAction, type FormActionState } from "./profile-actions";
 
 const INITIAL_STATE: FormActionState = { status: "idle" };
 
-export default function SecurityForm() {
+export default function SecurityForm({
+  onPendingChange,
+}: {
+  onPendingChange?: (pending: boolean) => void;
+}) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const submitPassword = useCallback(
+    async (previousState: FormActionState, formData: FormData) => {
+      const result = await changePasswordAction(previousState, formData);
+      if (result.status === "success") {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+      return result;
+    },
+    [],
+  );
   const [state, formAction, isPending] = useActionState(
-    changePasswordAction,
+    submitPassword,
     INITIAL_STATE,
   );
   const formRef = useRef<HTMLFormElement>(null);
-  const lastShown = useRef<FormActionState | null>(null);
-  const toast = useContext(ToastContext);
-
+  useActionFeedback(state);
+  useFirstInvalidField(state, formRef);
   useEffect(() => {
-    if (
-      state.status === "idle" ||
-      !state.title ||
-      state === lastShown.current
-    ) {
-      return;
-    }
-
-    lastShown.current = state;
-    const message = state.message ?? "";
-    if (state.status === "success") {
-      formRef.current?.reset();
-      toast?.success(state.title, message);
-    } else {
-      toast?.error(state.title, message);
-    }
-  }, [state, toast]);
+    onPendingChange?.(isPending);
+    return () => onPendingChange?.(false);
+  }, [isPending, onPendingChange]);
 
   return (
     <form ref={formRef} action={formAction} className="space-y-4">
@@ -49,6 +62,8 @@ export default function SecurityForm() {
           type="password"
           autoComplete="current-password"
           required
+          value={currentPassword}
+          onChange={(event) => setCurrentPassword(event.target.value)}
         />
       </div>
 
@@ -60,6 +75,8 @@ export default function SecurityForm() {
           type="password"
           autoComplete="new-password"
           required
+          value={newPassword}
+          onChange={(event) => setNewPassword(event.target.value)}
         />
       </div>
 
@@ -71,6 +88,8 @@ export default function SecurityForm() {
           type="password"
           autoComplete="new-password"
           required
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
           aria-invalid={Boolean(state.fieldErrors?.confirm_password)}
           aria-describedby={
             state.fieldErrors?.confirm_password
@@ -78,26 +97,12 @@ export default function SecurityForm() {
               : undefined
           }
         />
-        {state.fieldErrors?.confirm_password ? (
-          <p
-            id="confirm-password-error"
-            className="text-critical mt-1.5 text-sm"
-          >
-            {state.fieldErrors.confirm_password}
-          </p>
-        ) : null}
+        <FieldError id="confirm-password-error">
+          {state.fieldErrors?.confirm_password}
+        </FieldError>
       </div>
 
-      <p
-        aria-live="polite"
-        className={
-          state.status === "error"
-            ? "text-critical text-sm"
-            : "text-success text-sm"
-        }
-      >
-        {state.message}
-      </p>
+      <ActionMessage state={state} />
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isPending}>

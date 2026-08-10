@@ -1,3 +1,5 @@
+import "server-only";
+
 import { cookies } from "next/headers";
 
 import { API_BASE_URL } from "@/config/env";

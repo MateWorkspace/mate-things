@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -78,5 +78,30 @@ describe("Dialog", () => {
     // called unconditionally from that handler so the parent always stays
     // in sync with the dialog's actual open state (see dialog.tsx).
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("suppresses every dismissal path when not dismissible", async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <Dialog open dismissible={false} onClose={onClose} title="Pending action">
+        Content
+      </Dialog>,
+    );
+
+    const dialog = screen.getByRole("dialog", { name: "Pending action" });
+    const closeButton = screen.getByRole("button", {
+      name: "Close Pending action",
+    });
+
+    await user.keyboard("{Escape}");
+    fireEvent.click(dialog);
+    fireEvent(dialog, new Event("cancel", { cancelable: true }));
+    await user.click(closeButton);
+
+    expect(closeButton).toBeDisabled();
+    expect(dialog).toBeVisible();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

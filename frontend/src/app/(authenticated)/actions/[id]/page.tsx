@@ -9,8 +9,8 @@ import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { getActionById } from "@/lib/api/actions";
 import { ApiError } from "@/lib/api/client";
-import { listNodeClassActions } from "@/lib/api/node-classes";
-import { listNodes } from "@/lib/api/nodes";
+import { listAllNodeClassActions } from "@/lib/api/node-classes";
+import { listAllNodes } from "@/lib/api/nodes";
 import { listAllPayloadSchemas } from "@/lib/api/payload-schemas";
 import { requirePermission } from "@/lib/session";
 
@@ -32,25 +32,19 @@ export default async function ActionDetailPage({
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
   }
-  const [schemas, compatibleClasses, nodesPage] = await Promise.all([
+  const [schemas, compatibleClasses, nodes] = await Promise.all([
     permissions.has("payload_schema:get")
       ? listAllPayloadSchemas()
       : Promise.resolve([]),
     permissions.has("node_class_action:get")
-      ? listNodeClassActions({ action_id: id, limit: 48 })
-      : Promise.resolve({
-          data: [],
-          page: { page: 1, limit: 48, total_items: 0 },
-        }),
+      ? listAllNodeClassActions({ action_id: id })
+      : Promise.resolve([]),
     permissions.has("node:get") && permissions.has("action:dispatch")
-      ? listNodes({ page: 1, limit: 100 })
-      : Promise.resolve({
-          data: [],
-          page: { page: 1, limit: 100, total_items: 0 },
-        }),
+      ? listAllNodes()
+      : Promise.resolve([]),
   ]);
   const compatibleNodeClassIds = new Set(
-    compatibleClasses.data.map((item) => item.node_class.id),
+    compatibleClasses.map((item) => item.node_class.id),
   );
   const canEdit =
     permissions.has("action:set") && permissions.has("payload_schema:get");
@@ -66,7 +60,7 @@ export default async function ActionDetailPage({
             permissions.has("node:get") ? (
               <DispatchActionDialog
                 action={action}
-                nodes={nodesPage.data}
+                nodes={nodes}
                 compatibleNodeClassIds={compatibleNodeClassIds}
               />
             ) : null}
@@ -107,9 +101,9 @@ export default async function ActionDetailPage({
           <h2 className="font-display text-primary text-lg">
             Compatible node classes
           </h2>
-          {compatibleClasses.data.length ? (
+          {compatibleClasses.length ? (
             <ul className="mt-3 space-y-2">
-              {compatibleClasses.data.map((item) => (
+              {compatibleClasses.map((item) => (
                 <li
                   key={item.node_class.id}
                   className="bg-muted rounded-xl px-3 py-2 text-sm"

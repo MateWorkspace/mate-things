@@ -1,4 +1,13 @@
-export type RawRecordFilters = Record<string, string | string[] | undefined>;
+import {
+  firstQueryValue,
+  parseAbsoluteDateTime,
+  parseLocalDateTime,
+  parsePositiveSafeInteger,
+  toUtcQueryValue,
+  type RawSearchParams,
+} from "./query";
+
+export type RawRecordFilters = RawSearchParams;
 
 export interface RecordFilters {
   start?: string;
@@ -20,16 +29,16 @@ export interface ParsedRecordFilters {
 }
 
 function first(value: string | string[] | undefined): string {
-  return (Array.isArray(value) ? value[0] : (value ?? "")).trim();
+  return (firstQueryValue(value) ?? "").trim();
 }
 
 function iso(value: string, field: string): { value?: string; error?: string } {
   if (!value) return {};
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  const date = parseLocalDateTime(value) ?? parseAbsoluteDateTime(value);
+  if (!date) {
     return { error: `${field} must be a valid date and time.` };
   }
-  return { value: date.toISOString() };
+  return { value: toUtcQueryValue(date) };
 }
 
 export function parseRecordFilters(raw: RawRecordFilters): ParsedRecordFilters {
@@ -42,8 +51,8 @@ export function parseRecordFilters(raw: RawRecordFilters): ParsedRecordFilters {
   const versionRaw = first(raw.payload_schema_version);
   let payloadSchemaVersion: number | undefined;
   if (versionRaw) {
-    const version = Number(versionRaw);
-    if (!Number.isInteger(version) || version <= 0) {
+    const version = parsePositiveSafeInteger(versionRaw, 0);
+    if (version === 0) {
       fieldErrors.payload_schema_version =
         "Schema version must be a positive whole number.";
     } else {

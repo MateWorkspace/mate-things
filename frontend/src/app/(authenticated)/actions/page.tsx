@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import ActionCard from "@/app/(authenticated)/actions/_components/ActionCard";
 import ActionForm from "@/app/(authenticated)/actions/_components/ActionForm";
@@ -10,7 +11,11 @@ import { EmptyState } from "@/components/ui/states";
 import { listActions } from "@/lib/api/actions";
 import { getNodeClassById } from "@/lib/api/node-classes";
 import { listAllPayloadSchemas } from "@/lib/api/payload-schemas";
-import { parsePageQuery } from "@/lib/collection-query";
+import { getOptionalById } from "@/lib/api/optional";
+import {
+  getOutOfRangePageRedirect,
+  parsePageQuery,
+} from "@/lib/collection-query";
 import { requirePermission } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Actions — Mate Things" };
@@ -28,6 +33,7 @@ export default async function ActionsPage({
   const pageQuery = parsePageQuery(raw);
   const nodeClassId =
     typeof raw.node_class_id === "string" ? raw.node_class_id.trim() : "";
+  const canReadNodeClasses = permissions.has("node_class:get");
   const [result, schemas, nodeClassDefault] = await Promise.all([
     listActions({
       ...pageQuery,
@@ -36,8 +42,18 @@ export default async function ActionsPage({
     permissions.has("payload_schema:get")
       ? listAllPayloadSchemas()
       : Promise.resolve([]),
-    nodeClassId ? getNodeClassById(nodeClassId).catch(() => null) : null,
+    canReadNodeClasses && nodeClassId
+      ? getOptionalById(() => getNodeClassById(nodeClassId))
+      : null,
   ]);
+  const redirectTarget = getOutOfRangePageRedirect(
+    "/actions",
+    raw,
+    result.page,
+  );
+  if (redirectTarget) {
+    redirect(redirectTarget);
+  }
   const canCreate =
     permissions.has("action:add") && permissions.has("payload_schema:get");
 
@@ -63,11 +79,25 @@ export default async function ActionsPage({
             placeholder="Search actions"
           />
         </div>
-        <NodeClassSearchCombobox
-          name="node_class_id"
-          defaultNodeClassId={nodeClassId}
-          defaultNodeClassName={nodeClassDefault?.name}
-        />
+        {canReadNodeClasses ? (
+          <NodeClassSearchCombobox
+            name="node_class_id"
+            defaultNodeClassId={nodeClassId}
+            defaultNodeClassName={nodeClassDefault?.name ?? nodeClassId}
+          />
+        ) : (
+          <label>
+            <span className="text-foreground/70 mb-1.5 block text-xs font-semibold">
+              Node class ID
+            </span>
+            <Input
+              aria-label="Node class ID"
+              name="node_class_id"
+              readOnly
+              value={nodeClassId}
+            />
+          </label>
+        )}
         <button className="bg-primary text-surface mt-auto min-h-11 rounded-xl px-4 text-sm font-semibold">
           Apply
         </button>

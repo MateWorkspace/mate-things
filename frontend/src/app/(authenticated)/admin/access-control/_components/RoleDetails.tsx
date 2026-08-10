@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useMemo, useRef, useState } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
@@ -11,15 +12,39 @@ import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { PermissionResponse } from "@/lib/api/permissions";
 import type { RoleResponse } from "@/lib/api/roles";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
+import {
+  assignmentSubmission,
+  type AssignmentSubmission,
+  useAssignmentSelection,
+} from "@/hooks/use-assignment-selection";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
   removeRoleAction,
   saveRoleAction,
   setDefaultRoleAction,
+  EMPTY_ROLE_ASSIGNMENT_STATE,
   updateRoleAssignmentsAction,
+  type AssignmentActionState,
 } from "../_lib/actions";
 import { EMPTY_ACCESS_STATE } from "../_lib/state";
 import PermissionGroups from "./PermissionGroups";
+
+type RoleAssignmentClientState = AssignmentActionState & {
+  submission?: AssignmentSubmission;
+};
+
+async function updateRoleAssignmentsWithSubmission(
+  previous: RoleAssignmentClientState,
+  data: FormData,
+): Promise<RoleAssignmentClientState> {
+  const result = await updateRoleAssignmentsAction(previous, data);
+  return {
+    ...result,
+    submission: assignmentSubmission(data, "permission_ids"),
+  };
+}
 
 export default function RoleDetails({
   role,
@@ -34,11 +59,21 @@ export default function RoleDetails({
 }) {
   const allowed = new Set(grants);
   const [editOpen, setEditOpen] = useState(false);
+  const [editGeneration, setEditGeneration] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteGeneration, setDeleteGeneration] = useState(0);
   const [defaultOpen, setDefaultOpen] = useState(false);
+  const [defaultGeneration, setDefaultGeneration] = useState(0);
   const [assignmentState, assignmentAction, assignmentPending] = useActionState(
-    updateRoleAssignmentsAction,
-    EMPTY_ACCESS_STATE,
+    updateRoleAssignmentsWithSubmission,
+    EMPTY_ROLE_ASSIGNMENT_STATE,
+  );
+  useRefreshAfterAction(assignmentState);
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const assignmentSelection = useAssignmentSelection(
+    assignmentState,
+    selectedSet,
+    permissions.map(({ id }) => id),
   );
   return (
     <section className="space-y-5">
@@ -52,19 +87,34 @@ export default function RoleDetails({
           </div>
           <div className="flex flex-wrap gap-2">
             {allowed.has("role:set") ? (
-              <Button variant="secondary" onClick={() => setEditOpen(true)}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setEditGeneration((generation) => generation + 1);
+                  setEditOpen(true);
+                }}
+              >
                 Edit role
               </Button>
             ) : null}
             {!role.is_default && allowed.has("role:set") ? (
-              <Button variant="secondary" onClick={() => setDefaultOpen(true)}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setDefaultGeneration((generation) => generation + 1);
+                  setDefaultOpen(true);
+                }}
+              >
                 Make default
               </Button>
             ) : null}
             {allowed.has("role:remove") ? (
               <button
                 className="border-critical text-critical hover:bg-critical/10 active:bg-critical/15 rounded-xl border px-4 text-sm font-semibold transition-colors"
-                onClick={() => setDeleteOpen(true)}
+                onClick={() => {
+                  setDeleteGeneration((generation) => generation + 1);
+                  setDeleteOpen(true);
+                }}
               >
                 Delete role
               </button>
@@ -79,27 +129,37 @@ export default function RoleDetails({
         </div>
       </Card>
       {permissions.length ? (
-        <form action={assignmentAction} className="space-y-4">
+        <form
+          action={assignmentAction}
+          onReset={(event) => event.preventDefault()}
+          className="space-y-4"
+        >
           <input type="hidden" name="role_id" value={role.id} />
+          <input
+            type="hidden"
+            name="assignment_snapshot"
+            value={assignmentSelection.submissionSnapshot}
+          />
           <PermissionGroups
+            key={assignmentSelection.resultGeneration}
             permissions={permissions}
-            selected={new Set(selected)}
+            selected={
+              new Set(
+                permissions
+                  .filter(({ id }) => assignmentSelection.isSelected(id))
+                  .map(({ id }) => id),
+              )
+            }
             editable={
               allowed.has("role_permission:get") &&
               (allowed.has("role_permission:add") ||
                 allowed.has("role_permission:remove"))
             }
+            onSelectionChange={(id, checked) => {
+              assignmentSelection.setSelected(id, checked);
+            }}
           />
-          <p
-            aria-live="polite"
-            className={
-              assignmentState.status === "error"
-                ? "text-critical text-sm"
-                : "text-success text-sm"
-            }
-          >
-            {assignmentState.message}
-          </p>
+          <ActionMessage state={assignmentState} />
           {allowed.has("role_permission:add") ||
           allowed.has("role_permission:remove") ? (
             <Button type="submit" disabled={assignmentPending}>
@@ -113,6 +173,7 @@ export default function RoleDetails({
         </p>
       )}
       <RoleDialog
+        key={editGeneration}
         open={editOpen}
         onClose={() => setEditOpen(false)}
         role={role}
@@ -121,6 +182,7 @@ export default function RoleDetails({
         mode="edit"
       />
       <ConfirmRoleDialog
+        key={deleteGeneration}
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         role={role}
@@ -130,6 +192,7 @@ export default function RoleDetails({
         warning="Assigned users or permissions may cause the backend to reject this deletion."
       />
       <ConfirmRoleDialog
+        key={defaultGeneration}
         open={defaultOpen}
         onClose={() => setDefaultOpen(false)}
         role={role}
@@ -161,20 +224,23 @@ export function RoleDialog({
     action,
     EMPTY_ACCESS_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  const formRef = useRef<HTMLFormElement>(null);
+  useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   return (
     <Dialog
       open={open && state.status !== "success"}
       onClose={onClose}
       title={title}
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        ref={formRef}
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         {role ? <input type="hidden" name="role_id" value={role.id} /> : null}
         <div>
           <Label htmlFor={`${mode}-role-name`}>Name</Label>
@@ -184,6 +250,7 @@ export function RoleDialog({
             defaultValue={role?.name}
             required
           />
+          <FieldError>{state.fieldErrors?.name}</FieldError>
         </div>
         <div>
           <Label htmlFor={`${mode}-role-description`}>Description</Label>
@@ -195,17 +262,14 @@ export function RoleDialog({
             className="border-control-border bg-background w-full rounded-xl border p-3 text-sm"
           />
         </div>
-        <p
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={pending}>
@@ -238,37 +302,38 @@ function ConfirmRoleDialog({
     action,
     EMPTY_ACCESS_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  const formRef = useRef<HTMLFormElement>(null);
+  useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   return (
     <Dialog
       open={open && state.status !== "success"}
       onClose={onClose}
       title={title}
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        ref={formRef}
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="role_id" value={role.id} />
         <input type="hidden" name="role_name" value={role.name} />
         <p className="bg-muted rounded-xl p-4 text-sm">
           {warning} Enter <strong>{role.name}</strong> to continue.
         </p>
         <Input name="confirmation" aria-label="Confirm role name" required />
-        <p
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <FieldError>{state.fieldErrors?.confirmation}</FieldError>
+        <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={pending}>

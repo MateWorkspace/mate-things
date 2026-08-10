@@ -9,6 +9,7 @@ import {
   updatePayloadSchema,
 } from "@/lib/api/payload-schemas";
 import { requireSessionContext } from "@/lib/session";
+import { requiredString } from "@/lib/forms/parse";
 
 import type { PayloadSchemaActionState } from "./state";
 
@@ -23,10 +24,7 @@ function failure(error: unknown): PayloadSchemaActionState {
   return {
     status: "error",
     title: error instanceof ApiError ? error.title : "Something went wrong",
-    message:
-      error instanceof ApiError
-        ? error.message
-        : "Please try again.",
+    message: error instanceof ApiError ? error.message : "Please try again.",
   };
 }
 function value(data: FormData, name: string): string {
@@ -62,10 +60,11 @@ function definition(
 
 async function saveSchema(
   data: FormData,
-  id?: string,
+  operation: { kind: "create" } | { kind: "update"; id: string },
 ): Promise<PayloadSchemaActionState> {
   const session = await requireSessionContext();
-  const permission = id ? "payload_schema:set" : "payload_schema:add";
+  const permission =
+    operation.kind === "update" ? "payload_schema:set" : "payload_schema:add";
   if (!session.permissions.has(permission)) return denied(permission);
   const errors: Record<string, string> = {};
   const name = value(data, "name");
@@ -91,8 +90,8 @@ async function saveSchema(
       fieldErrors: errors,
     };
   try {
-    if (id)
-      await updatePayloadSchema(id, {
+    if (operation.kind === "update")
+      await updatePayloadSchema(operation.id, {
         name,
         version,
         definition: parsedDefinition,
@@ -109,7 +108,7 @@ async function saveSchema(
       });
     return {
       status: "success",
-      title: id ? "Schema updated" : "Schema created",
+      title: operation.kind === "update" ? "Schema updated" : "Schema created",
       message: `${name} v${version} was saved.`,
     };
   } catch (error) {
@@ -121,13 +120,47 @@ export async function createPayloadSchemaAction(
   _previous: PayloadSchemaActionState,
   data: FormData,
 ): Promise<PayloadSchemaActionState> {
-  return saveSchema(data);
+  return saveSchema(data, { kind: "create" });
 }
 export async function updatePayloadSchemaAction(
-  _previous: PayloadSchemaActionState,
-  data: FormData,
+  expectedIdOrPrevious: string | PayloadSchemaActionState,
+  previousOrData: PayloadSchemaActionState | FormData,
+  boundData?: FormData,
 ): Promise<PayloadSchemaActionState> {
-  return saveSchema(data, value(data, "payload_schema_id"));
+  const expectedId =
+    typeof expectedIdOrPrevious === "string" ? expectedIdOrPrevious.trim() : "";
+  const data =
+    boundData ??
+    (previousOrData instanceof FormData ? previousOrData : new FormData());
+  const submittedId = requiredString(
+    data,
+    "payload_schema_id",
+    "A payload schema ID is required.",
+  );
+  if (!expectedId || !submittedId.ok) {
+    return {
+      status: "error",
+      title: "Cannot update schema",
+      message: "A payload schema ID is required.",
+      fieldErrors: {
+        payload_schema_id: submittedId.ok
+          ? "A trusted payload schema ID is required."
+          : submittedId.error,
+      },
+    };
+  }
+  if (submittedId.value !== expectedId) {
+    return {
+      status: "error",
+      title: "Cannot update schema",
+      message: "The payload schema identity does not match this update.",
+      fieldErrors: {
+        payload_schema_id: "The payload schema identity does not match.",
+      },
+    };
+  }
+
+  return saveSchema(data, { kind: "update", id: expectedId });
 }
 export async function deletePayloadSchemaAction(
   _previous: PayloadSchemaActionState,

@@ -6,6 +6,7 @@ import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { listNodeLogs, type NodeLogLevel } from "@/lib/api/node-logs";
 import { getNodeByDeviceId } from "@/lib/api/nodes";
+import { getOptionalById } from "@/lib/api/optional";
 import { activeFilterEntries, parseRecordFilters } from "@/lib/record-filters";
 import { requirePermission } from "@/lib/session";
 
@@ -39,10 +40,13 @@ export default async function NodeLogsPage({
     : undefined;
   const levelError =
     rawLevel && !level ? "Choose a supported log level." : undefined;
+  const canReadNodes = permissions.has("node:get");
   const nodeDefault =
-    parsed.error || levelError || !parsed.filters.nodeDeviceId
+    parsed.error || levelError || !canReadNodes || !parsed.filters.nodeDeviceId
       ? null
-      : await getNodeByDeviceId(parsed.filters.nodeDeviceId).catch(() => null);
+      : await getOptionalById(() =>
+          getNodeByDeviceId(parsed.filters.nodeDeviceId!),
+        );
   const query = {
     logged_at_start: parsed.filters.start,
     logged_at_end: parsed.filters.end,
@@ -76,6 +80,7 @@ export default async function NodeLogsPage({
         }
       />
       <NodeLogFilters
+        canReadNodes={canReadNodes}
         start={parsed.filters.start}
         end={parsed.filters.end}
         nodeDeviceId={parsed.filters.nodeDeviceId}

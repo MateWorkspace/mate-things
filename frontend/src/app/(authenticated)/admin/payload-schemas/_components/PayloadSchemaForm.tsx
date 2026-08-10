@@ -1,13 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { PayloadSchemaResponse } from "@/lib/api/payload-schemas";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
   createPayloadSchemaAction,
@@ -69,14 +72,14 @@ export default function PayloadSchemaForm({
           unmount a still-open native <dialog>, dropping it from the
           browser's top layer without a clean close() call. */}
       <SchemaEditor
-        key={`${editorGeneration}-${schema?.id ?? "new"}`}
+        key={`editor-${editorGeneration}-${schema?.id ?? "new"}`}
         schema={schema}
         open={editorOpen}
         onClose={() => setEditorOpen(false)}
       />
       {schema ? (
         <DeleteSchema
-          key={`${deleteGeneration}-${schema.id}`}
+          key={`delete-${deleteGeneration}-${schema.id}`}
           schema={schema}
           open={deleteOpen}
           onClose={() => setDeleteOpen(false)}
@@ -95,17 +98,21 @@ function SchemaEditor({
   open: boolean;
   onClose: () => void;
 }) {
+  const submitAction = schema
+    ? updatePayloadSchemaAction.bind(null, schema.id)
+    : createPayloadSchemaAction;
   const [state, action, pending] = useActionState(
-    schema ? updatePayloadSchemaAction : createPayloadSchemaAction,
+    submitAction,
     EMPTY_SCHEMA_STATE,
   );
-  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   useEffect(() => {
     if (state.status === "success") {
       onClose();
-      router.refresh();
     }
-  }, [state, onClose, router]);
+  }, [state, onClose]);
   const definitionErrors = useMemo(() => {
     if (state.status !== "error" || !state.message) return {};
     const parsed = parseDefinitionFieldError(state.message);
@@ -123,8 +130,14 @@ function SchemaEditor({
           : "Create payload schema"
       }
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={action} className="space-y-4">
+      <form
+        ref={formRef}
+        action={action}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         {schema ? (
           <input type="hidden" name="payload_schema_id" value={schema.id} />
         ) : null}
@@ -137,9 +150,7 @@ function SchemaEditor({
               defaultValue={schema?.name}
               required
             />
-            {state.fieldErrors?.name ? (
-              <p className="text-critical text-sm">{state.fieldErrors.name}</p>
-            ) : null}
+            <FieldError>{state.fieldErrors?.name}</FieldError>
           </div>
           <div>
             <Label htmlFor="schema-version">Version</Label>
@@ -152,13 +163,9 @@ function SchemaEditor({
               defaultValue={schema?.version ?? 1}
               required
             />
-            {state.fieldErrors?.version ? (
-              <p className="text-critical text-sm">
-                {state.fieldErrors.version}
-              </p>
-            ) : null}
+            <FieldError>{state.fieldErrors?.version}</FieldError>
           </div>
-          <div>
+          <div data-field-name="definition" tabIndex={-1}>
             <h3 className="text-foreground/80 mb-1.5 block text-sm font-medium">
               Definition
             </h3>
@@ -169,6 +176,7 @@ function SchemaEditor({
               onRepresentableChange={setDefinitionRepresentable}
               onValidityChange={setDefinitionValid}
             />
+            <FieldError>{state.fieldErrors?.definition}</FieldError>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -179,6 +187,7 @@ function SchemaEditor({
                 type="datetime-local"
                 defaultValue={localDate(schema?.valid_from)}
               />
+              <FieldError>{state.fieldErrors?.valid_from}</FieldError>
             </div>
             <div>
               <Label htmlFor="schema-valid-to">Valid to</Label>
@@ -188,26 +197,18 @@ function SchemaEditor({
                 type="datetime-local"
                 defaultValue={localDate(schema?.valid_to)}
               />
-              {state.fieldErrors?.valid_to ? (
-                <p className="text-critical text-sm">
-                  {state.fieldErrors.valid_to}
-                </p>
-              ) : null}
+              <FieldError>{state.fieldErrors?.valid_to}</FieldError>
             </div>
           </div>
         </fieldset>
-        <p
-          aria-live="polite"
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
@@ -235,6 +236,8 @@ function DeleteSchema({
     deletePayloadSchemaAction,
     EMPTY_SCHEMA_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   const identity = `${schema.name} v${schema.version}`;
   return (
     <Dialog
@@ -242,8 +245,14 @@ function DeleteSchema({
       onClose={onClose}
       title={`Delete ${identity}`}
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={action} className="space-y-4">
+      <form
+        ref={formRef}
+        action={action}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="payload_schema_id" value={schema.id} />
         <input type="hidden" name="identity" value={identity} />
         <p className="bg-muted rounded-xl p-4 text-sm">
@@ -255,17 +264,15 @@ function DeleteSchema({
           aria-label="Confirm schema identity"
           required
         />
-        <p
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <FieldError>{state.fieldErrors?.confirmation}</FieldError>
+        <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={pending}>

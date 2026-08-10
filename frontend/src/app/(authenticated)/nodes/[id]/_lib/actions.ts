@@ -5,14 +5,10 @@ import { redirect } from "next/navigation";
 import { ApiError } from "@/lib/api/client";
 import { setNodeConfig } from "@/lib/api/node-config";
 import { deleteNode, getNodeById, updateNode } from "@/lib/api/nodes";
+import type { ActionState } from "@/lib/forms/action-state";
 import { requireSessionContext } from "@/lib/session";
 
-export interface NodeActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
+export type NodeActionState = ActionState<string>;
 
 const UINT32_MAX = 4_294_967_295;
 

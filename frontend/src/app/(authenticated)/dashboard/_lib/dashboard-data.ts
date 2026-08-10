@@ -9,9 +9,13 @@ const RECENT_WINDOW_HOURS = 6;
 
 export interface DashboardData {
   nodes?: {
+    /** Exact backend collection total. */
     total: number;
+    /** Number of nodes inspected in the bounded first-page sample. */
     sampled: number;
+    /** Connected count within the bounded sample, not the full fleet. */
     connected: number;
+    /** Disconnected nodes within the bounded sample, not the full fleet. */
     disconnected: NodeResponse[];
   };
   failedActions?: ActionLogResponse[];

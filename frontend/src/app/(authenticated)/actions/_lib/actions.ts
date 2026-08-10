@@ -9,15 +9,12 @@ import {
   updateAction,
 } from "@/lib/api/actions";
 import { ApiError } from "@/lib/api/client";
+import type { ActionState } from "@/lib/forms/action-state";
 import { requireSessionContext } from "@/lib/session";
 
-export interface ActionFormState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
+export type ActionFormState = ActionState<string> & {
   executionId?: string;
-  fieldErrors?: Record<string, string>;
-}
+};
 
 function denied(): ActionFormState {
   return {

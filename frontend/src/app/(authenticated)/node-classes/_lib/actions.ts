@@ -12,13 +12,31 @@ import {
   updateNodeClass,
 } from "@/lib/api/node-classes";
 import { requireSessionContext } from "@/lib/session";
+import type { ActionState } from "@/lib/forms/action-state";
 
-export interface FormActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
+export type FormActionState = ActionState<string>;
+
+export type AssignmentResult = {
+  status: "success" | "partial" | "error";
+  appliedIds: string[];
+  failed: Array<{ id: string; message: string }>;
+  title: string;
+  message: string;
+};
+
+export type AssignmentActionState =
+  | AssignmentResult
+  | {
+      status: "idle";
+      appliedIds: string[];
+      failed: Array<{ id: string; message: string }>;
+    };
+
+export const EMPTY_NODE_CLASS_ASSIGNMENT_STATE: AssignmentActionState = {
+  status: "idle",
+  appliedIds: [],
+  failed: [],
+};
 
 function permissionDenied(): FormActionState {
   return {
@@ -42,6 +60,32 @@ function actionError(error: unknown): FormActionState {
     title: "Something went wrong",
     message: "Please try again.",
   };
+}
+
+function assignmentError(error: unknown): AssignmentResult {
+  const state = actionError(error);
+  return {
+    status: "error",
+    title: state.title ?? "Something went wrong",
+    message: state.message ?? "Please try again.",
+    appliedIds: [],
+    failed: [],
+  };
+}
+
+function assignmentPermissionDenied(): AssignmentResult {
+  const state = permissionDenied();
+  return {
+    status: "error",
+    title: state.title ?? "Permission denied",
+    message: state.message ?? "You do not have permission to make this change.",
+    appliedIds: [],
+    failed: [],
+  };
+}
+
+function failedMessage(error: unknown): string {
+  return error instanceof ApiError ? error.message : "Please try again.";
 }
 
 function requiredFieldErrors(
@@ -178,43 +222,65 @@ export async function deleteNodeClassAction(
 }
 
 export async function updateNodeClassActionsAction(
-  _previousState: FormActionState,
+  _previousState: AssignmentActionState,
   formData: FormData,
-): Promise<FormActionState> {
+): Promise<AssignmentResult> {
   const session = await requireSessionContext();
   const nodeClassId = String(formData.get("node_class_id") ?? "").trim();
   if (!nodeClassId || !session.permissions.has("node_class_action:get")) {
-    return permissionDenied();
+    return assignmentPermissionDenied();
   }
 
-  const current = new Set(
-    (await getNodeClassActions(nodeClassId)).map((item) => item.id),
-  );
+  let current: Set<string>;
+  try {
+    current = new Set(
+      (await getNodeClassActions(nodeClassId)).map((item) => item.id),
+    );
+  } catch (error) {
+    return assignmentError(error);
+  }
   const desired = formData.getAll("action_ids").map(String);
   const desiredSet = new Set(desired);
   const assign = desired.filter((id) => !current.has(id));
   const revoke = [...current].filter((id) => !desiredSet.has(id));
 
   if (assign.length && !session.permissions.has("node_class_action:add")) {
-    return permissionDenied();
+    return assignmentPermissionDenied();
   }
   if (revoke.length && !session.permissions.has("node_class_action:remove")) {
-    return permissionDenied();
+    return assignmentPermissionDenied();
   }
 
-  const results = await Promise.allSettled([
-    ...assign.map((actionId) => assignNodeClassAction(nodeClassId, actionId)),
-    ...revoke.map((actionId) => revokeNodeClassAction(nodeClassId, actionId)),
-  ]);
-  const failures = results.filter(
-    (result) => result.status === "rejected",
-  ).length;
+  const operations = [
+    ...assign.map((id) => ({
+      id,
+      apply: () => assignNodeClassAction(nodeClassId, id),
+    })),
+    ...revoke.map((id) => ({
+      id,
+      apply: () => revokeNodeClassAction(nodeClassId, id),
+    })),
+  ];
+  const results = await Promise.allSettled(
+    operations.map((operation) => operation.apply()),
+  );
+  const appliedIds: string[] = [];
+  const failed: Array<{ id: string; message: string }> = [];
+  results.forEach((result, index) => {
+    const { id } = operations[index];
+    if (result.status === "fulfilled") appliedIds.push(id);
+    else failed.push({ id, message: failedMessage(result.reason) });
+  });
 
-  if (failures) {
+  if (failed.length) {
     return {
-      status: "error",
+      status: appliedIds.length ? "partial" : "error",
       title: "Assignments partially updated",
-      message: `${results.length - failures} changes succeeded and ${failures} failed. The current authoritative assignments were reloaded.`,
+      message: appliedIds.length
+        ? `${appliedIds.length} changes succeeded and ${failed.length} failed. Failed changes remain selected for retry.`
+        : `No changes were applied. ${failed.length} changes failed and remain selected for retry.`,
+      appliedIds,
+      failed,
     };
   }
 
@@ -222,5 +288,7 @@ export async function updateNodeClassActionsAction(
     status: "success",
     title: "Assignments updated",
     message: `${results.length} action changes saved.`,
+    appliedIds,
+    failed,
   };
 }

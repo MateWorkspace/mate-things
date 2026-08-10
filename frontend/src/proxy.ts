@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { API_BASE_URL, COOKIE_SECURE } from "@/config/env";
+import { isProtectedRoute as routeIsProtected } from "@/config/route-policies";
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -10,17 +11,6 @@ import { decodeJwtExpiry } from "@/lib/session/jwt";
 
 const API_VERSION_PATH = "/api/v1";
 const REFRESH_BUFFER_MS = 10_000;
-const PROTECTED_PREFIXES = [
-  "/dashboard",
-  "/nodes",
-  "/node-classes",
-  "/firmware",
-  "/actions",
-  "/action-history",
-  "/telemetry",
-  "/node-logs",
-  "/admin",
-] as const;
 const AUTH_ONLY_ROUTES = ["/login"];
 
 interface RefreshedTokens {
@@ -78,11 +68,7 @@ function setSessionCookies(
   });
 }
 
-export function isProtectedRoute(pathname: string): boolean {
-  return PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
-}
+export const isProtectedRoute = routeIsProtected;
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

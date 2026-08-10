@@ -5,6 +5,7 @@ import RefreshBoundary from "@/components/refresh/RefreshBoundary";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { getNodeByDeviceId } from "@/lib/api/nodes";
+import { getOptionalById } from "@/lib/api/optional";
 import { listTelemetryRecords } from "@/lib/api/telemetry";
 import { activeFilterEntries, parseRecordFilters } from "@/lib/record-filters";
 import { requirePermission } from "@/lib/session";
@@ -26,10 +27,13 @@ export default async function TelemetryPage({
     requirePermission("telemetry_record:get"),
   ]);
   const parsed = parseRecordFilters(raw);
+  const canReadNodes = permissions.has("node:get");
   const nodeDefault =
-    parsed.error || !parsed.filters.nodeDeviceId
+    parsed.error || !canReadNodes || !parsed.filters.nodeDeviceId
       ? null
-      : await getNodeByDeviceId(parsed.filters.nodeDeviceId).catch(() => null);
+      : await getOptionalById(() =>
+          getNodeByDeviceId(parsed.filters.nodeDeviceId!),
+        );
   const query = {
     recorded_at_start: parsed.filters.start,
     recorded_at_end: parsed.filters.end,
@@ -62,6 +66,7 @@ export default async function TelemetryPage({
         }
       />
       <TelemetryFilters
+        canReadNodes={canReadNodes}
         start={parsed.filters.start}
         end={parsed.filters.end}
         nodeDeviceId={parsed.filters.nodeDeviceId}

@@ -1,9 +1,10 @@
-export interface ApiKeyActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-  key?: string;
-}
+import {
+  INITIAL_ACTION_STATE,
+  type ActionState,
+} from "@/lib/forms/action-state";
 
-export const EMPTY_API_KEY_STATE: ApiKeyActionState = { status: "idle" };
+export type ApiKeyActionState = ActionState<string> & {
+  key?: string;
+};
+
+export const EMPTY_API_KEY_STATE: ApiKeyActionState = INITIAL_ACTION_STATE;

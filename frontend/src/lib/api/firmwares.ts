@@ -1,6 +1,7 @@
-"use server";
+import "server-only";
 
 import { apiFetch, apiRequest, buildQuery } from "@/lib/api/client";
+import { collectAllPages } from "@/lib/api/collect-all-pages";
 import type { AuditFields, PageDataResponse, PageQuery } from "@/lib/api/types";
 
 export interface FirmwareResponse extends AuditFields {
@@ -26,15 +27,20 @@ export interface FirmwareBinaryStatResponse {
   checksum: string;
 }
 
-export interface FirmwareConfigParameterResponse {
+export interface FirmwareConfigParameter {
   key: string;
   value_type: string;
 }
 
-export interface FirmwareConfigSchemaItem {
-  key: string;
-  value_type: string;
-}
+export type FirmwareConfigParameterResponse = FirmwareConfigParameter;
+
+export type FirmwareConfigSchemaItem = FirmwareConfigParameter;
+
+export type ReplaceFirmwareBinaryInput = {
+  id: string;
+  binary: File;
+  configSchema?: FirmwareConfigParameter[];
+};
 
 export interface UpdateFirmwareRequest {
   node_class_id?: string;
@@ -54,43 +60,21 @@ export async function listFirmwares(
 const FIRMWARE_OPTION_PAGE_LIMIT = 48;
 
 export async function listAllFirmwares(): Promise<FirmwareResponse[]> {
-  const firmwares: FirmwareResponse[] = [];
-  const seenIds = new Set<string>();
-  let page = 1;
-
-  while (true) {
-    const result = await listFirmwares({
-      page,
-      limit: FIRMWARE_OPTION_PAGE_LIMIT,
-    });
-
-    let added = 0;
-    for (const firmware of result.data) {
-      if (!seenIds.has(firmware.id)) {
-        seenIds.add(firmware.id);
-        firmwares.push(firmware);
-        added += 1;
-      }
-    }
-
-    const responseLimit =
-      Number.isSafeInteger(result.page.limit) && result.page.limit > 0
-        ? result.page.limit
-        : FIRMWARE_OPTION_PAGE_LIMIT;
-    const totalPages = Math.ceil(result.page.total_items / responseLimit);
-    if (
-      !Number.isSafeInteger(totalPages) ||
-      page >= totalPages ||
-      result.data.length === 0 ||
-      added === 0
-    ) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return firmwares;
+  return collectAllPages({
+    fetchPage: async (page) => {
+      const result = await listFirmwares({
+        page,
+        limit: FIRMWARE_OPTION_PAGE_LIMIT,
+      });
+      return {
+        data: result.data,
+        page: result.page.page,
+        limit: result.page.limit,
+        total: result.page.total_items,
+      };
+    },
+    keyOf: (firmware) => firmware.id,
+  });
 }
 
 export async function listFirmwaresByNodeClassId(
@@ -151,15 +135,15 @@ export async function updateFirmware(
 
 /** Replaces an existing firmware row's binary content. */
 export async function replaceFirmwareBinary(
-  id: string,
-  file: File | Blob,
-  configSchema: FirmwareConfigSchemaItem[],
+  input: ReplaceFirmwareBinaryInput,
 ): Promise<FirmwareBinaryStatResponse> {
   const body = new FormData();
-  body.set("file", file);
-  body.set("config_schema", JSON.stringify(configSchema));
+  body.set("file", input.binary);
+  if (input.configSchema !== undefined) {
+    body.append("config_schema", JSON.stringify(input.configSchema));
+  }
 
-  return apiFetch(`/firmwares/${id}/binary`, { method: "PUT", body });
+  return apiFetch(`/firmwares/${input.id}/binary`, { method: "PUT", body });
 }
 
 export async function getFirmwareBinaryStatByName(

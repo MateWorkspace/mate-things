@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { apiFetch } from "@/lib/api/client";
 import type { PermissionResponse } from "@/lib/api/permissions";

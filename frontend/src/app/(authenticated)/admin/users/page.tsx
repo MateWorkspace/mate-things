@@ -10,12 +10,14 @@ import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
-import { getRoleById, listRoles } from "@/lib/api/roles";
+import { getOptionalById } from "@/lib/api/optional";
+import { getRoleById, listAllRoles } from "@/lib/api/roles";
 import { listUsers } from "@/lib/api/users";
 import {
   getOutOfRangePageRedirect,
   parsePageQuery,
 } from "@/lib/collection-query";
+import { firstQueryValue } from "@/lib/query";
 import { requirePermission } from "@/lib/session";
 
 import UserCard from "./_components/UserCard";
@@ -35,17 +37,16 @@ export default async function UsersPage({
   ]);
   const query = parsePageQuery(raw);
   const canReadRoles = permissions.has("role:get");
-  const roleId = String(raw.role_id ?? "").trim() || undefined;
-  const [users, rolesResult, selectedRole] = await Promise.all([
+  const roleId = firstQueryValue(raw.role_id)?.trim() || undefined;
+  const [users, roles, selectedRole] = await Promise.all([
     listUsers({ ...query, role_id: roleId }),
-    canReadRoles ? listRoles({ limit: 48 }) : Promise.resolve(null),
+    canReadRoles ? listAllRoles() : Promise.resolve([]),
     canReadRoles && roleId
-      ? getRoleById(roleId).catch(() => null)
+      ? getOptionalById(() => getRoleById(roleId))
       : Promise.resolve(null),
   ]);
   const target = getOutOfRangePageRedirect("/admin/users", raw, users.page);
   if (target) redirect(target);
-  const roles = rolesResult?.data ?? [];
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader
@@ -108,9 +109,7 @@ export default async function UsersPage({
         </section>
       ) : (
         <EmptyState
-          title={
-            query.search || roleId ? "No matching users" : "No users yet"
-          }
+          title={query.search || roleId ? "No matching users" : "No users yet"}
           description={
             query.search || roleId
               ? "No accounts match the current filters."

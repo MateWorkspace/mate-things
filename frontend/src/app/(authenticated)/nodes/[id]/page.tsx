@@ -5,7 +5,7 @@ import { cache } from "react";
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
-import { listActions } from "@/lib/api/actions";
+import { listAllActions } from "@/lib/api/actions";
 import { ApiError } from "@/lib/api/client";
 import {
   getFirmwareConfigParameters,
@@ -102,11 +102,7 @@ export default async function NodeDetailPage({
         ? listAvailableFirmwaresByNodeId(node.id, firmwareQuery)
         : Promise.resolve(null),
       showActions && permissions.has("action:get")
-        ? listActions({
-            page: 1,
-            limit: 48,
-            node_class_id: node.node_class_id,
-          })
+        ? listAllActions({ node_class_id: node.node_class_id })
         : Promise.resolve(null),
       showTelemetry && permissions.has("telemetry_record:get")
         ? listTelemetryRecords({ node_device_id: node.device_id })
@@ -200,7 +196,7 @@ export default async function NodeDetailPage({
         ) : null}
         {showActions && actions ? (
           <NodeActionsWorkspace
-            actions={actions.data}
+            actions={actions}
             canDispatch={permissions.has("action:dispatch")}
             node={node}
           />

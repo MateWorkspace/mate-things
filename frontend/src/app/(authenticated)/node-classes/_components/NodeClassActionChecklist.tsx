@@ -1,15 +1,37 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
+import {
+  assignmentSubmission,
+  type AssignmentSubmission,
+  useAssignmentSelection,
+} from "@/hooks/use-assignment-selection";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { ActionResponse } from "@/lib/api/actions";
 
-import { updateNodeClassActionsAction } from "../_lib/actions";
-import type { FormActionState } from "../_lib/actions";
+import {
+  EMPTY_NODE_CLASS_ASSIGNMENT_STATE,
+  updateNodeClassActionsAction,
+  type AssignmentActionState,
+} from "../_lib/actions";
 
-const EMPTY_STATE: FormActionState = { status: "idle" };
+type NodeClassAssignmentClientState = AssignmentActionState & {
+  submission?: AssignmentSubmission;
+};
+
+async function updateNodeClassActionsWithSubmission(
+  previous: NodeClassAssignmentClientState,
+  data: FormData,
+): Promise<NodeClassAssignmentClientState> {
+  const result = await updateNodeClassActionsAction(previous, data);
+  return {
+    ...result,
+    submission: assignmentSubmission(data, "action_ids"),
+  };
+}
 
 export default function NodeClassActionChecklist({
   nodeClassId,
@@ -23,19 +45,28 @@ export default function NodeClassActionChecklist({
   editable: boolean;
 }) {
   const [state, formAction, pending] = useActionState(
-    updateNodeClassActionsAction,
-    EMPTY_STATE,
+    updateNodeClassActionsWithSubmission,
+    EMPTY_NODE_CLASS_ASSIGNMENT_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  useRefreshAfterAction(state);
+  const assignmentSelection = useAssignmentSelection(
+    state,
+    selected,
+    actions.map(({ id }) => id),
+  );
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form
+      action={formAction}
+      onReset={(event) => event.preventDefault()}
+      className="space-y-4"
+    >
       <input type="hidden" name="node_class_id" value={nodeClassId} />
+      <input
+        type="hidden"
+        name="assignment_snapshot"
+        value={assignmentSelection.submissionSnapshot}
+      />
       <fieldset className="border-border rounded-xl border p-4">
         <legend className="sr-only">Compatible actions</legend>
         <div className="space-y-2">
@@ -46,15 +77,22 @@ export default function NodeClassActionChecklist({
             >
               {editable ? (
                 <input
+                  key={`${action.id}:${assignmentSelection.resultGeneration}`}
                   type="checkbox"
                   name="action_ids"
                   value={action.id}
-                  defaultChecked={selected.has(action.id)}
+                  checked={assignmentSelection.isSelected(action.id)}
+                  onChange={(event) => {
+                    assignmentSelection.setSelected(
+                      action.id,
+                      event.target.checked,
+                    );
+                  }}
                   className="accent-primary mt-1 size-4"
                 />
               ) : (
                 <span aria-hidden="true" className="mt-1">
-                  {selected.has(action.id) ? "✓" : "—"}
+                  {assignmentSelection.isSelected(action.id) ? "✓" : "—"}
                 </span>
               )}
               <span>
@@ -69,16 +107,7 @@ export default function NodeClassActionChecklist({
           ))}
         </div>
       </fieldset>
-      <p
-        aria-live="polite"
-        className={
-          state.status === "error"
-            ? "text-critical text-sm"
-            : "text-success text-sm"
-        }
-      >
-        {state.message}
-      </p>
+      <ActionMessage state={state} />
       {editable ? (
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save assignments"}

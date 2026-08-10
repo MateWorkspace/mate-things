@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Label from "@/components/ui/label";
@@ -63,6 +64,7 @@ export default function OtaDialog({
         onClose={close}
         title="Dispatch firmware update"
         variant="sheet"
+        dismissible={!isPending}
       >
         <form
           className="space-y-5"
@@ -133,16 +135,7 @@ export default function OtaDialog({
             </span>
           </label>
 
-          <p
-            aria-live={state.status === "error" ? "assertive" : "polite"}
-            className={
-              state.status === "error"
-                ? "text-critical text-sm"
-                : "text-success text-sm"
-            }
-          >
-            {state.message}
-          </p>
+          <ActionMessage state={state} />
 
           <div className="flex flex-wrap justify-end gap-2">
             <Button

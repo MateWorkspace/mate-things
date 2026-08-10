@@ -1,11 +1,14 @@
 "use client";
 
-import { useActionState, useContext, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
-import { ToastContext } from "@/components/ui/toast-provider";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import type { UserResponse } from "@/lib/api/users";
 
 import { saveProfileAction, type FormActionState } from "./profile-actions";
@@ -15,36 +18,33 @@ const INITIAL_STATE: FormActionState = { status: "idle" };
 interface ProfileFormProps {
   user: UserResponse;
   onCancel: () => void;
+  onPendingChange?: (pending: boolean) => void;
 }
 
-export default function ProfileForm({ user, onCancel }: ProfileFormProps) {
+export default function ProfileForm({
+  user,
+  onCancel,
+  onPendingChange,
+}: ProfileFormProps) {
   const [state, formAction, isPending] = useActionState(
     saveProfileAction,
     INITIAL_STATE,
   );
-  const toast = useContext(ToastContext);
-  const lastShown = useRef<FormActionState | null>(null);
-
+  const formRef = useRef<HTMLFormElement>(null);
+  useActionFeedback(state);
+  useFirstInvalidField(state, formRef);
   useEffect(() => {
-    if (
-      state.status === "idle" ||
-      !state.title ||
-      state === lastShown.current
-    ) {
-      return;
-    }
-
-    lastShown.current = state;
-    const message = state.message ?? "";
-    if (state.status === "success") {
-      toast?.success(state.title, message);
-    } else {
-      toast?.error(state.title, message);
-    }
-  }, [state, toast]);
+    onPendingChange?.(isPending);
+    return () => onPendingChange?.(false);
+  }, [isPending, onPendingChange]);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form
+      ref={formRef}
+      action={formAction}
+      onReset={(event) => event.preventDefault()}
+      className="space-y-4"
+    >
       <div>
         <Label htmlFor="profile-name">Name</Label>
         <Input
@@ -58,11 +58,9 @@ export default function ProfileForm({ user, onCancel }: ProfileFormProps) {
             state.fieldErrors?.name ? "profile-name-error" : undefined
           }
         />
-        {state.fieldErrors?.name ? (
-          <p id="profile-name-error" className="text-critical mt-1.5 text-sm">
-            {state.fieldErrors.name}
-          </p>
-        ) : null}
+        <FieldError id="profile-name-error">
+          {state.fieldErrors?.name}
+        </FieldError>
       </div>
 
       <div>
@@ -78,14 +76,9 @@ export default function ProfileForm({ user, onCancel }: ProfileFormProps) {
             state.fieldErrors?.username ? "profile-username-error" : undefined
           }
         />
-        {state.fieldErrors?.username ? (
-          <p
-            id="profile-username-error"
-            className="text-critical mt-1.5 text-sm"
-          >
-            {state.fieldErrors.username}
-          </p>
-        ) : null}
+        <FieldError id="profile-username-error">
+          {state.fieldErrors?.username}
+        </FieldError>
       </div>
 
       <div>
@@ -99,16 +92,7 @@ export default function ProfileForm({ user, onCancel }: ProfileFormProps) {
         />
       </div>
 
-      <p
-        aria-live="polite"
-        className={
-          state.status === "error"
-            ? "text-critical text-sm"
-            : "text-success text-sm"
-        }
-      >
-        {state.message}
-      </p>
+      <ActionMessage state={state} />
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button
