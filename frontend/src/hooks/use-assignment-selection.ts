@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type AssignmentResult = {
   status: "idle" | "success" | "partial" | "error";
@@ -34,7 +34,10 @@ export function useAssignmentSelection<State extends AssignmentResult>(
   authoritative: ReadonlySet<string>,
   ids: readonly string[],
 ) {
-  const authoritativeKey = selectionKey(authoritative);
+  const authoritativeKey = useMemo(
+    () => selectionKey(authoritative),
+    [authoritative],
+  );
   const [storedSelection, setStoredSelection] = useState<
     AssignmentSelection<State>
   >(() => ({

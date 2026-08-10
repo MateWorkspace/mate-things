@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useMemo, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -69,7 +69,7 @@ export default function RoleDetails({
     EMPTY_ROLE_ASSIGNMENT_STATE,
   );
   useRefreshAfterAction(assignmentState);
-  const selectedSet = new Set(selected);
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
   const assignmentSelection = useAssignmentSelection(
     assignmentState,
     selectedSet,
