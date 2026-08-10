@@ -63,8 +63,12 @@ presentation → application → domain ← infrastructure
     infrastructure implements: `repository/` (Postgres access per entity),
     `cache/`, `storage/` (firmware binaries via MinIO), `node/` (MQTT
     publish/subscribe), `broadcaster/` (per-domain-typed live websocket
-    fan-out, e.g. `Telemetry`), `utility/` (password hashing, tokens, API
-    key generation/hashing, payload schema validation), `logger/`.
+    fan-out, e.g. `Telemetry`, `InfraredRecordSession`), `llm/` (`Client` —
+    stateless `GenerateText` only, no connect/disconnect/status; and
+    `ClientFactory` — resolves the currently-configured provider/model and
+    returns an already-usable `Client`), `utility/` (password hashing,
+    tokens, API key generation/hashing, payload schema validation,
+    `JSEngine` for running generated encoder JS), `logger/`.
   - `usecases/` — one interface per feature area (`admin`, `node`, `node_log`,
     `action`, `auth`, `profile`, `preferences`, `telemetry`, `seeder`, and an
     internal `repocache` interface set used by the cache-decorator layer) plus
@@ -82,8 +86,15 @@ presentation → application → domain ← infrastructure
   contracts: `repository/` (Postgres via squirrel + pgx), `cache/` (Redis),
   `storage/firmware/` (MinIO, presigned downloads), `node/publish` +
   `node/subscriptions` (MQTT via paho), `utility/` (bcrypt password hashing,
-  JWT tokens, the hand-rolled payload-schema validator), `logger/leveled`
-  (zerolog/slog dual backend).
+  JWT tokens, the hand-rolled payload-schema validator, `utility/jsengine/`
+  — goja-based JS encoder runner), `logger/leveled` (zerolog/slog dual
+  backend), `llm/client/` (the Claude/OpenAI SDK adapters, one file each,
+  package `infrastructurellmclient`) + `llm/client_factory/` (owns the
+  `LlmConfig` repository + encryptor, decrypts the stored API key, and picks
+  which adapter to construct — this is why the repository lives inside the
+  factory rather than the application layer), `broadcaster/
+  infrared_record_session/` (gorilla websocket fan-out, capped to exactly
+  one active listener per recording session — see below).
 - **`internal/presentation/`** — the only layer allowed to touch raw
   HTTP/MQTT request shapes:
   - `http/handler/` — one package per resource area, Echo handlers.
@@ -314,6 +325,20 @@ table/type.
   `success` field, and an unparseable payload all restart the device
   immediately (see `mate-espidf-base/AGENTS.md`'s MQTT protocol contracts).
   Keep both repos' handling of this payload shape in sync.
+
+### Infrared record-session broadcast
+
+`internal/infrastructure/broadcaster/infrared_record_session/gorilla.go`
+allows at most one active websocket listener per recording session
+(`sessionId`) — a second concurrent registration attempt is rejected with
+the new `domainmodels.ErrTypeBroadcastListenerLimitReached` (mapped to
+`409 Conflict`). The `sessions` map is keyed by `sessionId` (not by a
+per-connection id), and `Register` reserves that map slot under the mutex
+*before* calling `websocket.Upgrader.Upgrade` — once `Upgrade` succeeds the
+HTTP response is fully committed to the websocket protocol and a rejection
+can no longer be reported as a normal JSON error, so the capacity check
+must happen strictly before it. The slot is released when the listener
+disconnects, allowing a new listener to register afterward.
 
 ### RBAC seed and cache rollout
 
