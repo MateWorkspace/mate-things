@@ -439,7 +439,6 @@ Pure logic, no I/O. `DetectVolatileBits` compares two same-length bit sequences 
 package applicationinfraredanalysis
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 )
