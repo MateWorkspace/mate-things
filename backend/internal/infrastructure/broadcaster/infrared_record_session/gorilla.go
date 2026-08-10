@@ -37,14 +37,19 @@ func (h *gorillaImpl) Register(
 	r *http.Request,
 	sessionId uuid.UUID,
 ) (err error) {
+	if !h.reserve(sessionId) {
+		return domainmodels.NewError("this recording session already has an active listener", domainmodels.ErrTypeBroadcastListenerLimitReached, nil)
+	}
+
 	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		h.remove(sessionId)
 		return domainmodels.NewError("failed to upgrade websocket connection", domainmodels.ErrTypeFailure, err)
 	}
 
 	c := newClient(conn, sessionId)
-	h.add(c)
-	defer h.remove(c)
+	h.occupy(c)
+	defer h.remove(sessionId)
 
 	go c.writePump()
 	c.readPump(ctx)
@@ -63,25 +68,34 @@ func (h *gorillaImpl) Send(
 
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	for _, c := range h.sessions {
-		if c.sessionId == event.SessionId {
-			c.enqueue(payload)
-		}
+	if c := h.sessions[event.SessionId]; c != nil {
+		c.enqueue(payload)
 	}
 
 	return nil
 }
 
-func (h *gorillaImpl) add(c *client) {
+func (h *gorillaImpl) reserve(sessionId uuid.UUID) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.sessions[c.id] = c
+
+	if _, occupied := h.sessions[sessionId]; occupied {
+		return false
+	}
+	h.sessions[sessionId] = nil
+	return true
 }
 
-func (h *gorillaImpl) remove(c *client) {
+func (h *gorillaImpl) occupy(c *client) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	delete(h.sessions, c.id)
+	h.sessions[c.sessionId] = c
+}
+
+func (h *gorillaImpl) remove(sessionId uuid.UUID) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	delete(h.sessions, sessionId)
 }
 
 func originChecker(allowedOrigins []string) func(r *http.Request) bool {

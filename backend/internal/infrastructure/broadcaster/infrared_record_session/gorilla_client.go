@@ -16,7 +16,6 @@ const (
 )
 
 type client struct {
-	id        uuid.UUID
 	sessionId uuid.UUID
 
 	conn *websocket.Conn
@@ -28,7 +27,6 @@ type client struct {
 
 func newClient(conn *websocket.Conn, sessionId uuid.UUID) *client {
 	return &client{
-		id:        uuid.New(),
 		sessionId: sessionId,
 		conn:      conn,
 		send:      make(chan []byte, sendBufferSize),

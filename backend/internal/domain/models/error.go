@@ -36,6 +36,8 @@ var (
 	ErrTypeNodeConfigKeyExists        = errors.New("NODE_CONFIG_KEY_EXISTS")
 	ErrTypeApiKeyUserExists           = errors.New("API_KEY_USER_EXISTS")
 	ErrTypeLlmConfigNotConfigured     = errors.New("LLM_CONFIG_NOT_CONFIGURED")
+
+	ErrTypeBroadcastListenerLimitReached = errors.New("BROADCAST_LISTENER_LIMIT_REACHED")
 )
 
 type Error struct {

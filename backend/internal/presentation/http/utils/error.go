@@ -42,6 +42,7 @@ var errorMappings = []struct {
 	{domainmodels.ErrTypeNodeConfigKeyExists, errorMapping{http.StatusConflict, "Already Exists", "This config key already exists for the node."}},
 	{domainmodels.ErrTypeApiKeyUserExists, errorMapping{http.StatusConflict, "Already Exists", "This user already has an API key. Regenerate it instead."}},
 	{domainmodels.ErrTypeConflict, errorMapping{http.StatusConflict, "Already Exists", ""}},
+	{domainmodels.ErrTypeBroadcastListenerLimitReached, errorMapping{http.StatusConflict, "Already Being Watched", "This recording session already has an active listener."}},
 	{domainmodels.ErrTypeBadArgs, errorMapping{http.StatusBadRequest, "Invalid Format", ""}},
 	{domainmodels.ErrTypeValidation, errorMapping{http.StatusBadRequest, "Invalid Format", ""}},
 	{domainmodels.ErrTypeBadState, errorMapping{http.StatusPreconditionFailed, "Invalid State", ""}},
