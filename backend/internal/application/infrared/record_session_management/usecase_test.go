@@ -129,6 +129,11 @@ type fakeCaseRepository struct {
 	statusUpdateIds []uuid.UUID
 	getResult       *domainmodels.InfraredStateDeviceRecordCase
 	getErr          error
+
+	acceptedRawCounts     map[uuid.UUID]int
+	listBySessionIdResult []domainmodels.InfraredStateDeviceRecordCase
+	rawById               map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw
+	statusValuesByCase    map[uuid.UUID][]domainmodels.InfraredRecordCaseStatus
 }
 
 func (f *fakeCaseRepository) CreateRaw(_ context.Context, caseId uuid.UUID, rawData []byte) (uuid.UUID, error) {
@@ -151,17 +156,43 @@ func (f *fakeCaseRepository) CreatedCaseIds() []uuid.UUID {
 	defer f.mu.Unlock()
 	return append([]uuid.UUID(nil), f.createdCaseIds...)
 }
-func (f *fakeCaseRepository) UpdateStatusById(_ context.Context, id uuid.UUID, _ domainmodels.InfraredRecordCaseStatus) error {
+func (f *fakeCaseRepository) UpdateStatusById(_ context.Context, id uuid.UUID, status domainmodels.InfraredRecordCaseStatus) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.statusUpdateIds = append(f.statusUpdateIds, id)
+	if f.statusValuesByCase == nil {
+		f.statusValuesByCase = make(map[uuid.UUID][]domainmodels.InfraredRecordCaseStatus)
+	}
+	f.statusValuesByCase[id] = append(f.statusValuesByCase[id], status)
 	return nil
 }
 func (f *fakeCaseRepository) GetById(_ context.Context, _ uuid.UUID) (*domainmodels.InfraredStateDeviceRecordCase, error) {
 	return f.getResult, f.getErr
 }
+func (f *fakeCaseRepository) UpdateRawStatusById(_ context.Context, _ uuid.UUID, _ domainmodels.InfraredRecordRawStatus, _ *string) error {
+	return nil
+}
 func (f *fakeCaseRepository) ListRawByCaseId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordRaw, error) {
 	return nil, nil
+}
+func (f *fakeCaseRepository) CountAcceptedRawByCaseId(_ context.Context, caseId uuid.UUID) (int, error) {
+	return f.acceptedRawCounts[caseId], nil
+}
+func (f *fakeCaseRepository) ListBySessionId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordCase, error) {
+	return f.listBySessionIdResult, nil
+}
+func (f *fakeCaseRepository) GetRawById(_ context.Context, rawId uuid.UUID) (*domainmodels.InfraredStateDeviceRecordRaw, error) {
+	return f.rawById[rawId], nil
+}
+
+// StatusUpdatesForCase returns a snapshot of every status this fake's
+// UpdateStatusById has been called with for the given case, in call order —
+// mirrors the file's existing StatusUpdates()/CurrentCaseId() convention
+// for state a background goroutine might mutate concurrently with a test.
+func (f *fakeCaseRepository) StatusUpdatesForCase(caseId uuid.UUID) []domainmodels.InfraredRecordCaseStatus {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]domainmodels.InfraredRecordCaseStatus(nil), f.statusValuesByCase[caseId]...)
 }
 
 // fakeLlmClient/fakeLlmClientFactory stand in for the merged prior plan's
@@ -516,5 +547,116 @@ func TestRetryCaseSetsCurrentCase(t *testing.T) {
 	}
 	if sessionRepo.currentCaseSessionId != sessionId {
 		t.Fatalf("session id used for current case update = %v, want %v", sessionRepo.currentCaseSessionId, sessionId)
+	}
+}
+
+func TestAcceptRawAdvancesCursorToNextPendingCase(t *testing.T) {
+	sessionId := uuid.New()
+	firstCaseId, secondCaseId := uuid.New(), uuid.New()
+	rawId := uuid.New()
+
+	sessionRepo := &fakeSessionRepository{}
+	caseRepo := &fakeCaseRepository{
+		acceptedRawCounts: map[uuid.UUID]int{firstCaseId: 2},
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: firstCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusActive},
+			{Id: secondCaseId, InfraredRecordSessionId: sessionId, Step: 2, Status: domainmodels.InfraredRecordCaseStatusPending},
+		},
+		rawById: map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw{
+			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: firstCaseId, InfraredRecordSessionId: sessionId},
+		},
+	}
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &noopLogger{},
+	)
+
+	if err := usecase.AcceptRaw(context.Background(), rawId); err != nil {
+		t.Fatalf("AcceptRaw() error = %v, want nil", err)
+	}
+
+	firstUpdates := caseRepo.StatusUpdatesForCase(firstCaseId)
+	if len(firstUpdates) == 0 || firstUpdates[len(firstUpdates)-1] != domainmodels.InfraredRecordCaseStatusAccepted {
+		t.Fatalf("first case status updates = %v, want to end with ACCEPTED", firstUpdates)
+	}
+	secondUpdates := caseRepo.StatusUpdatesForCase(secondCaseId)
+	if len(secondUpdates) == 0 || secondUpdates[len(secondUpdates)-1] != domainmodels.InfraredRecordCaseStatusActive {
+		t.Fatalf("second case status updates = %v, want to end with ACTIVE", secondUpdates)
+	}
+	if got := sessionRepo.CurrentCaseId(); got == nil || *got != secondCaseId {
+		t.Fatalf("session current case = %v, want %v", got, secondCaseId)
+	}
+}
+
+func TestAcceptRawTriggersAnalyzingWhenNoPendingCaseRemains(t *testing.T) {
+	sessionId := uuid.New()
+	onlyCaseId := uuid.New()
+	rawId := uuid.New()
+
+	sessionRepo := &fakeSessionRepository{}
+	caseRepo := &fakeCaseRepository{
+		acceptedRawCounts: map[uuid.UUID]int{onlyCaseId: 2},
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: onlyCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusActive},
+		},
+		rawById: map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw{
+			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: onlyCaseId, InfraredRecordSessionId: sessionId},
+		},
+	}
+	// runAnalysisAndGeneration is still Task 9's no-op stub at this point in
+	// the plan (Task 10 fills it in), so llmFactory is never actually
+	// called by the goroutine AcceptRaw launches — passed anyway for
+	// forward-compatibility with Task 10's real body.
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{err: errors.New("llm not configured for this test")}, &fakeNodeRepository{}, &noopLogger{},
+	)
+
+	if err := usecase.AcceptRaw(context.Background(), rawId); err != nil {
+		t.Fatalf("AcceptRaw() error = %v, want nil", err)
+	}
+
+	found := false
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateAnalyzing {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("status updates = %v, want to include ANALYZING", sessionRepo.StatusUpdates())
+	}
+}
+
+func TestAcceptRawDoesNotAdvanceCursorBeforeSecondRawAccepted(t *testing.T) {
+	sessionId := uuid.New()
+	caseId := uuid.New()
+	rawId := uuid.New()
+
+	sessionRepo := &fakeSessionRepository{}
+	caseRepo := &fakeCaseRepository{
+		acceptedRawCounts: map[uuid.UUID]int{caseId: 1},
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: caseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusActive},
+		},
+		rawById: map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw{
+			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: caseId, InfraredRecordSessionId: sessionId},
+		},
+	}
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &noopLogger{},
+	)
+
+	if err := usecase.AcceptRaw(context.Background(), rawId); err != nil {
+		t.Fatalf("AcceptRaw() error = %v, want nil", err)
+	}
+	if updates := caseRepo.StatusUpdatesForCase(caseId); len(updates) != 0 {
+		t.Fatalf("case status updates = %v, want none (only 1 of 2 required raws accepted)", updates)
+	}
+	if got := sessionRepo.CurrentCaseId(); got != nil {
+		t.Fatalf("session current case = %v, want nil (no change before the case's second raw is accepted)", got)
 	}
 }

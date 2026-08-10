@@ -17,4 +17,5 @@ type InfraredStateDeviceRecordCase interface {
 	ListRawByCaseId(ctx context.Context, caseId uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordRaw, error)
 	UpdateRawStatusById(ctx context.Context, id uuid.UUID, status domainmodels.InfraredRecordRawStatus, discardedReason *string) error
 	CountAcceptedRawByCaseId(ctx context.Context, caseId uuid.UUID) (int, error)
+	GetRawById(ctx context.Context, rawId uuid.UUID) (*domainmodels.InfraredStateDeviceRecordRaw, error)
 }

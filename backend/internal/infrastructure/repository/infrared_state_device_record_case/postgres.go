@@ -187,6 +187,22 @@ func (p *postgresImpl) UpdateRawStatusById(ctx context.Context, id uuid.UUID, st
 	return nil
 }
 
+func (p *postgresImpl) GetRawById(ctx context.Context, rawId uuid.UUID) (*domainmodels.InfraredStateDeviceRecordRaw, error) {
+	query, args, err := p.queryGetRawById(rawId)
+	if err != nil {
+		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build infrared_state_device_record_raw get query", err)
+	}
+
+	var item domainmodels.InfraredStateDeviceRecordRaw
+	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&item.Id, &item.InfraredStateDeviceRecordCaseId, &item.InfraredRecordSessionId, &item.RawData, &item.Status, &item.DiscardedReason); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, infrastructurerepositoryshared.NotFound("infrared_state_device_record_raw not found", err)
+		}
+		return nil, infrastructurerepositoryshared.MapPgxError("failed to read infrared_state_device_record_raw", err)
+	}
+	return &item, nil
+}
+
 func (p *postgresImpl) CountAcceptedRawByCaseId(ctx context.Context, caseId uuid.UUID) (int, error) {
 	query, args, err := p.queryCountAcceptedRawByCaseId(caseId)
 	if err != nil {

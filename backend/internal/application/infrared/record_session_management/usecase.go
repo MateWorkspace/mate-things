@@ -229,8 +229,82 @@ func (u *usecase) ListCases(ctx context.Context, sessionId uuid.UUID) ([]domainu
 }
 
 func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
-	return u.recordCase.UpdateRawStatusById(ctx, rawId, domainmodels.InfraredRecordRawStatusAccepted, nil)
+	const tag = "infrared/record_session_management/AcceptRaw"
+
+	if err := u.recordCase.UpdateRawStatusById(ctx, rawId, domainmodels.InfraredRecordRawStatusAccepted, nil); err != nil {
+		return err
+	}
+
+	raw, err := u.recordCase.GetRawById(ctx, rawId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to look up accepted raw", domainmodels.LoggerMeta{"err": err, "raw_id": rawId})
+		return err
+	}
+
+	acceptedCount, err := u.recordCase.CountAcceptedRawByCaseId(ctx, raw.InfraredStateDeviceRecordCaseId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to count accepted raws", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
+		return err
+	}
+	if acceptedCount < 2 {
+		return nil
+	}
+
+	if err := u.recordCase.UpdateStatusById(ctx, raw.InfraredStateDeviceRecordCaseId, domainmodels.InfraredRecordCaseStatusAccepted); err != nil {
+		u.logger.Error(ctx, tag, "failed to mark case accepted", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
+		return err
+	}
+
+	cases, err := u.recordCase.ListBySessionId(ctx, raw.InfraredRecordSessionId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to list cases for cursor advancement", domainmodels.LoggerMeta{"err": err, "session_id": raw.InfraredRecordSessionId})
+		return err
+	}
+
+	var next *domainmodels.InfraredStateDeviceRecordCase
+	for i := range cases {
+		if cases[i].Status != domainmodels.InfraredRecordCaseStatusPending {
+			continue
+		}
+		if next == nil || cases[i].Step < next.Step {
+			next = &cases[i]
+		}
+	}
+
+	if next != nil {
+		if err := u.recordCase.UpdateStatusById(ctx, next.Id, domainmodels.InfraredRecordCaseStatusActive); err != nil {
+			u.logger.Error(ctx, tag, "failed to activate next case", domainmodels.LoggerMeta{"err": err, "case_id": next.Id})
+			return err
+		}
+		if err := u.session.UpdateCurrentRecordCaseIdById(ctx, raw.InfraredRecordSessionId, &next.Id); err != nil {
+			u.logger.Error(ctx, tag, "failed to advance session cursor", domainmodels.LoggerMeta{"err": err, "session_id": raw.InfraredRecordSessionId})
+			return err
+		}
+		u.broadcastBestEffort(ctx, tag, raw.InfraredRecordSessionId, domainmodels.InfraredRecordingStateRecording, &next.Id)
+		return nil
+	}
+
+	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, raw.InfraredRecordSessionId, nil); err != nil {
+		u.logger.Error(ctx, tag, "failed to clear session cursor before analysis", domainmodels.LoggerMeta{"err": err, "session_id": raw.InfraredRecordSessionId})
+		return err
+	}
+	u.transition(ctx, tag, raw.InfraredRecordSessionId, domainmodels.InfraredRecordingStateAnalyzing)
+
+	go u.runAnalysisAndGeneration(raw.InfraredRecordSessionId)
+
+	return nil
 }
+
+func (u *usecase) broadcastBestEffort(ctx context.Context, tag string, sessionId uuid.UUID, state string, currentCaseId *uuid.UUID) {
+	if err := u.broadcaster.Send(ctx, domainmodels.InfraredRecordSessionEvent{SessionId: sessionId, RecordingState: state, CurrentRecordCaseId: currentCaseId}); err != nil {
+		u.logger.Warn(ctx, tag, "failed to broadcast", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+	}
+}
+
+// runAnalysisAndGeneration is Task 10's async job; this stub exists only so
+// AcceptRaw compiles and its cursor/transition logic can be tested in
+// isolation ahead of Task 10 filling in the real body.
+func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {}
 
 func (u *usecase) DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string) error {
 	if reason == "" {

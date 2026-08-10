@@ -97,6 +97,21 @@ func (p *postgresImpl) queryUpdateRawStatusById(id uuid.UUID, status domainmodel
 		ToSql()
 }
 
+func (p *postgresImpl) queryGetRawById(rawId uuid.UUID) (query string, args []any, err error) {
+	return p.SqrD.Select(
+		"raw.id",
+		"raw.infrared_state_device_record_case_id",
+		"cases.infrared_record_session_id",
+		"raw.raw_data",
+		"raw.status",
+		"raw.discarded_reason",
+	).
+		From("infrared_state_device_record_raw raw").
+		Join("infrared_state_device_record_case cases ON cases.id = raw.infrared_state_device_record_case_id").
+		Where(squirrel.Eq{"raw.id": rawId}).
+		ToSql()
+}
+
 func (p *postgresImpl) queryCountAcceptedRawByCaseId(caseId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select("COUNT(*)").
 		From("infrared_state_device_record_raw").
