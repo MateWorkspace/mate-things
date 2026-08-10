@@ -13,6 +13,18 @@ export type RoutePolicy = {
 
 export const ROUTE_POLICIES: readonly RoutePolicy[] = [
   {
+    href: "/",
+    protected: false,
+  },
+  {
+    href: "/login",
+    protected: false,
+  },
+  {
+    href: "/auth/invalid-session",
+    protected: false,
+  },
+  {
     href: "/dashboard",
     protected: true,
     requiredAny: [],
@@ -111,15 +123,26 @@ export function findRoutePolicy(pathname: string): RoutePolicy | undefined {
     .find((policy) => matchesPrefix(pathname, policy.href));
 }
 
+// A pathname with no matching policy fails closed: it is treated as
+// protected (isProtectedRoute) and not visitable (canVisitRoute), rather
+// than silently granting unauthenticated/unpermissioned access because a
+// new route was never added to ROUTE_POLICIES.
+
 export function isProtectedRoute(pathname: string): boolean {
-  return findRoutePolicy(pathname)?.protected ?? false;
+  const policy = findRoutePolicy(pathname);
+  return policy ? policy.protected : true;
 }
 
 export function canVisitRoute(
   pathname: string,
   permissions: ReadonlySet<string>,
 ): boolean {
-  const requiredAny = findRoutePolicy(pathname)?.requiredAny ?? [];
+  const policy = findRoutePolicy(pathname);
+  if (!policy) {
+    return false;
+  }
+
+  const requiredAny = policy.requiredAny ?? [];
 
   return (
     requiredAny.length === 0 ||

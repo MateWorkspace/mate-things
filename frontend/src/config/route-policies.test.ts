@@ -57,6 +57,23 @@ describe("route policies", () => {
     expect(findRoutePolicy("/nodes-old")).toBeUndefined();
   });
 
+  it("fails closed (treats as protected) for a pathname with no policy", () => {
+    expect(findRoutePolicy("/nodes-old")).toBeUndefined();
+    expect(isProtectedRoute("/nodes-old")).toBe(true);
+  });
+
+  it("fails closed (denies visiting) for a pathname with no policy", () => {
+    expect(canVisitRoute("/nodes-old", new Set(["node:get", "user:get"]))).toBe(
+      false,
+    );
+  });
+
+  it("treats the explicitly public routes as unprotected", () => {
+    expect(isProtectedRoute("/")).toBe(false);
+    expect(isProtectedRoute("/login")).toBe(false);
+    expect(isProtectedRoute("/auth/invalid-session")).toBe(false);
+  });
+
   it("allows a route when any required permission is present", () => {
     expect(
       canVisitRoute("/admin/access-control", new Set(["permission:get"])),
