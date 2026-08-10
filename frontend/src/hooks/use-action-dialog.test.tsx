@@ -39,12 +39,14 @@ function StatefulForm({
 function Harness({
   pending = false,
   onSuccess,
+  closeOnSuccess,
 }: {
   pending?: boolean;
   onSuccess?: () => void;
+  closeOnSuccess?: boolean;
 }) {
   const [state, setState] = useState<ActionState>(INITIAL_ACTION_STATE);
-  const dialog = useActionDialog({ state, onSuccess });
+  const dialog = useActionDialog({ state, onSuccess, closeOnSuccess });
 
   return (
     <>
@@ -57,7 +59,13 @@ function Harness({
         dismissible={!pending}
         title="Action"
       >
-        <StatefulForm key={dialog.formKey} onStateChange={setState} />
+        {state.status === "success" ? (
+          <button type="button" onClick={dialog.reset}>
+            Done
+          </button>
+        ) : (
+          <StatefulForm key={dialog.formKey} onStateChange={setState} />
+        )}
       </Dialog>
     </>
   );
@@ -112,5 +120,25 @@ it("restores the trigger focus and resets the keyed owner after cancel", async (
 
   expect(trigger).toHaveFocus();
   await user.click(trigger);
+  expect(screen.getByLabelText("Draft")).toHaveValue("fresh");
+});
+
+it("stays open on success and only closes via a manual reset when closeOnSuccess is false", async () => {
+  const user = userEvent.setup();
+  const onSuccess = vi.fn();
+  submitAction.mockClear();
+  render(<Harness onSuccess={onSuccess} closeOnSuccess={false} />);
+
+  await user.click(screen.getByRole("button", { name: "Open" }));
+  await user.click(screen.getByRole("button", { name: "Submit" }));
+
+  await waitFor(() => expect(onSuccess).toHaveBeenCalledOnce());
+  expect(screen.getByRole("dialog")).toBeVisible();
+  const doneButton = await screen.findByRole("button", { name: "Done" });
+
+  await user.click(doneButton);
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Open" }));
   expect(screen.getByLabelText("Draft")).toHaveValue("fresh");
 });

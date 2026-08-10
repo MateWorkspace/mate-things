@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -8,6 +8,7 @@ import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
+import { useActionDialog } from "@/hooks/use-action-dialog";
 import type { UserResponse } from "@/lib/api/users";
 import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 
@@ -15,25 +16,24 @@ import { resetUserPasswordAction } from "../_lib/actions";
 import { EMPTY_USER_STATE } from "../_lib/state";
 
 export default function PasswordResetForm({ user }: { user: UserResponse }) {
-  const [open, setOpen] = useState(false);
-  const [generation, setGeneration] = useState(0);
+  const [state, setState] = useState(EMPTY_USER_STATE);
+  const dialog = useActionDialog({ state });
+
   return (
     <>
       <Button
         type="button"
         variant="secondary"
-        onClick={() => {
-          setGeneration((current) => current + 1);
-          setOpen(true);
-        }}
+        onClick={() => dialog.setOpen(true)}
       >
         Reset password
       </Button>
       <PasswordResetDialog
-        key={generation}
+        key={dialog.formKey}
         user={user}
-        open={open}
-        onClose={() => setOpen(false)}
+        open={dialog.open}
+        onClose={dialog.reset}
+        onStateChange={setState}
       />
     </>
   );
@@ -43,10 +43,12 @@ function PasswordResetDialog({
   user,
   open,
   onClose,
+  onStateChange,
 }: {
   user: UserResponse;
   open: boolean;
   onClose: () => void;
+  onStateChange: (state: typeof EMPTY_USER_STATE) => void;
 }) {
   const [state, action, pending] = useActionState(
     resetUserPasswordAction,
@@ -56,6 +58,7 @@ function PasswordResetDialog({
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   useFirstInvalidField(state, formRef);
+  useEffect(() => onStateChange(state), [onStateChange, state]);
   return (
     <Dialog
       open={open && state.status !== "success"}

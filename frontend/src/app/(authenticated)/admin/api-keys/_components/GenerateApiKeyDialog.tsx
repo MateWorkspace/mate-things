@@ -9,6 +9,7 @@ import CopyButton from "@/components/ui/copy-button";
 import Dialog from "@/components/ui/dialog";
 import Label from "@/components/ui/label";
 import UserSearchCombobox from "@/components/users/UserSearchCombobox";
+import { useActionDialog } from "@/hooks/use-action-dialog";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 
@@ -16,63 +17,50 @@ import { generateApiKeyAction } from "../_lib/actions";
 import { EMPTY_API_KEY_STATE } from "../_lib/state";
 
 export default function GenerateApiKeyDialog() {
-  const [open, setOpen] = useState(false);
-  const [generation, setGeneration] = useState(0);
-  const [pending, setPending] = useState(false);
-  const close = () => {
-    if (pending) return;
-    setOpen(false);
-    setPending(false);
-  };
+  const [state, setState] = useState(EMPTY_API_KEY_STATE);
+  const dialog = useActionDialog({ state, closeOnSuccess: false });
+
   return (
     <>
-      <Button
-        type="button"
-        onClick={() => {
-          setGeneration((current) => current + 1);
-          setPending(false);
-          setOpen(true);
-        }}
-      >
+      <Button type="button" onClick={() => dialog.setOpen(true)}>
         Generate API key
       </Button>
-      <Dialog
-        open={open}
-        onClose={close}
-        title="Generate API key"
-        variant="sheet"
-        dismissible={!pending}
-      >
-        {open ? (
-          <GenerateApiKeyContent
-            key={generation}
-            onClose={close}
-            onPendingChange={setPending}
-          />
-        ) : null}
-      </Dialog>
+      <GenerateApiKeyContent
+        key={dialog.formKey}
+        open={dialog.open}
+        onClose={dialog.reset}
+        onStateChange={setState}
+      />
     </>
   );
 }
 
 function GenerateApiKeyContent({
+  open,
   onClose,
-  onPendingChange,
+  onStateChange,
 }: {
+  open: boolean;
   onClose: () => void;
-  onPendingChange: (pending: boolean) => void;
+  onStateChange: (state: typeof EMPTY_API_KEY_STATE) => void;
 }) {
   const [state, action, pending] = useActionState(
     generateApiKeyAction,
     EMPTY_API_KEY_STATE,
   );
   const formRef = useRef<HTMLFormElement>(null);
-  useEffect(() => onPendingChange(pending), [onPendingChange, pending]);
   useRefreshAfterAction(state);
   useFirstInvalidField(state, formRef);
+  useEffect(() => onStateChange(state), [onStateChange, state]);
 
   return (
-    <>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Generate API key"
+      variant="sheet"
+      dismissible={!pending}
+    >
       {state.status === "success" && state.key ? (
         <div className="space-y-4">
           <p className="text-success text-sm">{state.message}</p>
@@ -128,6 +116,6 @@ function GenerateApiKeyContent({
           </div>
         </form>
       )}
-    </>
+    </Dialog>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -9,6 +9,7 @@ import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
+import { useActionDialog } from "@/hooks/use-action-dialog";
 import type { ActionResponse } from "@/lib/api/actions";
 import type { NodeResponse } from "@/lib/api/nodes";
 import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
@@ -31,26 +32,22 @@ export default function DispatchActionDialog({
   nodes,
   compatibleNodeClassIds,
 }: DispatchActionDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [generation, setGeneration] = useState(0);
+  const [state, setState] = useState(EMPTY_STATE);
+  const dialog = useActionDialog({ state, closeOnSuccess: false });
+
   return (
     <>
-      <Button
-        type="button"
-        onClick={() => {
-          setGeneration((current) => current + 1);
-          setOpen(true);
-        }}
-      >
+      <Button type="button" onClick={() => dialog.setOpen(true)}>
         Dispatch action
       </Button>
       <DispatchDialogContent
-        key={generation}
+        key={dialog.formKey}
         action={action}
         nodes={nodes}
         compatibleNodeClassIds={compatibleNodeClassIds}
-        open={open}
-        onClose={() => setOpen(false)}
+        open={dialog.open}
+        onClose={dialog.reset}
+        onStateChange={setState}
       />
     </>
   );
@@ -62,13 +59,19 @@ function DispatchDialogContent({
   compatibleNodeClassIds,
   open,
   onClose,
-}: DispatchActionDialogProps & { open: boolean; onClose: () => void }) {
+  onStateChange,
+}: DispatchActionDialogProps & {
+  open: boolean;
+  onClose: () => void;
+  onStateChange: (state: ActionFormState) => void;
+}) {
   const [state, formAction, pending] = useActionState(
     dispatchActionFormAction,
     EMPTY_STATE,
   );
   const formRef = useRef<HTMLFormElement>(null);
   useFirstInvalidField(state, formRef);
+  useEffect(() => onStateChange(state), [onStateChange, state]);
   const id = useId();
   const compatibleNodes = nodes.filter((node) =>
     compatibleNodeClassIds.has(node.node_class_id),

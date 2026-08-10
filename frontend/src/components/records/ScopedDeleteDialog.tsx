@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useEffect, useId, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
+import { useActionDialog } from "@/hooks/use-action-dialog";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { ActionState } from "@/lib/forms/action-state";
 
@@ -30,27 +31,26 @@ export default function ScopedDeleteDialog({
   filters,
   label,
 }: ScopedDeleteDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [generation, setGeneration] = useState(0);
+  const [state, setState] = useState<ScopedDeleteState>(INITIAL_STATE);
+  const dialog = useActionDialog({ state, closeOnSuccess: false });
+
   return (
     <>
       <button
         type="button"
         className="border-critical text-critical hover:bg-critical/10 active:bg-critical/15 focus-visible:ring-critical rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
-        onClick={() => {
-          setGeneration((current) => current + 1);
-          setOpen(true);
-        }}
+        onClick={() => dialog.setOpen(true)}
       >
         Delete filtered {label}
       </button>
       <ScopedDeleteContent
-        key={generation}
+        key={dialog.formKey}
         action={action}
         filters={filters}
         label={label}
-        open={open}
-        onClose={() => setOpen(false)}
+        open={dialog.open}
+        onClose={dialog.reset}
+        onStateChange={setState}
       />
     </>
   );
@@ -62,10 +62,16 @@ function ScopedDeleteContent({
   label,
   open,
   onClose,
-}: ScopedDeleteDialogProps & { open: boolean; onClose: () => void }) {
+  onStateChange,
+}: ScopedDeleteDialogProps & {
+  open: boolean;
+  onClose: () => void;
+  onStateChange: (state: ScopedDeleteState) => void;
+}) {
   const [confirmation, setConfirmation] = useState("");
   const [state, formAction, pending] = useActionState(action, INITIAL_STATE);
   useRefreshAfterAction(state);
+  useEffect(() => onStateChange(state), [onStateChange, state]);
   const id = useId();
   const phrase = filters.length ? "DELETE" : "DELETE ALL";
 

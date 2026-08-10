@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
+import { useActionDialog } from "@/hooks/use-action-dialog";
 import type { ApiKeyResponse } from "@/lib/api/api-keys";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
@@ -16,25 +17,24 @@ export default function RevokeApiKeyDialog({
 }: {
   apiKey: ApiKeyResponse;
 }) {
-  const [open, setOpen] = useState(false);
-  const [generation, setGeneration] = useState(0);
+  const [state, setState] = useState(EMPTY_API_KEY_STATE);
+  const dialog = useActionDialog({ state, closeOnSuccess: false });
+
   return (
     <>
       <Button
         type="button"
         variant="secondary"
-        onClick={() => {
-          setGeneration((current) => current + 1);
-          setOpen(true);
-        }}
+        onClick={() => dialog.setOpen(true)}
       >
         Revoke
       </Button>
       <RevokeApiKeyContent
-        key={generation}
+        key={dialog.formKey}
         apiKey={apiKey}
-        open={open}
-        onClose={() => setOpen(false)}
+        open={dialog.open}
+        onClose={dialog.reset}
+        onStateChange={setState}
       />
     </>
   );
@@ -44,16 +44,19 @@ function RevokeApiKeyContent({
   apiKey,
   open,
   onClose,
+  onStateChange,
 }: {
   apiKey: ApiKeyResponse;
   open: boolean;
   onClose: () => void;
+  onStateChange: (state: typeof EMPTY_API_KEY_STATE) => void;
 }) {
   const [state, action, pending] = useActionState(
     revokeApiKeyAction,
     EMPTY_API_KEY_STATE,
   );
   useRefreshAfterAction(state);
+  useEffect(() => onStateChange(state), [onStateChange, state]);
 
   return (
     <Dialog

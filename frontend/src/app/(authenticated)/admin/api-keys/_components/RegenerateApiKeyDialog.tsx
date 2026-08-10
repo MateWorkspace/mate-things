@@ -8,6 +8,7 @@ import Button from "@/components/ui/button";
 import CopyButton from "@/components/ui/copy-button";
 import Dialog from "@/components/ui/dialog";
 import Label from "@/components/ui/label";
+import { useActionDialog } from "@/hooks/use-action-dialog";
 import type { ApiKeyResponse } from "@/lib/api/api-keys";
 import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
@@ -27,67 +28,57 @@ export default function RegenerateApiKeyDialog({
 }: {
   apiKey: ApiKeyResponse;
 }) {
-  const [open, setOpen] = useState(false);
-  const [generation, setGeneration] = useState(0);
-  const [pending, setPending] = useState(false);
-  const close = () => {
-    if (pending) return;
-    setOpen(false);
-    setPending(false);
-  };
+  const [state, setState] = useState(EMPTY_API_KEY_STATE);
+  const dialog = useActionDialog({ state, closeOnSuccess: false });
+
   return (
     <>
       <Button
         type="button"
         variant="secondary"
-        onClick={() => {
-          setGeneration((current) => current + 1);
-          setPending(false);
-          setOpen(true);
-        }}
+        onClick={() => dialog.setOpen(true)}
       >
         Regenerate
       </Button>
-      <Dialog
-        open={open}
-        onClose={close}
-        title={`Regenerate ${apiKey.user_username}'s API key`}
-        variant="sheet"
-        dismissible={!pending}
-      >
-        {open ? (
-          <RegenerateApiKeyContent
-            key={generation}
-            apiKey={apiKey}
-            onClose={close}
-            onPendingChange={setPending}
-          />
-        ) : null}
-      </Dialog>
+      <RegenerateApiKeyContent
+        key={dialog.formKey}
+        apiKey={apiKey}
+        open={dialog.open}
+        onClose={dialog.reset}
+        onStateChange={setState}
+      />
     </>
   );
 }
 
 function RegenerateApiKeyContent({
   apiKey,
+  open,
   onClose,
-  onPendingChange,
+  onStateChange,
 }: {
   apiKey: ApiKeyResponse;
+  open: boolean;
   onClose: () => void;
-  onPendingChange: (pending: boolean) => void;
+  onStateChange: (state: typeof EMPTY_API_KEY_STATE) => void;
 }) {
   const [state, action, pending] = useActionState(
     regenerateApiKeyAction,
     EMPTY_API_KEY_STATE,
   );
   const formRef = useRef<HTMLFormElement>(null);
-  useEffect(() => onPendingChange(pending), [onPendingChange, pending]);
   useRefreshAfterAction(state);
   useFirstInvalidField(state, formRef);
+  useEffect(() => onStateChange(state), [onStateChange, state]);
 
   return (
-    <>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={`Regenerate ${apiKey.user_username}'s API key`}
+      variant="sheet"
+      dismissible={!pending}
+    >
       {state.status === "success" && state.key ? (
         <div className="space-y-4">
           <p className="text-success text-sm">{state.message}</p>
@@ -150,6 +141,6 @@ function RegenerateApiKeyContent({
           </div>
         </form>
       )}
-    </>
+    </Dialog>
   );
 }

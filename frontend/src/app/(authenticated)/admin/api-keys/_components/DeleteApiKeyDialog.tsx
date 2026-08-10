@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -8,6 +8,7 @@ import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
+import { useActionDialog } from "@/hooks/use-action-dialog";
 import type { ApiKeyResponse } from "@/lib/api/api-keys";
 import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
@@ -20,25 +21,24 @@ export default function DeleteApiKeyDialog({
 }: {
   apiKey: ApiKeyResponse;
 }) {
-  const [open, setOpen] = useState(false);
-  const [generation, setGeneration] = useState(0);
+  const [state, setState] = useState(EMPTY_API_KEY_STATE);
+  const dialog = useActionDialog({ state, closeOnSuccess: false });
+
   return (
     <>
       <button
         type="button"
         className="border-critical text-critical hover:bg-critical/10 active:bg-critical/15 focus-visible:ring-critical rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
-        onClick={() => {
-          setGeneration((current) => current + 1);
-          setOpen(true);
-        }}
+        onClick={() => dialog.setOpen(true)}
       >
         Delete
       </button>
       <DeleteApiKeyContent
-        key={generation}
+        key={dialog.formKey}
         apiKey={apiKey}
-        open={open}
-        onClose={() => setOpen(false)}
+        open={dialog.open}
+        onClose={dialog.reset}
+        onStateChange={setState}
       />
     </>
   );
@@ -48,10 +48,12 @@ function DeleteApiKeyContent({
   apiKey,
   open,
   onClose,
+  onStateChange,
 }: {
   apiKey: ApiKeyResponse;
   open: boolean;
   onClose: () => void;
+  onStateChange: (state: typeof EMPTY_API_KEY_STATE) => void;
 }) {
   const [confirmation, setConfirmation] = useState("");
   const [state, action, pending] = useActionState(
@@ -61,6 +63,7 @@ function DeleteApiKeyContent({
   const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
   useFirstInvalidField(state, formRef);
+  useEffect(() => onStateChange(state), [onStateChange, state]);
   const id = useId();
 
   return (

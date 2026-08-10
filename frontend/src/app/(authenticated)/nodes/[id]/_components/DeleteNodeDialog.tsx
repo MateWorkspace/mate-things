@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -8,6 +8,7 @@ import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
+import { useActionDialog } from "@/hooks/use-action-dialog";
 import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 
 import { deleteNodeAction, type NodeActionState } from "../_lib/actions";
@@ -25,27 +26,30 @@ export default function DeleteNodeDialog({
   nodeId,
   nodeName,
 }: DeleteNodeDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [generation, setGeneration] = useState(0);
+  // deleteNodeAction redirects server-side on success, so `state` here
+  // never actually reaches "success" client-side - useActionDialog's
+  // auto-close is inert, but the shared open/reset/remount scaffolding
+  // still applies for the cancel/reopen path.
+  const [state, setState] = useState(INITIAL_STATE);
+  const dialog = useActionDialog({ state });
+
   return (
     <>
       <button
         type="button"
-        onClick={() => {
-          setGeneration((current) => current + 1);
-          setOpen(true);
-        }}
+        onClick={() => dialog.setOpen(true)}
         className="border-critical text-critical hover:bg-critical/10 focus-visible:ring-critical focus-visible:ring-offset-background inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         Delete node
       </button>
       <DeleteNodeContent
-        key={generation}
+        key={dialog.formKey}
         deviceId={deviceId}
         nodeId={nodeId}
         nodeName={nodeName}
-        open={open}
-        onClose={() => setOpen(false)}
+        open={dialog.open}
+        onClose={dialog.reset}
+        onStateChange={setState}
       />
     </>
   );
@@ -57,7 +61,12 @@ function DeleteNodeContent({
   nodeName,
   open,
   onClose,
-}: DeleteNodeDialogProps & { open: boolean; onClose: () => void }) {
+  onStateChange,
+}: DeleteNodeDialogProps & {
+  open: boolean;
+  onClose: () => void;
+  onStateChange: (state: NodeActionState) => void;
+}) {
   const [confirmation, setConfirmation] = useState("");
   const [state, formAction, isPending] = useActionState(
     deleteNodeAction,
@@ -65,6 +74,7 @@ function DeleteNodeContent({
   );
   const formRef = useRef<HTMLFormElement>(null);
   useFirstInvalidField(state, formRef);
+  useEffect(() => onStateChange(state), [onStateChange, state]);
 
   const close = () => {
     if (!isPending) {
