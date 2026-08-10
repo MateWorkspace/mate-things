@@ -26,3 +26,8 @@ type ConfigPayload struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
+
+type IrTransmitPayload struct {
+	ExecutionId uuid.UUID `json:"execution_id"`
+	RawData     []int32   `json:"raw_data"`
+}

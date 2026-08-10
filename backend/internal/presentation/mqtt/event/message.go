@@ -58,6 +58,8 @@ func OnMessage(_ mqtt.Client, msg mqtt.Message) {
 			h.Telemetry(ctx, msg, topic.DeviceId)
 		case "ir_capture":
 			h.IrCapture(ctx, msg, topic.DeviceId)
+		case "ir_transmit_ack":
+			h.IrTransmitAck(ctx, msg, topic.DeviceId)
 		default:
 			h.Logger.Warn(ctx, tag, "unknown mqtt topic", domainmodels.LoggerMeta{
 				"topic": msg.Topic(),

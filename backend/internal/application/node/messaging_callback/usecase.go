@@ -297,6 +297,9 @@ func (u *usecase) subscribeNode(ctx context.Context, deviceId string) error {
 	if err := u.subscriptions.IrCapture(ctx, deviceId); err != nil {
 		return err
 	}
+	if err := u.subscriptions.IrTransmitAck(ctx, deviceId); err != nil {
+		return err
+	}
 	return nil
 }
 

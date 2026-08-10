@@ -9,4 +9,5 @@ type Subscriptions interface {
 	ActionAck(ctx context.Context, nodeDeviceId string) (err error)
 	Telemetry(ctx context.Context, nodeDeviceId string) (err error)
 	IrCapture(ctx context.Context, nodeDeviceId string) (err error)
+	IrTransmitAck(ctx context.Context, nodeDeviceId string) (err error)
 }

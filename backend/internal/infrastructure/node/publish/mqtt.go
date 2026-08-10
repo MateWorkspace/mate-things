@@ -16,6 +16,7 @@ const (
 	otaQos             = 1
 	actionQos          = 1
 	configQos          = 1
+	irTransmitQos      = 1
 )
 
 type mqttImpl struct {
@@ -105,6 +106,26 @@ func (m *mqttImpl) Config(
 	return m.publish(
 		ctx, infrastructurenodeshared.NodeSubTopic(nodeDeviceId, "config"),
 		configQos, false, payload,
+	)
+}
+
+func (m *mqttImpl) IrTransmit(
+	ctx context.Context,
+	nodeDeviceId string,
+	executionId uuid.UUID,
+	rawData []int32,
+) (err error) {
+	payload, err := json.Marshal(infrastructurenodeshared.IrTransmitPayload{
+		ExecutionId: executionId,
+		RawData:     rawData,
+	})
+	if err != nil {
+		return domainmodels.NewError("failed to build payload", domainmodels.ErrTypeValidation, err)
+	}
+
+	return m.publish(
+		ctx, infrastructurenodeshared.NodeSubTopic(nodeDeviceId, "ir_transmit"),
+		irTransmitQos, false, payload,
 	)
 }
 

@@ -36,4 +36,11 @@ type Publish interface {
 		key string,
 		value string,
 	) (err error)
+
+	IrTransmit(
+		ctx context.Context,
+		nodeDeviceId string,
+		executionId uuid.UUID,
+		rawData []int32,
+	) (err error)
 }
