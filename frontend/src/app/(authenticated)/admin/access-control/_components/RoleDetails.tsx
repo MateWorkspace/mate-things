@@ -13,6 +13,11 @@ import Label from "@/components/ui/label";
 import type { PermissionResponse } from "@/lib/api/permissions";
 import type { RoleResponse } from "@/lib/api/roles";
 import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
+import {
+  assignmentSubmission,
+  type AssignmentSubmission,
+  useAssignmentSelection,
+} from "@/hooks/use-assignment-selection";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
@@ -21,9 +26,25 @@ import {
   setDefaultRoleAction,
   EMPTY_ROLE_ASSIGNMENT_STATE,
   updateRoleAssignmentsAction,
+  type AssignmentActionState,
 } from "../_lib/actions";
 import { EMPTY_ACCESS_STATE } from "../_lib/state";
 import PermissionGroups from "./PermissionGroups";
+
+type RoleAssignmentClientState = AssignmentActionState & {
+  submission?: AssignmentSubmission;
+};
+
+async function updateRoleAssignmentsWithSubmission(
+  previous: RoleAssignmentClientState,
+  data: FormData,
+): Promise<RoleAssignmentClientState> {
+  const result = await updateRoleAssignmentsAction(previous, data);
+  return {
+    ...result,
+    submission: assignmentSubmission(data, "permission_ids"),
+  };
+}
 
 export default function RoleDetails({
   role,
@@ -44,31 +65,16 @@ export default function RoleDetails({
   const [defaultOpen, setDefaultOpen] = useState(false);
   const [defaultGeneration, setDefaultGeneration] = useState(0);
   const [assignmentState, assignmentAction, assignmentPending] = useActionState(
-    updateRoleAssignmentsAction,
+    updateRoleAssignmentsWithSubmission,
     EMPTY_ROLE_ASSIGNMENT_STATE,
   );
   useRefreshAfterAction(assignmentState);
-  const [assignmentSelection, setAssignmentSelection] = useState(() => ({
-    handled: assignmentState,
-    overrides: new Map<string, boolean>(),
-    settled: new Set<string>(),
-  }));
-  if (assignmentSelection.handled !== assignmentState) {
-    const settled = new Set(assignmentSelection.settled);
-    assignmentState.appliedIds.forEach((id) => settled.add(id));
-    assignmentState.failed.forEach(({ id }) => settled.delete(id));
-    setAssignmentSelection({
-      ...assignmentSelection,
-      handled: assignmentState,
-      settled,
-    });
-  }
   const selectedSet = new Set(selected);
-  const isSelected = (id: string) =>
-    assignmentSelection.overrides.has(id) &&
-    !assignmentSelection.settled.has(id)
-      ? (assignmentSelection.overrides.get(id) ?? false)
-      : selectedSet.has(id);
+  const assignmentSelection = useAssignmentSelection(
+    assignmentState,
+    selectedSet,
+    permissions.map(({ id }) => id),
+  );
   return (
     <section className="space-y-5">
       <Card>
@@ -129,12 +135,18 @@ export default function RoleDetails({
           className="space-y-4"
         >
           <input type="hidden" name="role_id" value={role.id} />
+          <input
+            type="hidden"
+            name="assignment_snapshot"
+            value={assignmentSelection.submissionSnapshot}
+          />
           <PermissionGroups
+            key={assignmentSelection.resultGeneration}
             permissions={permissions}
             selected={
               new Set(
                 permissions
-                  .filter(({ id }) => isSelected(id))
+                  .filter(({ id }) => assignmentSelection.isSelected(id))
                   .map(({ id }) => id),
               )
             }
@@ -144,13 +156,7 @@ export default function RoleDetails({
                 allowed.has("role_permission:remove"))
             }
             onSelectionChange={(id, checked) => {
-              setAssignmentSelection((current) => {
-                const overrides = new Map(current.overrides);
-                const settled = new Set(current.settled);
-                overrides.set(id, checked);
-                settled.delete(id);
-                return { ...current, overrides, settled };
-              });
+              assignmentSelection.setSelected(id, checked);
             }}
           />
           <ActionMessage state={assignmentState} />

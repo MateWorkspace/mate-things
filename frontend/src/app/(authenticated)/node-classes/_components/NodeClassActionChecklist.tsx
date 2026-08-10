@@ -1,16 +1,37 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
+import {
+  assignmentSubmission,
+  type AssignmentSubmission,
+  useAssignmentSelection,
+} from "@/hooks/use-assignment-selection";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { ActionResponse } from "@/lib/api/actions";
 
 import {
   EMPTY_NODE_CLASS_ASSIGNMENT_STATE,
   updateNodeClassActionsAction,
+  type AssignmentActionState,
 } from "../_lib/actions";
+
+type NodeClassAssignmentClientState = AssignmentActionState & {
+  submission?: AssignmentSubmission;
+};
+
+async function updateNodeClassActionsWithSubmission(
+  previous: NodeClassAssignmentClientState,
+  data: FormData,
+): Promise<NodeClassAssignmentClientState> {
+  const result = await updateNodeClassActionsAction(previous, data);
+  return {
+    ...result,
+    submission: assignmentSubmission(data, "action_ids"),
+  };
+}
 
 export default function NodeClassActionChecklist({
   nodeClassId,
@@ -24,30 +45,15 @@ export default function NodeClassActionChecklist({
   editable: boolean;
 }) {
   const [state, formAction, pending] = useActionState(
-    updateNodeClassActionsAction,
+    updateNodeClassActionsWithSubmission,
     EMPTY_NODE_CLASS_ASSIGNMENT_STATE,
   );
   useRefreshAfterAction(state);
-  const [assignmentSelection, setAssignmentSelection] = useState(() => ({
-    handled: state,
-    overrides: new Map<string, boolean>(),
-    settled: new Set<string>(),
-  }));
-  if (assignmentSelection.handled !== state) {
-    const settled = new Set(assignmentSelection.settled);
-    state.appliedIds.forEach((id) => settled.add(id));
-    state.failed.forEach(({ id }) => settled.delete(id));
-    setAssignmentSelection({
-      ...assignmentSelection,
-      handled: state,
-      settled,
-    });
-  }
-  const isSelected = (id: string) =>
-    assignmentSelection.overrides.has(id) &&
-    !assignmentSelection.settled.has(id)
-      ? (assignmentSelection.overrides.get(id) ?? false)
-      : selected.has(id);
+  const assignmentSelection = useAssignmentSelection(
+    state,
+    selected,
+    actions.map(({ id }) => id),
+  );
 
   return (
     <form
@@ -56,6 +62,11 @@ export default function NodeClassActionChecklist({
       className="space-y-4"
     >
       <input type="hidden" name="node_class_id" value={nodeClassId} />
+      <input
+        type="hidden"
+        name="assignment_snapshot"
+        value={assignmentSelection.submissionSnapshot}
+      />
       <fieldset className="border-border rounded-xl border p-4">
         <legend className="sr-only">Compatible actions</legend>
         <div className="space-y-2">
@@ -66,25 +77,22 @@ export default function NodeClassActionChecklist({
             >
               {editable ? (
                 <input
+                  key={`${action.id}:${assignmentSelection.resultGeneration}`}
                   type="checkbox"
                   name="action_ids"
                   value={action.id}
-                  checked={isSelected(action.id)}
+                  checked={assignmentSelection.isSelected(action.id)}
                   onChange={(event) => {
-                    const checked = event.target.checked;
-                    setAssignmentSelection((current) => {
-                      const overrides = new Map(current.overrides);
-                      const settled = new Set(current.settled);
-                      overrides.set(action.id, checked);
-                      settled.delete(action.id);
-                      return { ...current, overrides, settled };
-                    });
+                    assignmentSelection.setSelected(
+                      action.id,
+                      event.target.checked,
+                    );
                   }}
                   className="accent-primary mt-1 size-4"
                 />
               ) : (
                 <span aria-hidden="true" className="mt-1">
-                  {isSelected(action.id) ? "✓" : "—"}
+                  {assignmentSelection.isSelected(action.id) ? "✓" : "—"}
                 </span>
               )}
               <span>
