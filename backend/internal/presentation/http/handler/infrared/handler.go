@@ -290,3 +290,88 @@ func (h *handler) RecordSessionCoderGetById(c *echo.Context) error {
 
 	return c.JSON(http.StatusOK, presentationhttpresponse.InfraredStateCoder(*coder))
 }
+
+// RecordSessionTestCasesGetList godoc
+//
+// @Summary Infrared Record Session Test Cases List
+// @Tags Infrared
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 200 {array} presentationhttpresponse.InfraredTestCaseResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/infrared/record-sessions/{id}/test-cases [get]
+func (h *handler) RecordSessionTestCasesGetList(c *echo.Context) error {
+	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	testCases, err := h.recordSessionUseCase.ListTestCases(c.Request().Context(), id)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.InfraredTestCases(testCases))
+}
+
+// TestCaseTransmitPost godoc
+//
+// @Summary Infrared Test Case Transmit
+// @Tags Infrared
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/infrared/test-cases/{id}/transmit [post]
+func (h *handler) TestCaseTransmitPost(c *echo.Context) error {
+	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	if err := h.recordSessionUseCase.TransmitTestCase(c.Request().Context(), id); err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// TestCaseResultPost godoc
+//
+// @Summary Infrared Test Case Result
+// @Tags Infrared
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Param request body presentationhttprequest.RecordTestCaseResultRequest true "request"
+// @Success 204
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/infrared/test-cases/{id}/result [post]
+func (h *handler) TestCaseResultPost(c *echo.Context) error {
+	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	var req presentationhttprequest.RecordTestCaseResultRequest
+	if err := presentationhttputils.Bind(c, &req); err != nil {
+		return err
+	}
+
+	if err := h.recordSessionUseCase.RecordTestCaseResult(c.Request().Context(), id, req.Passed); err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}

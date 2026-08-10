@@ -19,3 +19,7 @@ type StartRecordSessionDefinition struct {
 type DiscardRawRequest struct {
 	Reason string `json:"reason" example:"pressed the wrong button"`
 }
+
+type RecordTestCaseResultRequest struct {
+	Passed bool `json:"passed" example:"true"`
+}

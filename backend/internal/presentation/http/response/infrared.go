@@ -128,3 +128,43 @@ func InfraredStateCoder(model domainmodels.InfraredStateCoder) InfraredStateCode
 		Status:        string(model.Status),
 	}
 }
+
+type InfraredTestCaseStateResponse struct {
+	Id              string `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+	InfraredStateId string `json:"infrared_state_id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+	StateValue      string `json:"state_value" example:"ON"`
+}
+
+func InfraredTestCaseStates(models []domainmodels.InfraredTestCaseState) []InfraredTestCaseStateResponse {
+	responses := make([]InfraredTestCaseStateResponse, len(models))
+	for i, model := range models {
+		responses[i] = InfraredTestCaseStateResponse{
+			Id:              UUIDString(model.Id),
+			InfraredStateId: UUIDString(model.InfraredStateId),
+			StateValue:      model.StateValue,
+		}
+	}
+	return responses
+}
+
+type InfraredTestCaseResponse struct {
+	Id          string                          `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+	Step        int32                           `json:"step" example:"1"`
+	Description string                          `json:"description" example:"Confirm the unit powers on."`
+	Status      string                          `json:"status" example:"PENDING"`
+	States      []InfraredTestCaseStateResponse `json:"states"`
+}
+
+func InfraredTestCases(models []domainusecasesinfrared.TestCaseWithStates) []InfraredTestCaseResponse {
+	responses := make([]InfraredTestCaseResponse, len(models))
+	for i, m := range models {
+		responses[i] = InfraredTestCaseResponse{
+			Id:          UUIDString(m.TestCase.Id),
+			Step:        m.TestCase.Step,
+			Description: m.TestCase.Description,
+			Status:      string(m.TestCase.Status),
+			States:      InfraredTestCaseStates(m.States),
+		}
+	}
+	return responses
+}

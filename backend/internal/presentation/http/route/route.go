@@ -147,6 +147,9 @@ type InfraredHandler interface {
 	RecordCaseRetry(c *echo.Context) error
 	RecordSessionCaseCurrentPost(c *echo.Context) error
 	RecordSessionCoderGetById(c *echo.Context) error
+	RecordSessionTestCasesGetList(c *echo.Context) error
+	TestCaseTransmitPost(c *echo.Context) error
+	TestCaseResultPost(c *echo.Context) error
 }
 
 type NodeLogHandler interface {
@@ -361,4 +364,7 @@ func routeInfrared(v1 *echo.Group, handler InfraredHandler, permission Permissio
 	v1.POST("/infrared/record-cases/:caseId/raw/:rawId/discard", handler.RecordCaseRawDiscard, permission("infrared_record_session:set"))
 	v1.POST("/infrared/record-cases/:caseId/retry", handler.RecordCaseRetry, permission("infrared_record_session:set"))
 	v1.POST("/infrared/record-sessions/:id/cases/:caseId/current", handler.RecordSessionCaseCurrentPost, permission("infrared_record_session:set"))
+	v1.GET("/infrared/record-sessions/:id/test-cases", handler.RecordSessionTestCasesGetList, permission("infrared_record_session:get"))
+	v1.POST("/infrared/test-cases/:id/transmit", handler.TestCaseTransmitPost, permission("infrared_record_session:set"))
+	v1.POST("/infrared/test-cases/:id/result", handler.TestCaseResultPost, permission("infrared_record_session:set"))
 }
