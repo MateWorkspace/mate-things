@@ -1,6 +1,7 @@
 import "server-only";
 
 import { apiFetch, buildQuery } from "@/lib/api/client";
+import { collectAllPages } from "@/lib/api/collect-all-pages";
 import type {
   AuditFields,
   IdResponse,
@@ -45,25 +46,21 @@ export async function listPayloadSchemas(
   return apiFetch(`/admin/payload-schemas${buildQuery(query)}`);
 }
 
-export async function listAllPayloadSchemas(): Promise<
-  PayloadSchemaResponse[]
-> {
-  const schemas: PayloadSchemaResponse[] = [];
-  let page = 1;
-
-  while (true) {
-    const result = await listPayloadSchemas({ page, limit: 100 });
-    schemas.push(...result.data);
-
-    if (
-      result.data.length === 0 ||
-      page >= Math.ceil(result.page.total_items / result.page.limit)
-    ) {
-      return schemas;
-    }
-
-    page += 1;
-  }
+export async function listAllPayloadSchemas(
+  query: Omit<ListPayloadSchemasQuery, "page"> = {},
+): Promise<PayloadSchemaResponse[]> {
+  return collectAllPages({
+    fetchPage: async (page) => {
+      const result = await listPayloadSchemas({ ...query, page });
+      return {
+        data: result.data,
+        page: result.page.page,
+        limit: result.page.limit,
+        total: result.page.total_items,
+      };
+    },
+    keyOf: (schema) => schema.id,
+  });
 }
 
 export async function getPayloadSchemaById(

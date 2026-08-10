@@ -2,6 +2,7 @@ import "server-only";
 
 import type { ActionLogResponse } from "@/lib/api/action-logs";
 import { apiFetch, buildQuery } from "@/lib/api/client";
+import { collectAllPages } from "@/lib/api/collect-all-pages";
 import type {
   AuditFields,
   IdResponse,
@@ -52,46 +53,21 @@ export async function listActions(
   return apiFetch(`/actions${buildQuery(query)}`);
 }
 
-const ACTION_OPTION_PAGE_LIMIT = 48;
-
-export async function listAllActions(): Promise<ActionResponse[]> {
-  const actions: ActionResponse[] = [];
-  const seenIds = new Set<string>();
-  let page = 1;
-
-  while (true) {
-    const result = await listActions({
-      page,
-      limit: ACTION_OPTION_PAGE_LIMIT,
-    });
-
-    let added = 0;
-    for (const action of result.data) {
-      if (!seenIds.has(action.id)) {
-        seenIds.add(action.id);
-        actions.push(action);
-        added += 1;
-      }
-    }
-
-    const responseLimit =
-      Number.isSafeInteger(result.page.limit) && result.page.limit > 0
-        ? result.page.limit
-        : ACTION_OPTION_PAGE_LIMIT;
-    const totalPages = Math.ceil(result.page.total_items / responseLimit);
-    if (
-      !Number.isSafeInteger(totalPages) ||
-      page >= totalPages ||
-      result.data.length === 0 ||
-      added === 0
-    ) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return actions;
+export async function listAllActions(
+  query: Omit<ListActionsQuery, "page"> = {},
+): Promise<ActionResponse[]> {
+  return collectAllPages({
+    fetchPage: async (page) => {
+      const result = await listActions({ ...query, page });
+      return {
+        data: result.data,
+        page: result.page.page,
+        limit: result.page.limit,
+        total: result.page.total_items,
+      };
+    },
+    keyOf: (action) => action.id,
+  });
 }
 
 export async function getActionByName(name: string): Promise<ActionResponse> {

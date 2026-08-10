@@ -1,6 +1,7 @@
 import "server-only";
 
 import { apiFetch, buildQuery } from "@/lib/api/client";
+import { collectAllPages } from "@/lib/api/collect-all-pages";
 import type {
   AuditFields,
   IdResponse,
@@ -29,6 +30,23 @@ export async function listPermissions(
   query: PageQuery = {},
 ): Promise<PageDataResponse<PermissionResponse>> {
   return apiFetch(`/admin/permissions${buildQuery(query)}`);
+}
+
+export async function listAllPermissions(
+  query: Omit<PageQuery, "page"> = {},
+): Promise<PermissionResponse[]> {
+  return collectAllPages({
+    fetchPage: async (page) => {
+      const result = await listPermissions({ ...query, page });
+      return {
+        data: result.data,
+        page: result.page.page,
+        limit: result.page.limit,
+        total: result.page.total_items,
+      };
+    },
+    keyOf: (permission) => permission.id,
+  });
 }
 
 export async function getPermissionByName(

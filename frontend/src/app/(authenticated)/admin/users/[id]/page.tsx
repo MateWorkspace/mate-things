@@ -6,7 +6,7 @@ import Card from "@/components/ui/card";
 import LocalDateTime from "@/components/ui/local-date-time";
 import PageHeader from "@/components/ui/page-header";
 import { ApiError } from "@/lib/api/client";
-import { listRoles } from "@/lib/api/roles";
+import { listAllRoles } from "@/lib/api/roles";
 import { getUserById, getUserPermissions } from "@/lib/api/users";
 import { requirePermission } from "@/lib/session";
 
@@ -31,15 +31,12 @@ export default async function UserDetails({
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
   }
-  const [rolesResult, effective] = await Promise.all([
-    session.permissions.has("role:get")
-      ? listRoles({ limit: 48 })
-      : Promise.resolve(null),
+  const [roles, effective] = await Promise.all([
+    session.permissions.has("role:get") ? listAllRoles() : Promise.resolve([]),
     session.permissions.has("user_permission:get")
       ? getUserPermissions(id)
       : Promise.resolve(null),
   ]);
-  const roles = rolesResult?.data ?? [];
   const role = roles.find((item) => item.id === user.role_id);
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -48,7 +45,8 @@ export default async function UserDetails({
         description={`@${user.username}`}
         actions={
           <div className="flex flex-wrap gap-2">
-            {session.permissions.has("user:set") && rolesResult ? (
+            {session.permissions.has("user:set") &&
+            session.permissions.has("role:get") ? (
               <UserForm
                 user={user}
                 roles={roles}

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { apiFetch, buildQuery } from "@/lib/api/client";
+import { collectAllPages } from "@/lib/api/collect-all-pages";
 import type { PermissionResponse } from "@/lib/api/permissions";
 import type {
   AuditFields,
@@ -31,6 +32,23 @@ export async function listRoles(
   query: PageQuery = {},
 ): Promise<PageDataResponse<RoleResponse>> {
   return apiFetch(`/admin/roles${buildQuery(query)}`);
+}
+
+export async function listAllRoles(
+  query: Omit<PageQuery, "page"> = {},
+): Promise<RoleResponse[]> {
+  return collectAllPages({
+    fetchPage: async (page) => {
+      const result = await listRoles({ ...query, page });
+      return {
+        data: result.data,
+        page: result.page.page,
+        limit: result.page.limit,
+        total: result.page.total_items,
+      };
+    },
+    keyOf: (role) => role.id,
+  });
 }
 
 export async function getDefaultRole(): Promise<RoleResponse> {

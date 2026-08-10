@@ -1,6 +1,7 @@
 import "server-only";
 
 import { apiFetch, buildQuery } from "@/lib/api/client";
+import { collectAllPages } from "@/lib/api/collect-all-pages";
 import type { AuditFields, PageDataResponse, PageQuery } from "@/lib/api/types";
 
 export interface NodeResponse extends AuditFields {
@@ -35,6 +36,23 @@ export async function listNodes(
   query: ListNodesQuery = {},
 ): Promise<PageDataResponse<NodeResponse>> {
   return apiFetch(`/nodes${buildQuery(query)}`);
+}
+
+export async function listAllNodes(
+  query: Omit<ListNodesQuery, "page"> = {},
+): Promise<NodeResponse[]> {
+  return collectAllPages({
+    fetchPage: async (page) => {
+      const result = await listNodes({ ...query, page });
+      return {
+        data: result.data,
+        page: result.page.page,
+        limit: result.page.limit,
+        total: result.page.total_items,
+      };
+    },
+    keyOf: (node) => node.id,
+  });
 }
 
 export async function getNodeByDeviceId(

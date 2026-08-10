@@ -2,6 +2,7 @@ import "server-only";
 
 import type { ActionResponse } from "@/lib/api/actions";
 import { apiFetch, buildQuery } from "@/lib/api/client";
+import { collectAllPages } from "@/lib/api/collect-all-pages";
 import type {
   AuditFields,
   IdResponse,
@@ -32,46 +33,21 @@ export async function listNodeClasses(
   return apiFetch(`/node-classes${buildQuery(query)}`);
 }
 
-const NODE_CLASS_OPTION_PAGE_LIMIT = 48;
-
-export async function listAllNodeClasses(): Promise<NodeClassResponse[]> {
-  const nodeClasses: NodeClassResponse[] = [];
-  const seenIds = new Set<string>();
-  let page = 1;
-
-  while (true) {
-    const result = await listNodeClasses({
-      page,
-      limit: NODE_CLASS_OPTION_PAGE_LIMIT,
-    });
-
-    let added = 0;
-    for (const nodeClass of result.data) {
-      if (!seenIds.has(nodeClass.id)) {
-        seenIds.add(nodeClass.id);
-        nodeClasses.push(nodeClass);
-        added += 1;
-      }
-    }
-
-    const responseLimit =
-      Number.isSafeInteger(result.page.limit) && result.page.limit > 0
-        ? result.page.limit
-        : NODE_CLASS_OPTION_PAGE_LIMIT;
-    const totalPages = Math.ceil(result.page.total_items / responseLimit);
-    if (
-      !Number.isSafeInteger(totalPages) ||
-      page >= totalPages ||
-      result.data.length === 0 ||
-      added === 0
-    ) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return nodeClasses;
+export async function listAllNodeClasses(
+  query: Omit<PageQuery, "page"> = {},
+): Promise<NodeClassResponse[]> {
+  return collectAllPages({
+    fetchPage: async (page) => {
+      const result = await listNodeClasses({ ...query, page });
+      return {
+        data: result.data,
+        page: result.page.page,
+        limit: result.page.limit,
+        total: result.page.total_items,
+      };
+    },
+    keyOf: (nodeClass) => nodeClass.id,
+  });
 }
 
 export async function getNodeClassByName(
@@ -148,4 +124,21 @@ export async function listNodeClassActions(
   query: ListNodeClassActionsQuery = {},
 ): Promise<PageDataResponse<NodeClassActionDetailResponse>> {
   return apiFetch(`/node-class-actions${buildQuery(query)}`);
+}
+
+export async function listAllNodeClassActions(
+  query: Omit<ListNodeClassActionsQuery, "page"> = {},
+): Promise<NodeClassActionDetailResponse[]> {
+  return collectAllPages({
+    fetchPage: async (page) => {
+      const result = await listNodeClassActions({ ...query, page });
+      return {
+        data: result.data,
+        page: result.page.page,
+        limit: result.page.limit,
+        total: result.page.total_items,
+      };
+    },
+    keyOf: (item) => item.node_class_action.id,
+  });
 }
