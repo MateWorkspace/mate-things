@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { startTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 interface RefreshableActionState {
@@ -20,6 +20,6 @@ export function useRefreshAfterAction(state: RefreshableActionState): void {
     }
 
     refreshed.current = state;
-    router.refresh();
+    startTransition(() => router.refresh());
   }, [router, state]);
 }

@@ -19,6 +19,7 @@ import {
   removeRoleAction,
   saveRoleAction,
   setDefaultRoleAction,
+  EMPTY_ROLE_ASSIGNMENT_STATE,
   updateRoleAssignmentsAction,
 } from "../_lib/actions";
 import { EMPTY_ACCESS_STATE } from "../_lib/state";
@@ -44,9 +45,30 @@ export default function RoleDetails({
   const [defaultGeneration, setDefaultGeneration] = useState(0);
   const [assignmentState, assignmentAction, assignmentPending] = useActionState(
     updateRoleAssignmentsAction,
-    EMPTY_ACCESS_STATE,
+    EMPTY_ROLE_ASSIGNMENT_STATE,
   );
   useRefreshAfterAction(assignmentState);
+  const [assignmentSelection, setAssignmentSelection] = useState(() => ({
+    handled: assignmentState,
+    overrides: new Map<string, boolean>(),
+    settled: new Set<string>(),
+  }));
+  if (assignmentSelection.handled !== assignmentState) {
+    const settled = new Set(assignmentSelection.settled);
+    assignmentState.appliedIds.forEach((id) => settled.add(id));
+    assignmentState.failed.forEach(({ id }) => settled.delete(id));
+    setAssignmentSelection({
+      ...assignmentSelection,
+      handled: assignmentState,
+      settled,
+    });
+  }
+  const selectedSet = new Set(selected);
+  const isSelected = (id: string) =>
+    assignmentSelection.overrides.has(id) &&
+    !assignmentSelection.settled.has(id)
+      ? (assignmentSelection.overrides.get(id) ?? false)
+      : selectedSet.has(id);
   return (
     <section className="space-y-5">
       <Card>
@@ -109,12 +131,27 @@ export default function RoleDetails({
           <input type="hidden" name="role_id" value={role.id} />
           <PermissionGroups
             permissions={permissions}
-            selected={new Set(selected)}
+            selected={
+              new Set(
+                permissions
+                  .filter(({ id }) => isSelected(id))
+                  .map(({ id }) => id),
+              )
+            }
             editable={
               allowed.has("role_permission:get") &&
               (allowed.has("role_permission:add") ||
                 allowed.has("role_permission:remove"))
             }
+            onSelectionChange={(id, checked) => {
+              setAssignmentSelection((current) => {
+                const overrides = new Map(current.overrides);
+                const settled = new Set(current.settled);
+                overrides.set(id, checked);
+                settled.delete(id);
+                return { ...current, overrides, settled };
+              });
+            }}
           />
           <ActionMessage state={assignmentState} />
           {allowed.has("role_permission:add") ||

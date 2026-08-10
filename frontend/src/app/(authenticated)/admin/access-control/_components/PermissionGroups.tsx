@@ -25,10 +25,12 @@ export default function PermissionGroups({
   permissions,
   selected,
   editable,
+  onSelectionChange,
 }: {
   permissions: readonly PermissionResponse[];
   selected: ReadonlySet<string>;
   editable: boolean;
+  onSelectionChange: (id: string, selected: boolean) => void;
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -57,7 +59,10 @@ export default function PermissionGroups({
                       type="checkbox"
                       name="permission_ids"
                       value={permission.id}
-                      defaultChecked={selected.has(permission.id)}
+                      checked={selected.has(permission.id)}
+                      onChange={(event) =>
+                        onSelectionChange(permission.id, event.target.checked)
+                      }
                       className="accent-primary mt-1 size-4"
                     />
                   ) : (

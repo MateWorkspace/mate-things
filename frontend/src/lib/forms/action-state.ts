@@ -1,5 +1,5 @@
 export type ActionState<TFields extends string = never> = {
-  status: "idle" | "error" | "success";
+  status: "idle" | "error" | "partial" | "success";
   title?: string;
   message?: string;
   fieldErrors?: Partial<Record<TFields, string>>;

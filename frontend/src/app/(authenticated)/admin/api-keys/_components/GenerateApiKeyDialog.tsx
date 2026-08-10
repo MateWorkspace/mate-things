@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -18,49 +18,61 @@ import { EMPTY_API_KEY_STATE } from "../_lib/state";
 export default function GenerateApiKeyDialog() {
   const [open, setOpen] = useState(false);
   const [generation, setGeneration] = useState(0);
+  const [pending, setPending] = useState(false);
+  const close = () => {
+    if (pending) return;
+    setOpen(false);
+    setPending(false);
+  };
   return (
     <>
       <Button
         type="button"
         onClick={() => {
           setGeneration((current) => current + 1);
+          setPending(false);
           setOpen(true);
         }}
       >
         Generate API key
       </Button>
-      <GenerateApiKeyContent
-        key={generation}
+      <Dialog
         open={open}
-        onClose={() => setOpen(false)}
-      />
+        onClose={close}
+        title="Generate API key"
+        variant="sheet"
+        dismissible={!pending}
+      >
+        {open ? (
+          <GenerateApiKeyContent
+            key={generation}
+            onClose={close}
+            onPendingChange={setPending}
+          />
+        ) : null}
+      </Dialog>
     </>
   );
 }
 
 function GenerateApiKeyContent({
-  open,
   onClose,
+  onPendingChange,
 }: {
-  open: boolean;
   onClose: () => void;
+  onPendingChange: (pending: boolean) => void;
 }) {
   const [state, action, pending] = useActionState(
     generateApiKeyAction,
     EMPTY_API_KEY_STATE,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => onPendingChange(pending), [onPendingChange, pending]);
   useRefreshAfterAction(state);
   useFirstInvalidField(state, formRef);
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title="Generate API key"
-      variant="sheet"
-      dismissible={!pending}
-    >
+    <>
       {state.status === "success" && state.key ? (
         <div className="space-y-4">
           <p className="text-success text-sm">{state.message}</p>
@@ -116,6 +128,6 @@ function GenerateApiKeyContent({
           </div>
         </form>
       )}
-    </Dialog>
+    </>
   );
 }

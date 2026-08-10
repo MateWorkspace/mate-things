@@ -2,11 +2,15 @@ import { redirect } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  assignNodeClassAction,
   createNodeClass,
   deleteNodeClass,
   getNodeClassById,
+  getNodeClassActions,
+  revokeNodeClassAction,
   updateNodeClass,
 } from "@/lib/api/node-classes";
+import { ApiError } from "@/lib/api/client";
 import { requireSessionContext } from "@/lib/session";
 import { formData } from "@/test/form-data";
 import { USER } from "@/test/fixtures";
@@ -14,6 +18,8 @@ import { USER } from "@/test/fixtures";
 import {
   createNodeClassAction,
   deleteNodeClassAction,
+  EMPTY_NODE_CLASS_ASSIGNMENT_STATE,
+  updateNodeClassActionsAction,
   updateNodeClassAction,
   type FormActionState,
 } from "./actions";
@@ -25,9 +31,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/api/node-classes", () => ({
+  assignNodeClassAction: vi.fn(),
   createNodeClass: vi.fn(),
   deleteNodeClass: vi.fn(),
   getNodeClassById: vi.fn(),
+  getNodeClassActions: vi.fn(),
+  revokeNodeClassAction: vi.fn(),
   updateNodeClass: vi.fn(),
 }));
 
@@ -219,5 +228,69 @@ describe("node class actions", () => {
 
     expect(state.status).toBe("error");
     expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("returns the exact applied and failed action ids", async () => {
+    permit(
+      "node_class_action:get",
+      "node_class_action:add",
+      "node_class_action:remove",
+    );
+    vi.mocked(getNodeClassActions).mockResolvedValue([
+      { id: "action-keep" },
+      { id: "action-remove" },
+    ] as Awaited<ReturnType<typeof getNodeClassActions>>);
+    vi.mocked(assignNodeClassAction).mockImplementation(
+      async (_nodeClassId, id) => {
+        if (id === "action-add-failed") {
+          throw new ApiError(409, "Conflict", "Action is unavailable.");
+        }
+        return { id: `assignment-${id}` };
+      },
+    );
+
+    const data = formData({ node_class_id: "class-1" });
+    data.append("action_ids", "action-keep");
+    data.append("action_ids", "action-add-ok");
+    data.append("action_ids", "action-add-failed");
+
+    const result = await updateNodeClassActionsAction(
+      EMPTY_NODE_CLASS_ASSIGNMENT_STATE,
+      data,
+    );
+
+    expect(result.status).toBe("partial");
+    expect(result.appliedIds).toEqual(["action-add-ok", "action-remove"]);
+    expect(result.failed).toEqual([
+      { id: "action-add-failed", message: "Action is unavailable." },
+    ]);
+    expect(revokeNodeClassAction).toHaveBeenCalledWith(
+      "class-1",
+      "action-remove",
+    );
+  });
+
+  it("reports an authoritative-read failure without attempting mutations", async () => {
+    permit("node_class_action:get", "node_class_action:add");
+    vi.mocked(getNodeClassActions).mockRejectedValue(
+      new ApiError(503, "Unavailable", "Assignments could not be loaded."),
+    );
+    const data = formData({ node_class_id: "class-1" });
+    data.append("action_ids", "action-add");
+
+    const result = await updateNodeClassActionsAction(
+      EMPTY_NODE_CLASS_ASSIGNMENT_STATE,
+      data,
+    );
+
+    expect(result).toMatchObject({
+      status: "error",
+      title: "Unavailable",
+      message: "Assignments could not be loaded.",
+      appliedIds: [],
+      failed: [],
+    });
+    expect(assignNodeClassAction).not.toHaveBeenCalled();
+    expect(revokeNodeClassAction).not.toHaveBeenCalled();
   });
 });

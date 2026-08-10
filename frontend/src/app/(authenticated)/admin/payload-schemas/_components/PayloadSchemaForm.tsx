@@ -72,14 +72,14 @@ export default function PayloadSchemaForm({
           unmount a still-open native <dialog>, dropping it from the
           browser's top layer without a clean close() call. */}
       <SchemaEditor
-        key={`${editorGeneration}-${schema?.id ?? "new"}`}
+        key={`editor-${editorGeneration}-${schema?.id ?? "new"}`}
         schema={schema}
         open={editorOpen}
         onClose={() => setEditorOpen(false)}
       />
       {schema ? (
         <DeleteSchema
-          key={`${deleteGeneration}-${schema.id}`}
+          key={`delete-${deleteGeneration}-${schema.id}`}
           schema={schema}
           open={deleteOpen}
           onClose={() => setDeleteOpen(false)}
@@ -98,8 +98,11 @@ function SchemaEditor({
   open: boolean;
   onClose: () => void;
 }) {
+  const submitAction = schema
+    ? updatePayloadSchemaAction.bind(null, schema.id)
+    : createPayloadSchemaAction;
   const [state, action, pending] = useActionState(
-    schema ? updatePayloadSchemaAction : createPayloadSchemaAction,
+    submitAction,
     EMPTY_SCHEMA_STATE,
   );
   const formRef = useRef<HTMLFormElement>(null);

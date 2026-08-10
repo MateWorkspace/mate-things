@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -29,6 +29,12 @@ export default function RegenerateApiKeyDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [generation, setGeneration] = useState(0);
+  const [pending, setPending] = useState(false);
+  const close = () => {
+    if (pending) return;
+    setOpen(false);
+    setPending(false);
+  };
   return (
     <>
       <Button
@@ -36,46 +42,52 @@ export default function RegenerateApiKeyDialog({
         variant="secondary"
         onClick={() => {
           setGeneration((current) => current + 1);
+          setPending(false);
           setOpen(true);
         }}
       >
         Regenerate
       </Button>
-      <RegenerateApiKeyContent
-        key={generation}
-        apiKey={apiKey}
+      <Dialog
         open={open}
-        onClose={() => setOpen(false)}
-      />
+        onClose={close}
+        title={`Regenerate ${apiKey.user_username}'s API key`}
+        variant="sheet"
+        dismissible={!pending}
+      >
+        {open ? (
+          <RegenerateApiKeyContent
+            key={generation}
+            apiKey={apiKey}
+            onClose={close}
+            onPendingChange={setPending}
+          />
+        ) : null}
+      </Dialog>
     </>
   );
 }
 
 function RegenerateApiKeyContent({
   apiKey,
-  open,
   onClose,
+  onPendingChange,
 }: {
   apiKey: ApiKeyResponse;
-  open: boolean;
   onClose: () => void;
+  onPendingChange: (pending: boolean) => void;
 }) {
   const [state, action, pending] = useActionState(
     regenerateApiKeyAction,
     EMPTY_API_KEY_STATE,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => onPendingChange(pending), [onPendingChange, pending]);
   useRefreshAfterAction(state);
   useFirstInvalidField(state, formRef);
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title={`Regenerate ${apiKey.user_username}'s API key`}
-      variant="sheet"
-      dismissible={!pending}
-    >
+    <>
       {state.status === "success" && state.key ? (
         <div className="space-y-4">
           <p className="text-success text-sm">{state.message}</p>
@@ -138,6 +150,6 @@ function RegenerateApiKeyContent({
           </div>
         </form>
       )}
-    </Dialog>
+    </>
   );
 }

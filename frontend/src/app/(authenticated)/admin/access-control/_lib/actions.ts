@@ -19,6 +19,28 @@ import { requireSessionContext } from "@/lib/session";
 
 import type { AccessActionState } from "./state";
 
+export type AssignmentResult = {
+  status: "success" | "partial" | "error";
+  appliedIds: string[];
+  failed: Array<{ id: string; message: string }>;
+  title: string;
+  message: string;
+};
+
+export type AssignmentActionState =
+  | AssignmentResult
+  | {
+      status: "idle";
+      appliedIds: string[];
+      failed: Array<{ id: string; message: string }>;
+    };
+
+export const EMPTY_ROLE_ASSIGNMENT_STATE: AssignmentActionState = {
+  status: "idle",
+  appliedIds: [],
+  failed: [],
+};
+
 function denied(permission: string): AccessActionState {
   return {
     status: "error",
@@ -30,14 +52,37 @@ function failure(error: unknown): AccessActionState {
   return {
     status: "error",
     title: error instanceof ApiError ? error.title : "Something went wrong",
-    message:
-      error instanceof ApiError
-        ? error.message
-        : "Please try again.",
+    message: error instanceof ApiError ? error.message : "Please try again.",
   };
 }
 function text(data: FormData, name: string): string {
   return String(data.get(name) ?? "").trim();
+}
+
+function assignmentFailure(error: unknown): AssignmentResult {
+  const state = failure(error);
+  return {
+    status: "error",
+    title: state.title ?? "Something went wrong",
+    message: state.message ?? "Please try again.",
+    appliedIds: [],
+    failed: [],
+  };
+}
+
+function assignmentDenied(permission: string): AssignmentResult {
+  const state = denied(permission);
+  return {
+    status: "error",
+    title: state.title ?? "Permission denied",
+    message: state.message ?? `${permission} is required for this change.`,
+    appliedIds: [],
+    failed: [],
+  };
+}
+
+function failedMessage(error: unknown): string {
+  return error instanceof ApiError ? error.message : "Please try again.";
 }
 
 export async function saveRoleAction(
@@ -183,41 +228,65 @@ export async function removePermissionAction(
 }
 
 export async function updateRoleAssignmentsAction(
-  _previous: AccessActionState,
+  _previous: AssignmentActionState,
   data: FormData,
-): Promise<AccessActionState> {
+): Promise<AssignmentResult> {
   const session = await requireSessionContext();
   const roleId = text(data, "role_id");
   if (!roleId || !session.permissions.has("role_permission:get"))
-    return denied("role_permission:get");
-  const current = new Set(
-    (await getRolePermissions(roleId)).map((item) => item.id),
-  );
+    return assignmentDenied("role_permission:get");
+  let current: Set<string>;
+  try {
+    current = new Set(
+      (await getRolePermissions(roleId)).map((item) => item.id),
+    );
+  } catch (error) {
+    return assignmentFailure(error);
+  }
   const desired = data.getAll("permission_ids").map(String);
   const desiredSet = new Set(desired);
   const assign = desired.filter((id) => !current.has(id));
   const revoke = [...current].filter((id) => !desiredSet.has(id));
   if (assign.length && !session.permissions.has("role_permission:add"))
-    return denied("role_permission:add");
+    return assignmentDenied("role_permission:add");
   if (revoke.length && !session.permissions.has("role_permission:remove"))
-    return denied("role_permission:remove");
-  const results = await Promise.allSettled([
-    ...assign.map((id) => assignRolePermission(roleId, id)),
-    ...revoke.map((id) => revokeRolePermission(roleId, id)),
-  ]);
-  const failures = results.filter(
-    (result) => result.status === "rejected",
-  ).length;
-  if (failures) {
+    return assignmentDenied("role_permission:remove");
+  const operations = [
+    ...assign.map((id) => ({
+      id,
+      apply: () => assignRolePermission(roleId, id),
+    })),
+    ...revoke.map((id) => ({
+      id,
+      apply: () => revokeRolePermission(roleId, id),
+    })),
+  ];
+  const results = await Promise.allSettled(
+    operations.map((operation) => operation.apply()),
+  );
+  const appliedIds: string[] = [];
+  const failed: Array<{ id: string; message: string }> = [];
+  results.forEach((result, index) => {
+    const { id } = operations[index];
+    if (result.status === "fulfilled") appliedIds.push(id);
+    else failed.push({ id, message: failedMessage(result.reason) });
+  });
+  if (failed.length) {
     return {
-      status: "error",
+      status: appliedIds.length ? "partial" : "error",
       title: "Assignments partially updated",
-      message: `${results.length - failures} changes succeeded and ${failures} failed. The current authoritative assignments were reloaded.`,
+      message: appliedIds.length
+        ? `${appliedIds.length} changes succeeded and ${failed.length} failed. Failed changes remain selected for retry.`
+        : `No changes were applied. ${failed.length} changes failed and remain selected for retry.`,
+      appliedIds,
+      failed,
     };
   }
   return {
     status: "success",
     title: "Assignments updated",
     message: `${results.length} permission changes saved.`,
+    appliedIds,
+    failed,
   };
 }

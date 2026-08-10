@@ -1,16 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { ActionResponse } from "@/lib/api/actions";
 
-import { updateNodeClassActionsAction } from "../_lib/actions";
-import type { FormActionState } from "../_lib/actions";
-
-const EMPTY_STATE: FormActionState = { status: "idle" };
+import {
+  EMPTY_NODE_CLASS_ASSIGNMENT_STATE,
+  updateNodeClassActionsAction,
+} from "../_lib/actions";
 
 export default function NodeClassActionChecklist({
   nodeClassId,
@@ -25,9 +25,29 @@ export default function NodeClassActionChecklist({
 }) {
   const [state, formAction, pending] = useActionState(
     updateNodeClassActionsAction,
-    EMPTY_STATE,
+    EMPTY_NODE_CLASS_ASSIGNMENT_STATE,
   );
   useRefreshAfterAction(state);
+  const [assignmentSelection, setAssignmentSelection] = useState(() => ({
+    handled: state,
+    overrides: new Map<string, boolean>(),
+    settled: new Set<string>(),
+  }));
+  if (assignmentSelection.handled !== state) {
+    const settled = new Set(assignmentSelection.settled);
+    state.appliedIds.forEach((id) => settled.add(id));
+    state.failed.forEach(({ id }) => settled.delete(id));
+    setAssignmentSelection({
+      ...assignmentSelection,
+      handled: state,
+      settled,
+    });
+  }
+  const isSelected = (id: string) =>
+    assignmentSelection.overrides.has(id) &&
+    !assignmentSelection.settled.has(id)
+      ? (assignmentSelection.overrides.get(id) ?? false)
+      : selected.has(id);
 
   return (
     <form
@@ -49,12 +69,22 @@ export default function NodeClassActionChecklist({
                   type="checkbox"
                   name="action_ids"
                   value={action.id}
-                  defaultChecked={selected.has(action.id)}
+                  checked={isSelected(action.id)}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setAssignmentSelection((current) => {
+                      const overrides = new Map(current.overrides);
+                      const settled = new Set(current.settled);
+                      overrides.set(action.id, checked);
+                      settled.delete(action.id);
+                      return { ...current, overrides, settled };
+                    });
+                  }}
                   className="accent-primary mt-1 size-4"
                 />
               ) : (
                 <span aria-hidden="true" className="mt-1">
-                  {selected.has(action.id) ? "✓" : "—"}
+                  {isSelected(action.id) ? "✓" : "—"}
                 </span>
               )}
               <span>
