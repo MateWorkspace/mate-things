@@ -31,8 +31,8 @@ func NewPostgresImpl(
 	}
 }
 
-func (p *postgresImpl) Create(ctx context.Context, infraredDeviceTypeId uuid.UUID, brand string, model string) (id uuid.UUID, err error) {
-	query, args, err := p.queryCreate(infraredDeviceTypeId, brand, model)
+func (p *postgresImpl) Create(ctx context.Context, infraredDeviceTypeId uuid.UUID, brand string, model string, createdBy *uuid.UUID) (id uuid.UUID, err error) {
+	query, args, err := p.queryCreate(infraredDeviceTypeId, brand, model, createdBy)
 	if err != nil {
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create infrared_device query", err)
 	}
@@ -50,11 +50,31 @@ func (p *postgresImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels
 	}
 
 	var item domainmodels.InfraredDevice
-	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&item.Id, &item.InfraredDeviceTypeId, &item.Brand, &item.Model); err != nil {
+	if err := p.Dt.QueryRow(ctx, query, args...).Scan(
+		&item.Id, &item.InfraredDeviceTypeId, &item.Brand, &item.Model,
+		&item.CreatedAt, &item.UpdatedAt, &item.DeletedAt,
+		&item.CreatedBy, &item.UpdatedBy, &item.DeletedBy,
+	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, infrastructurerepositoryshared.NotFound("infrared_device not found", err)
 		}
 		return nil, infrastructurerepositoryshared.MapPgxError("failed to read infrared_device", err)
 	}
 	return &item, nil
+}
+
+func (p *postgresImpl) DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	query, args, err := p.queryDeleteById(id, deletedBy)
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build delete infrared_device query", err)
+	}
+
+	commandTag, err := p.Dt.Exec(ctx, query, args...)
+	if err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to delete infrared_device", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return infrastructurerepositoryshared.NotFound("infrared_device not found", nil)
+	}
+	return nil
 }

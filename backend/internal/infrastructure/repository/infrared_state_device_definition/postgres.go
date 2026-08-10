@@ -29,9 +29,9 @@ func NewPostgresImpl(
 	}
 }
 
-func (p *postgresImpl) CreateMany(ctx context.Context, definitions []domainmodels.InfraredStateDeviceDefinition) error {
+func (p *postgresImpl) CreateMany(ctx context.Context, definitions []domainmodels.InfraredStateDeviceDefinition, createdBy *uuid.UUID) error {
 	for _, definition := range definitions {
-		query, args, err := p.queryCreate(definition)
+		query, args, err := p.queryCreate(definition, createdBy)
 		if err != nil {
 			return infrastructurerepositoryshared.QueryBuildError("failed to build create infrared_state_device_definition query", err)
 		}
@@ -59,10 +59,29 @@ func (p *postgresImpl) ListByDeviceId(ctx context.Context, infraredDeviceId uuid
 	var result []domainmodels.InfraredStateDeviceDefinition
 	for rows.Next() {
 		var item domainmodels.InfraredStateDeviceDefinition
-		if err := rows.Scan(&item.Id, &item.InfraredDeviceId, &item.InfraredStateId, &item.Options, &item.Minimum, &item.Maximum, &item.Step); err != nil {
+		if err := rows.Scan(
+			&item.Id, &item.InfraredDeviceId, &item.InfraredStateId, &item.Options, &item.Minimum, &item.Maximum, &item.Step,
+			&item.CreatedAt, &item.UpdatedAt, &item.DeletedAt, &item.CreatedBy, &item.UpdatedBy, &item.DeletedBy,
+		); err != nil {
 			return nil, infrastructurerepositoryshared.MapPgxError("failed to scan infrared_state_device_definition", err)
 		}
 		result = append(result, item)
 	}
 	return result, nil
+}
+
+func (p *postgresImpl) DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	query, args, err := p.queryDeleteById(id, deletedBy)
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build delete infrared_state_device_definition query", err)
+	}
+
+	commandTag, err := p.Dt.Exec(ctx, query, args...)
+	if err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to delete infrared_state_device_definition", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return infrastructurerepositoryshared.NotFound("infrared_state_device_definition not found", nil)
+	}
+	return nil
 }

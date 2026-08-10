@@ -10,5 +10,6 @@ import (
 type InfraredDeviceType interface {
 	List(ctx context.Context) ([]domainmodels.InfraredDeviceType, error)
 	ReadByName(ctx context.Context, name string) (*domainmodels.InfraredDeviceType, error)
-	Create(ctx context.Context, name string) (id uuid.UUID, err error)
+	Create(ctx context.Context, name string, createdBy *uuid.UUID) (id uuid.UUID, err error)
+	DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 }

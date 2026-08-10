@@ -59,6 +59,7 @@ func (l *launcher) newPresentation(ctx context.Context) error {
 	preferencesHandler := presentationhttphandlerpreferences.NewHandler(l.app.preferencesUpdate)
 	infraredHandler := presentationhttphandlerinfrared.NewHandler(
 		l.app.infraredRecordSessionManagement,
+		l.app.infraredReferenceManagement,
 		l.infra.infraredRecordSessionBroadcaster,
 		l.infra.token,
 	)

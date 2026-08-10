@@ -78,5 +78,9 @@
 
   { "name": "infrared_record_session:get", "description": "View infrared record sessions and their cases." },
   { "name": "infrared_record_session:add", "description": "Start an infrared record session." },
-  { "name": "infrared_record_session:set", "description": "Accept or discard captured infrared raw data, or retry a record case." }
+  { "name": "infrared_record_session:set", "description": "Accept or discard captured infrared raw data, or retry a record case." },
+  { "name": "infrared_record_session:delete", "description": "Delete an infrared record session or any of its cases, states, raws, coders, or test cases." },
+  { "name": "infrared_reference:get", "description": "View infrared device types, states, and per-device definitions." },
+  { "name": "infrared_reference:add", "description": "Create infrared device types and states." },
+  { "name": "infrared_reference:delete", "description": "Delete infrared device types, devices, states, or definitions." }
 ]

@@ -91,7 +91,7 @@ func (u *usecase) Start(ctx context.Context, request domainusecasesinfrared.Star
 		return uuid.Nil, err
 	}
 
-	deviceId, err := u.device.Create(ctx, request.InfraredDeviceTypeId, brand, model)
+	deviceId, err := u.device.Create(ctx, request.InfraredDeviceTypeId, brand, model, request.CreatedBy)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to create infrared device", domainmodels.LoggerMeta{"err": err})
 		return uuid.Nil, err
@@ -104,18 +104,18 @@ func (u *usecase) Start(ctx context.Context, request domainusecasesinfrared.Star
 			Options: d.Options, Minimum: d.Minimum, Maximum: d.Maximum, Step: d.Step,
 		})
 	}
-	if err := u.definition.CreateMany(ctx, definitions); err != nil {
+	if err := u.definition.CreateMany(ctx, definitions, request.CreatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to create infrared state device definitions", domainmodels.LoggerMeta{"err": err})
 		return uuid.Nil, err
 	}
 
-	sessionId, err := u.session.Create(ctx, request.NodeId, deviceId)
+	sessionId, err := u.session.Create(ctx, request.NodeId, deviceId, request.CreatedBy)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to create infrared record session", domainmodels.LoggerMeta{"err": err})
 		return uuid.Nil, err
 	}
 
-	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateCasesGenerating)
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateCasesGenerating, request.CreatedBy)
 
 	go u.runCaseGeneration(sessionId, deviceId, request.InfraredDeviceTypeId, brand, model)
 
@@ -131,13 +131,13 @@ func (u *usecase) runCaseGeneration(sessionId uuid.UUID, deviceId uuid.UUID, dev
 	states, err := u.state.ListByDeviceTypeId(ctx, deviceTypeId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to list infrared states", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	definitions, err := u.definition.ListByDeviceId(ctx, deviceId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to list infrared state device definitions", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
@@ -146,13 +146,13 @@ func (u *usecase) runCaseGeneration(sessionId uuid.UUID, deviceId uuid.UUID, dev
 	client, err := u.llmFactory.Current(ctx)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to resolve llm client", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	scriptedCases, err := applicationinfraredcasegeneration.WriteScript(ctx, client, brand, model, states, cases)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to write case script", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
@@ -162,10 +162,10 @@ func (u *usecase) runCaseGeneration(sessionId uuid.UUID, deviceId uuid.UUID, dev
 		for stateId, value := range c.States {
 			states = append(states, domainmodels.InfraredStateDeviceRecordState{InfraredStateId: stateId, StateValue: value})
 		}
-		caseId, err := u.recordCase.CreateWithStates(ctx, sessionId, c.Step, c.Description, states)
+		caseId, err := u.recordCase.CreateWithStates(ctx, sessionId, c.Step, c.Description, states, nil)
 		if err != nil {
 			u.logger.Error(ctx, tag, "failed to persist record case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "step": c.Step})
-			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 			return
 		}
 		if i == 0 {
@@ -173,39 +173,39 @@ func (u *usecase) runCaseGeneration(sessionId uuid.UUID, deviceId uuid.UUID, dev
 		}
 	}
 
-	if err := u.recordCase.UpdateStatusById(ctx, firstCaseId, domainmodels.InfraredRecordCaseStatusActive); err != nil {
+	if err := u.recordCase.UpdateStatusById(ctx, firstCaseId, domainmodels.InfraredRecordCaseStatusActive, nil); err != nil {
 		u.logger.Error(ctx, tag, "failed to activate first record case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "case_id": firstCaseId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
-	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &firstCaseId); err != nil {
+	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &firstCaseId, nil); err != nil {
 		u.logger.Error(ctx, tag, "failed to set session's current record case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "case_id": firstCaseId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
 	session, err := u.session.GetById(ctx, sessionId)
 	if err != nil || session == nil {
 		u.logger.Error(ctx, tag, "failed to look up session before subscribing to ir capture", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	node, err := u.node.ReadById(ctx, session.NodeId)
 	if err != nil || node == nil {
 		u.logger.Error(ctx, tag, "failed to look up node before subscribing to ir capture", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "node_id": session.NodeId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	if err := u.subscriptions.IrCapture(ctx, node.DeviceId); err != nil {
 		u.logger.Error(ctx, tag, "failed to subscribe to ir capture topic", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "device_id": node.DeviceId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
-	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateRecording)
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateRecording, nil)
 }
 
-func (u *usecase) transition(ctx context.Context, tag string, sessionId uuid.UUID, state string) {
+func (u *usecase) transition(ctx context.Context, tag string, sessionId uuid.UUID, state string, updatedBy *uuid.UUID) {
 	// The passed-in ctx may already carry a deadline (e.g. the case-generation
 	// goroutine's overall timeout) that has just expired — if that's exactly
 	// why we're transitioning to FAILED, writing the terminal state on that
@@ -216,7 +216,7 @@ func (u *usecase) transition(ctx context.Context, tag string, sessionId uuid.UUI
 	defer cancel()
 
 	isCompleted := state == domainmodels.InfraredRecordingStateCompleted || state == domainmodels.InfraredRecordingStateFailed
-	if err := u.session.UpdateRecordingStateById(writeCtx, sessionId, state, isCompleted); err != nil {
+	if err := u.session.UpdateRecordingStateById(writeCtx, sessionId, state, isCompleted, updatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to update recording state", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "state": state})
 		return
 	}
@@ -249,10 +249,10 @@ func (u *usecase) ListCases(ctx context.Context, sessionId uuid.UUID) ([]domainu
 	return result, nil
 }
 
-func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
+func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID, updatedBy *uuid.UUID) error {
 	const tag = "infrared/record_session_management/AcceptRaw"
 
-	if err := u.recordCase.UpdateRawStatusById(ctx, rawId, domainmodels.InfraredRecordRawStatusAccepted, nil); err != nil {
+	if err := u.recordCase.UpdateRawStatusById(ctx, rawId, domainmodels.InfraredRecordRawStatusAccepted, nil, updatedBy); err != nil {
 		return err
 	}
 
@@ -271,7 +271,7 @@ func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
 		return nil
 	}
 
-	if err := u.recordCase.UpdateStatusById(ctx, raw.InfraredStateDeviceRecordCaseId, domainmodels.InfraredRecordCaseStatusAccepted); err != nil {
+	if err := u.recordCase.UpdateStatusById(ctx, raw.InfraredStateDeviceRecordCaseId, domainmodels.InfraredRecordCaseStatusAccepted, updatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to mark case accepted", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
 		return err
 	}
@@ -309,11 +309,11 @@ func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
 	}
 
 	if next != nil {
-		if err := u.recordCase.UpdateStatusById(ctx, next.Id, domainmodels.InfraredRecordCaseStatusActive); err != nil {
+		if err := u.recordCase.UpdateStatusById(ctx, next.Id, domainmodels.InfraredRecordCaseStatusActive, updatedBy); err != nil {
 			u.logger.Error(ctx, tag, "failed to activate next case", domainmodels.LoggerMeta{"err": err, "case_id": next.Id})
 			return err
 		}
-		if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &next.Id); err != nil {
+		if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &next.Id, updatedBy); err != nil {
 			u.logger.Error(ctx, tag, "failed to advance session cursor", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 			return err
 		}
@@ -321,11 +321,11 @@ func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
 		return nil
 	}
 
-	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, nil); err != nil {
+	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, nil, updatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to clear session cursor before analysis", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		return err
 	}
-	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateAnalyzing)
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateAnalyzing, updatedBy)
 
 	go u.runAnalysisAndGeneration(sessionId)
 
@@ -352,56 +352,56 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 	session, err := u.session.GetById(ctx, sessionId)
 	if err != nil || session == nil {
 		u.logger.Error(ctx, tag, "failed to look up session", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
 	device, err := u.device.GetById(ctx, session.InfraredDeviceId)
 	if err != nil || device == nil {
 		u.logger.Error(ctx, tag, "failed to look up device", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	states, err := u.state.ListByDeviceTypeId(ctx, device.InfraredDeviceTypeId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to list states", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	definitions, err := u.definition.ListByDeviceId(ctx, session.InfraredDeviceId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to list definitions", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
 	cases, err := u.recordCase.ListBySessionId(ctx, sessionId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to list cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
 	payload, baselineState, err := u.buildAnalysisPayload(ctx, tag, cases, states, definitions)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to analyze recorded cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
-	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFunctionGenerating)
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFunctionGenerating, nil)
 
 	client, err := u.llmFactory.Current(ctx)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to resolve llm client", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
 	written, err := applicationinfraredcodergeneration.WriteCoder(ctx, client, device.Brand, device.Model, states, definitions, payload)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to write coder", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
@@ -411,7 +411,7 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 	// so it must be converted before crossing this boundary.
 	if _, err := u.encoderRunner.RunEncoder(written.EncoderSource, stateIdToName(states, baselineState), encoderSmokeTestTimeout); err != nil {
 		u.logger.Error(ctx, tag, "generated encoder failed its smoke test", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
@@ -422,10 +422,10 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 		DecoderSource:           written.DecoderSource,
 		SummaryReadme:           written.SummaryReadme,
 		DetailReadme:            written.DetailReadme,
-	})
+	}, nil)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to persist coder", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
@@ -445,53 +445,53 @@ func (u *usecase) runTestCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID) 
 	coder, err := u.coder.GetBySessionId(ctx, sessionId)
 	if err != nil || coder == nil {
 		u.logger.Error(ctx, tag, "failed to look up coder", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
 	session, err := u.session.GetById(ctx, sessionId)
 	if err != nil || session == nil {
 		u.logger.Error(ctx, tag, "failed to look up session", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	device, err := u.device.GetById(ctx, session.InfraredDeviceId)
 	if err != nil || device == nil {
 		u.logger.Error(ctx, tag, "failed to look up device", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	states, err := u.state.ListByDeviceTypeId(ctx, device.InfraredDeviceTypeId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to list states", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	definitions, err := u.definition.ListByDeviceId(ctx, session.InfraredDeviceId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to list definitions", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
-	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateTestCasesGenerating)
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateTestCasesGenerating, nil)
 
 	client, err := u.llmFactory.Current(ctx)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to resolve llm client", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	plans, err := applicationinfraredcodergeneration.WriteTestCases(ctx, client, device.Brand, device.Model, *coder, states, definitions)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to write test cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
 	if len(plans) == 0 {
 		u.logger.Error(ctx, tag, "llm proposed no test cases", domainmodels.LoggerMeta{"session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
@@ -500,14 +500,14 @@ func (u *usecase) runTestCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID) 
 		for stateId, value := range plan.States {
 			testCaseStates = append(testCaseStates, domainmodels.InfraredTestCaseState{InfraredStateId: stateId, StateValue: value})
 		}
-		if _, err := u.testCase.CreateWithStates(ctx, coderId, int32(i+1), plan.Description, testCaseStates); err != nil {
+		if _, err := u.testCase.CreateWithStates(ctx, coderId, int32(i+1), plan.Description, testCaseStates, nil); err != nil {
 			u.logger.Error(ctx, tag, "failed to persist test case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "step": i + 1})
-			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 			return
 		}
 	}
 
-	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateTesting)
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateTesting, nil)
 }
 
 func (u *usecase) ListTestCases(ctx context.Context, sessionId uuid.UUID) ([]domainusecasesinfrared.TestCaseWithStates, error) {
@@ -593,7 +593,7 @@ func (u *usecase) TransmitTestCase(ctx context.Context, testCaseId uuid.UUID) er
 	return nil
 }
 
-func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID, passed bool) error {
+func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID, passed bool, updatedBy *uuid.UUID) error {
 	const tag = "infrared/record_session_management/RecordTestCaseResult"
 
 	existing, err := u.testCase.GetById(ctx, testCaseId)
@@ -610,7 +610,7 @@ func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID
 	if passed {
 		status = domainmodels.InfraredTestCaseStatusPassed
 	}
-	if err := u.testCase.UpdateStatusById(ctx, testCaseId, status); err != nil {
+	if err := u.testCase.UpdateStatusById(ctx, testCaseId, status, updatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to update test case status", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
 		return err
 	}
@@ -659,11 +659,11 @@ func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID
 	}
 
 	if !anyFailed {
-		if err := u.coder.Activate(ctx, coder.Id, coder.InfraredDeviceId); err != nil {
+		if err := u.coder.Activate(ctx, coder.Id, coder.InfraredDeviceId, updatedBy); err != nil {
 			u.logger.Error(ctx, tag, "failed to activate coder", domainmodels.LoggerMeta{"err": err, "coder_id": coder.Id})
 			return err
 		}
-		u.transition(ctx, tag, coder.InfraredRecordSessionId, domainmodels.InfraredRecordingStateCompleted)
+		u.transition(ctx, tag, coder.InfraredRecordSessionId, domainmodels.InfraredRecordingStateCompleted, updatedBy)
 		return nil
 	}
 
@@ -703,50 +703,50 @@ func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID,
 	coder, err := u.coderById(ctx, coderId)
 	if err != nil || coder == nil {
 		u.logger.Error(ctx, tag, "failed to look up coder", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	session, err := u.session.GetById(ctx, sessionId)
 	if err != nil || session == nil {
 		u.logger.Error(ctx, tag, "failed to look up session", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	device, err := u.device.GetById(ctx, session.InfraredDeviceId)
 	if err != nil || device == nil {
 		u.logger.Error(ctx, tag, "failed to look up device", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	states, err := u.state.ListByDeviceTypeId(ctx, device.InfraredDeviceTypeId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to list states", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
 	client, err := u.llmFactory.Current(ctx)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to resolve llm client", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	plans, err := applicationinfraredcodergeneration.WriteRetryCases(ctx, client, device.Brand, device.Model, *coder, failedStates, states)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to write retry cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	if len(plans) == 0 {
 		u.logger.Error(ctx, tag, "llm proposed no retry cases", domainmodels.LoggerMeta{"session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 
 	existingCases, err := u.recordCase.ListBySessionId(ctx, sessionId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to list existing cases for step numbering", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
 	nextStep := int32(1)
@@ -762,10 +762,10 @@ func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID,
 		for stateId, value := range plan.States {
 			caseStates = append(caseStates, domainmodels.InfraredStateDeviceRecordState{InfraredStateId: stateId, StateValue: value})
 		}
-		caseId, err := u.recordCase.CreateWithStates(ctx, sessionId, nextStep+int32(i), plan.Description, caseStates)
+		caseId, err := u.recordCase.CreateWithStates(ctx, sessionId, nextStep+int32(i), plan.Description, caseStates, nil)
 		if err != nil {
 			u.logger.Error(ctx, tag, "failed to persist retry case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 			return
 		}
 		if i == 0 {
@@ -773,17 +773,17 @@ func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID,
 		}
 	}
 
-	if err := u.recordCase.UpdateStatusById(ctx, firstNewCaseId, domainmodels.InfraredRecordCaseStatusActive); err != nil {
+	if err := u.recordCase.UpdateStatusById(ctx, firstNewCaseId, domainmodels.InfraredRecordCaseStatusActive, nil); err != nil {
 		u.logger.Error(ctx, tag, "failed to activate first retry case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
-	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &firstNewCaseId); err != nil {
+	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &firstNewCaseId, nil); err != nil {
 		u.logger.Error(ctx, tag, "failed to set session cursor to first retry case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed, nil)
 		return
 	}
-	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateRecording)
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateRecording, nil)
 }
 
 // coderById is a small helper since InfraredStateCoder's repository only
@@ -952,14 +952,14 @@ func (u *usecase) GetCoderBySessionId(ctx context.Context, sessionId uuid.UUID) 
 	return u.coder.GetBySessionId(ctx, sessionId)
 }
 
-func (u *usecase) DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string) error {
+func (u *usecase) DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string, updatedBy *uuid.UUID) error {
 	if reason == "" {
 		return domainmodels.NewError("reason is required", domainmodels.ErrTypeValidation, nil)
 	}
-	return u.recordCase.UpdateRawStatusById(ctx, rawId, domainmodels.InfraredRecordRawStatusDiscarded, &reason)
+	return u.recordCase.UpdateRawStatusById(ctx, rawId, domainmodels.InfraredRecordRawStatusDiscarded, &reason, updatedBy)
 }
 
-func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
+func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID, updatedBy *uuid.UUID) error {
 	const tag = "infrared/record_session_management/RetryCase"
 
 	raw, err := u.recordCase.ListRawByCaseId(ctx, caseId)
@@ -969,13 +969,13 @@ func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
 	for _, r := range raw {
 		if r.Status == domainmodels.InfraredRecordRawStatusAccepted {
 			reason := "case marked for redo"
-			if err := u.recordCase.UpdateRawStatusById(ctx, r.Id, domainmodels.InfraredRecordRawStatusDiscarded, &reason); err != nil {
+			if err := u.recordCase.UpdateRawStatusById(ctx, r.Id, domainmodels.InfraredRecordRawStatusDiscarded, &reason, updatedBy); err != nil {
 				u.logger.Error(ctx, tag, "failed to discard accepted raw for retry", domainmodels.LoggerMeta{"err": err, "raw_id": r.Id})
 				return err
 			}
 		}
 	}
-	if err := u.recordCase.UpdateStatusById(ctx, caseId, domainmodels.InfraredRecordCaseStatusActive); err != nil {
+	if err := u.recordCase.UpdateStatusById(ctx, caseId, domainmodels.InfraredRecordCaseStatusActive, updatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to activate case for retry", domainmodels.LoggerMeta{"err": err, "case_id": caseId})
 		return err
 	}
@@ -985,14 +985,14 @@ func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
 		u.logger.Error(ctx, tag, "failed to look up case for retry", domainmodels.LoggerMeta{"err": err, "case_id": caseId})
 		return err
 	}
-	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, recordCase.InfraredRecordSessionId, &caseId); err != nil {
+	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, recordCase.InfraredRecordSessionId, &caseId, updatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to set session's current record case for retry", domainmodels.LoggerMeta{"err": err, "case_id": caseId})
 		return err
 	}
 	return nil
 }
 
-func (u *usecase) SetCurrentCase(ctx context.Context, sessionId uuid.UUID, caseId uuid.UUID) error {
+func (u *usecase) SetCurrentCase(ctx context.Context, sessionId uuid.UUID, caseId uuid.UUID, updatedBy *uuid.UUID) error {
 	const tag = "infrared/record_session_management/SetCurrentCase"
 
 	recordCase, err := u.recordCase.GetById(ctx, caseId)
@@ -1004,11 +1004,11 @@ func (u *usecase) SetCurrentCase(ctx context.Context, sessionId uuid.UUID, caseI
 		return domainmodels.NewError("case does not belong to session", domainmodels.ErrTypeValidation, nil)
 	}
 
-	if err := u.recordCase.UpdateStatusById(ctx, caseId, domainmodels.InfraredRecordCaseStatusActive); err != nil {
+	if err := u.recordCase.UpdateStatusById(ctx, caseId, domainmodels.InfraredRecordCaseStatusActive, updatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to activate case", domainmodels.LoggerMeta{"err": err, "case_id": caseId})
 		return err
 	}
-	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &caseId); err != nil {
+	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &caseId, updatedBy); err != nil {
 		u.logger.Error(ctx, tag, "failed to set session's current record case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "case_id": caseId})
 		return err
 	}
@@ -1043,7 +1043,7 @@ func (u *usecase) CaptureIrRaw(ctx context.Context, request domainusecasesinfrar
 	if err != nil {
 		return domainmodels.NewError("failed to encode raw ir data", domainmodels.ErrTypeFailure, err)
 	}
-	if _, err := u.recordCase.CreateRaw(ctx, *session.CurrentRecordCaseId, rawBytes); err != nil {
+	if _, err := u.recordCase.CreateRaw(ctx, *session.CurrentRecordCaseId, rawBytes, nil); err != nil {
 		u.logger.Error(ctx, tag, "failed to persist raw capture", domainmodels.LoggerMeta{"err": err, "case_id": *session.CurrentRecordCaseId})
 		return err
 	}
@@ -1054,4 +1054,32 @@ func (u *usecase) CaptureIrRaw(ctx context.Context, request domainusecasesinfrar
 		u.logger.Warn(ctx, tag, "failed to broadcast raw capture", domainmodels.LoggerMeta{"err": err, "session_id": session.Id})
 	}
 	return nil
+}
+
+func (u *usecase) DeleteRecordSessionById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	return u.session.DeleteById(ctx, id, deletedBy)
+}
+
+func (u *usecase) DeleteRecordCaseById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	return u.recordCase.DeleteById(ctx, id, deletedBy)
+}
+
+func (u *usecase) DeleteRecordStateById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	return u.recordCase.DeleteStateById(ctx, id, deletedBy)
+}
+
+func (u *usecase) DeleteRecordRawById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	return u.recordCase.DeleteRawById(ctx, id, deletedBy)
+}
+
+func (u *usecase) DeleteStateCoderById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	return u.coder.DeleteById(ctx, id, deletedBy)
+}
+
+func (u *usecase) DeleteTestCaseById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	return u.testCase.DeleteById(ctx, id, deletedBy)
+}
+
+func (u *usecase) DeleteTestCaseStateById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	return u.testCase.DeleteStateById(ctx, id, deletedBy)
 }

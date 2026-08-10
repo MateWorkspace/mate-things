@@ -23,7 +23,8 @@
       "node_log:get", "node_log:remove",
       "preferences:set",
       "llm_config:get", "llm_config:set",
-      "infrared_record_session:get", "infrared_record_session:add", "infrared_record_session:set"
+      "infrared_record_session:get", "infrared_record_session:add", "infrared_record_session:set", "infrared_record_session:delete",
+      "infrared_reference:get", "infrared_reference:add", "infrared_reference:delete"
     ]
   },
   {
@@ -47,7 +48,8 @@
       "node_log:get", "node_log:remove",
       "preferences:set",
       "llm_config:get", "llm_config:set",
-      "infrared_record_session:get", "infrared_record_session:add", "infrared_record_session:set"
+      "infrared_record_session:get", "infrared_record_session:add", "infrared_record_session:set", "infrared_record_session:delete",
+      "infrared_reference:get", "infrared_reference:add", "infrared_reference:delete"
     ]
   },
   {

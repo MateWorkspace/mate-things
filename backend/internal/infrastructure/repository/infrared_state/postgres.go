@@ -31,6 +31,19 @@ func NewPostgresImpl(
 	}
 }
 
+func scanInfraredState(row pgx.Row, item *domainmodels.InfraredState) error {
+	var stateType string
+	if err := row.Scan(
+		&item.Id, &item.InfraredDeviceTypeId, &item.Name, &stateType,
+		&item.CreatedAt, &item.UpdatedAt, &item.DeletedAt,
+		&item.CreatedBy, &item.UpdatedBy, &item.DeletedBy,
+	); err != nil {
+		return err
+	}
+	item.Type = domainmodels.InfraredStateType(stateType)
+	return nil
+}
+
 func (p *postgresImpl) ListByDeviceTypeId(ctx context.Context, infraredDeviceTypeId uuid.UUID) ([]domainmodels.InfraredState, error) {
 	query, args, err := p.queryListByDeviceTypeId(infraredDeviceTypeId)
 	if err != nil {
@@ -46,11 +59,9 @@ func (p *postgresImpl) ListByDeviceTypeId(ctx context.Context, infraredDeviceTyp
 	var result []domainmodels.InfraredState
 	for rows.Next() {
 		var item domainmodels.InfraredState
-		var stateType string
-		if err := rows.Scan(&item.Id, &item.InfraredDeviceTypeId, &item.Name, &stateType); err != nil {
+		if err := scanInfraredState(rows, &item); err != nil {
 			return nil, infrastructurerepositoryshared.MapPgxError("failed to scan infrared_state", err)
 		}
-		item.Type = domainmodels.InfraredStateType(stateType)
 		result = append(result, item)
 	}
 	return result, nil
@@ -63,19 +74,17 @@ func (p *postgresImpl) ReadByDeviceTypeIdAndName(ctx context.Context, infraredDe
 	}
 
 	var item domainmodels.InfraredState
-	var stateType string
-	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&item.Id, &item.InfraredDeviceTypeId, &item.Name, &stateType); err != nil {
+	if err := scanInfraredState(p.Dt.QueryRow(ctx, query, args...), &item); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, infrastructurerepositoryshared.NotFound("infrared_state not found", err)
 		}
 		return nil, infrastructurerepositoryshared.MapPgxError("failed to read infrared_state", err)
 	}
-	item.Type = domainmodels.InfraredStateType(stateType)
 	return &item, nil
 }
 
-func (p *postgresImpl) Create(ctx context.Context, infraredDeviceTypeId uuid.UUID, name string, stateType domainmodels.InfraredStateType) (id uuid.UUID, err error) {
-	query, args, err := p.queryCreate(infraredDeviceTypeId, name, stateType)
+func (p *postgresImpl) Create(ctx context.Context, infraredDeviceTypeId uuid.UUID, name string, stateType domainmodels.InfraredStateType, createdBy *uuid.UUID) (id uuid.UUID, err error) {
+	query, args, err := p.queryCreate(infraredDeviceTypeId, name, stateType, createdBy)
 	if err != nil {
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create infrared_state query", err)
 	}
@@ -84,4 +93,20 @@ func (p *postgresImpl) Create(ctx context.Context, infraredDeviceTypeId uuid.UUI
 		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create infrared_state", err)
 	}
 	return id, nil
+}
+
+func (p *postgresImpl) DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	query, args, err := p.queryDeleteById(id, deletedBy)
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build delete infrared_state query", err)
+	}
+
+	commandTag, err := p.Dt.Exec(ctx, query, args...)
+	if err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to delete infrared_state", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return infrastructurerepositoryshared.NotFound("infrared_state not found", nil)
+	}
+	return nil
 }

@@ -8,12 +8,13 @@ import (
 )
 
 type InfraredRecordSession interface {
-	Create(ctx context.Context, nodeId uuid.UUID, infraredDeviceId uuid.UUID) (id uuid.UUID, err error)
+	Create(ctx context.Context, nodeId uuid.UUID, infraredDeviceId uuid.UUID, createdBy *uuid.UUID) (id uuid.UUID, err error)
 	GetById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredRecordSession, error)
 	// GetActiveByNodeId returns the session currently RECORDING against the
 	// given node, or (nil, nil) if none is active — there is deliberately
 	// no error for the common "nothing recording right now" case.
 	GetActiveByNodeId(ctx context.Context, nodeId uuid.UUID) (*domainmodels.InfraredRecordSession, error)
-	UpdateRecordingStateById(ctx context.Context, id uuid.UUID, recordingState string, isCompleted bool) error
-	UpdateCurrentRecordCaseIdById(ctx context.Context, id uuid.UUID, currentRecordCaseId *uuid.UUID) error
+	UpdateRecordingStateById(ctx context.Context, id uuid.UUID, recordingState string, isCompleted bool, updatedBy *uuid.UUID) error
+	UpdateCurrentRecordCaseIdById(ctx context.Context, id uuid.UUID, currentRecordCaseId *uuid.UUID, updatedBy *uuid.UUID) error
+	DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 }

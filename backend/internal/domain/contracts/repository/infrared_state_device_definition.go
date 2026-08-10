@@ -10,6 +10,7 @@ import (
 type InfraredStateDeviceDefinition interface {
 	// CreateMany inserts one row per definition. All definitions must share
 	// the given infraredDeviceId; this is validated by the usecase, not here.
-	CreateMany(ctx context.Context, definitions []domainmodels.InfraredStateDeviceDefinition) error
+	CreateMany(ctx context.Context, definitions []domainmodels.InfraredStateDeviceDefinition, createdBy *uuid.UUID) error
 	ListByDeviceId(ctx context.Context, infraredDeviceId uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error)
+	DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 }

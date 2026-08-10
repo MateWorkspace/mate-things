@@ -31,8 +31,8 @@ func NewPostgresImpl(
 	}
 }
 
-func (p *postgresImpl) Create(ctx context.Context, coder domainmodels.InfraredStateCoder) (id uuid.UUID, err error) {
-	query, args, err := p.queryCreate(coder)
+func (p *postgresImpl) Create(ctx context.Context, coder domainmodels.InfraredStateCoder, createdBy *uuid.UUID) (id uuid.UUID, err error) {
+	query, args, err := p.queryCreate(coder, createdBy)
 	if err != nil {
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create infrared_state_coder query", err)
 	}
@@ -43,6 +43,19 @@ func (p *postgresImpl) Create(ctx context.Context, coder domainmodels.InfraredSt
 	return id, nil
 }
 
+func scanInfraredStateCoder(row pgx.Row, item *domainmodels.InfraredStateCoder) error {
+	var status string
+	if err := row.Scan(
+		&item.Id, &item.InfraredDeviceId, &item.InfraredRecordSessionId,
+		&item.EncoderSource, &item.DecoderSource, &item.SummaryReadme, &item.DetailReadme,
+		&status, &item.CreatedAt, &item.UpdatedAt, &item.DeletedAt, &item.CreatedBy, &item.UpdatedBy, &item.DeletedBy,
+	); err != nil {
+		return err
+	}
+	item.Status = domainmodels.InfraredStateCoderStatus(status)
+	return nil
+}
+
 func (p *postgresImpl) GetBySessionId(ctx context.Context, sessionId uuid.UUID) (*domainmodels.InfraredStateCoder, error) {
 	query, args, err := p.queryGetBySessionId(sessionId)
 	if err != nil {
@@ -50,18 +63,12 @@ func (p *postgresImpl) GetBySessionId(ctx context.Context, sessionId uuid.UUID) 
 	}
 
 	var item domainmodels.InfraredStateCoder
-	var status string
-	if err := p.Dt.QueryRow(ctx, query, args...).Scan(
-		&item.Id, &item.InfraredDeviceId, &item.InfraredRecordSessionId,
-		&item.EncoderSource, &item.DecoderSource, &item.SummaryReadme, &item.DetailReadme,
-		&status, &item.CreatedAt,
-	); err != nil {
+	if err := scanInfraredStateCoder(p.Dt.QueryRow(ctx, query, args...), &item); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, infrastructurerepositoryshared.NotFound("infrared_state_coder not found", err)
 		}
 		return nil, infrastructurerepositoryshared.MapPgxError("failed to get infrared_state_coder", err)
 	}
-	item.Status = domainmodels.InfraredStateCoderStatus(status)
 	return &item, nil
 }
 
@@ -72,25 +79,22 @@ func (p *postgresImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels
 	}
 
 	var item domainmodels.InfraredStateCoder
-	var status string
-	if err := p.Dt.QueryRow(ctx, query, args...).Scan(
-		&item.Id, &item.InfraredDeviceId, &item.InfraredRecordSessionId,
-		&item.EncoderSource, &item.DecoderSource, &item.SummaryReadme, &item.DetailReadme,
-		&status, &item.CreatedAt,
-	); err != nil {
+	if err := scanInfraredStateCoder(p.Dt.QueryRow(ctx, query, args...), &item); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, infrastructurerepositoryshared.NotFound("infrared_state_coder not found", err)
 		}
 		return nil, infrastructurerepositoryshared.MapPgxError("failed to get infrared_state_coder", err)
 	}
-	item.Status = domainmodels.InfraredStateCoderStatus(status)
 	return &item, nil
 }
 
-func (p *postgresImpl) Activate(ctx context.Context, coderId uuid.UUID, deviceId uuid.UUID) error {
+func (p *postgresImpl) Activate(ctx context.Context, coderId uuid.UUID, deviceId uuid.UUID, updatedBy *uuid.UUID) error {
 	activateQuery, activateArgs, err := p.SqrD.Update("infrared_state_coder").
 		Set("status", domainmodels.InfraredStateCoderStatusActive).
+		Set("updated_at", squirrel.Expr("CURRENT_TIMESTAMP")).
+		Set("updated_by", updatedBy).
 		Where(squirrel.Eq{"id": coderId}).
+		Where("deleted_at IS NULL").
 		ToSql()
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build activate infrared_state_coder query", err)
@@ -101,14 +105,33 @@ func (p *postgresImpl) Activate(ctx context.Context, coderId uuid.UUID, deviceId
 
 	supersedeQuery, supersedeArgs, err := p.SqrD.Update("infrared_state_coder").
 		Set("status", domainmodels.InfraredStateCoderStatusSuperseded).
+		Set("updated_at", squirrel.Expr("CURRENT_TIMESTAMP")).
+		Set("updated_by", updatedBy).
 		Where(squirrel.Eq{"infrared_device_id": deviceId, "status": domainmodels.InfraredStateCoderStatusActive}).
 		Where(squirrel.NotEq{"id": coderId}).
+		Where("deleted_at IS NULL").
 		ToSql()
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build supersede infrared_state_coder query", err)
 	}
 	if _, err := p.Dt.Exec(ctx, supersedeQuery, supersedeArgs...); err != nil {
 		return infrastructurerepositoryshared.MapPgxError("failed to supersede prior infrared_state_coder", err)
+	}
+	return nil
+}
+
+func (p *postgresImpl) DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	query, args, err := p.queryDeleteById(id, deletedBy)
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build delete infrared_state_coder query", err)
+	}
+
+	commandTag, err := p.Dt.Exec(ctx, query, args...)
+	if err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to delete infrared_state_coder", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return infrastructurerepositoryshared.NotFound("infrared_state_coder not found", nil)
 	}
 	return nil
 }

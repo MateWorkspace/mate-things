@@ -23,3 +23,12 @@ type DiscardRawRequest struct {
 type RecordTestCaseResultRequest struct {
 	Passed bool `json:"passed" example:"true"`
 }
+
+type CreateDeviceTypeRequest struct {
+	Name string `json:"name" example:"Air Conditioner"`
+}
+
+type CreateStateRequest struct {
+	Name string `json:"name" example:"POWER"`
+	Type string `json:"type" example:"ENUM"`
+}

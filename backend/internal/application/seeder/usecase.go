@@ -509,7 +509,7 @@ func (u *usecase) seedInfraredDeviceTypes(ctx context.Context) (map[string]uuid.
 			return nil, err
 		}
 
-		id, err := u.infraredDeviceType.Create(ctx, deviceType.Name)
+		id, err := u.infraredDeviceType.Create(ctx, deviceType.Name, nil)
 		if err != nil {
 			u.logger.Error(ctx, tag, "failed to create infrared device type", domainmodels.LoggerMeta{
 				"err":  err,
@@ -553,7 +553,7 @@ func (u *usecase) seedInfraredStates(ctx context.Context, deviceTypeIds map[stri
 			return err
 		}
 
-		if _, err := u.infraredState.Create(ctx, deviceTypeId, state.Name, domainmodels.InfraredStateType(state.Type)); err != nil {
+		if _, err := u.infraredState.Create(ctx, deviceTypeId, state.Name, domainmodels.InfraredStateType(state.Type), nil); err != nil {
 			u.logger.Error(ctx, tag, "failed to create infrared state", domainmodels.LoggerMeta{
 				"err":  err,
 				"name": state.Name,

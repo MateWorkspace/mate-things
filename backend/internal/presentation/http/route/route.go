@@ -150,6 +150,22 @@ type InfraredHandler interface {
 	RecordSessionTestCasesGetList(c *echo.Context) error
 	TestCaseTransmitPost(c *echo.Context) error
 	TestCaseResultPost(c *echo.Context) error
+	RecordSessionDelete(c *echo.Context) error
+	RecordCaseDelete(c *echo.Context) error
+	RecordStateDelete(c *echo.Context) error
+	RecordRawDelete(c *echo.Context) error
+	StateCoderDelete(c *echo.Context) error
+	TestCaseDelete(c *echo.Context) error
+	TestCaseStateDelete(c *echo.Context) error
+	DeviceTypePost(c *echo.Context) error
+	DeviceTypeGetList(c *echo.Context) error
+	DeviceTypeDelete(c *echo.Context) error
+	StatePost(c *echo.Context) error
+	StateGetList(c *echo.Context) error
+	StateDelete(c *echo.Context) error
+	DeviceDelete(c *echo.Context) error
+	DefinitionGetList(c *echo.Context) error
+	DefinitionDelete(c *echo.Context) error
 }
 
 type NodeLogHandler interface {
@@ -367,4 +383,20 @@ func routeInfrared(v1 *echo.Group, handler InfraredHandler, permission Permissio
 	v1.GET("/infrared/record-sessions/:id/test-cases", handler.RecordSessionTestCasesGetList, permission("infrared_record_session:get"))
 	v1.POST("/infrared/test-cases/:id/transmit", handler.TestCaseTransmitPost, permission("infrared_record_session:set"))
 	v1.POST("/infrared/test-cases/:id/result", handler.TestCaseResultPost, permission("infrared_record_session:set"))
+	v1.DELETE("/infrared/record-sessions/:id", handler.RecordSessionDelete, permission("infrared_record_session:delete"))
+	v1.DELETE("/infrared/record-cases/:caseId", handler.RecordCaseDelete, permission("infrared_record_session:delete"))
+	v1.DELETE("/infrared/record-states/:id", handler.RecordStateDelete, permission("infrared_record_session:delete"))
+	v1.DELETE("/infrared/record-cases/:caseId/raw/:rawId", handler.RecordRawDelete, permission("infrared_record_session:delete"))
+	v1.DELETE("/infrared/state-coders/:id", handler.StateCoderDelete, permission("infrared_record_session:delete"))
+	v1.DELETE("/infrared/test-cases/:id", handler.TestCaseDelete, permission("infrared_record_session:delete"))
+	v1.DELETE("/infrared/test-cases/:id/states/:stateId", handler.TestCaseStateDelete, permission("infrared_record_session:delete"))
+	v1.POST("/infrared/device-types", handler.DeviceTypePost, permission("infrared_reference:add"))
+	v1.GET("/infrared/device-types", handler.DeviceTypeGetList, permission("infrared_reference:get"))
+	v1.DELETE("/infrared/device-types/:id", handler.DeviceTypeDelete, permission("infrared_reference:delete"))
+	v1.POST("/infrared/device-types/:deviceTypeId/states", handler.StatePost, permission("infrared_reference:add"))
+	v1.GET("/infrared/device-types/:deviceTypeId/states", handler.StateGetList, permission("infrared_reference:get"))
+	v1.DELETE("/infrared/states/:id", handler.StateDelete, permission("infrared_reference:delete"))
+	v1.DELETE("/infrared/devices/:id", handler.DeviceDelete, permission("infrared_reference:delete"))
+	v1.GET("/infrared/devices/:id/definitions", handler.DefinitionGetList, permission("infrared_reference:get"))
+	v1.DELETE("/infrared/state-device-definitions/:id", handler.DefinitionDelete, permission("infrared_reference:delete"))
 }

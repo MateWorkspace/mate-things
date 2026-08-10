@@ -31,8 +31,8 @@ func NewPostgresImpl(
 	}
 }
 
-func (p *postgresImpl) CreateWithStates(ctx context.Context, sessionId uuid.UUID, step int32, description string, states []domainmodels.InfraredStateDeviceRecordState) (caseId uuid.UUID, err error) {
-	query, args, err := p.queryCreateCase(sessionId, step, description)
+func (p *postgresImpl) CreateWithStates(ctx context.Context, sessionId uuid.UUID, step int32, description string, states []domainmodels.InfraredStateDeviceRecordState, createdBy *uuid.UUID) (caseId uuid.UUID, err error) {
+	query, args, err := p.queryCreateCase(sessionId, step, description, createdBy)
 	if err != nil {
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create infrared_state_device_record_case query", err)
 	}
@@ -42,7 +42,7 @@ func (p *postgresImpl) CreateWithStates(ctx context.Context, sessionId uuid.UUID
 	}
 
 	for _, state := range states {
-		query, args, err := p.queryCreateState(caseId, state)
+		query, args, err := p.queryCreateState(caseId, state, createdBy)
 		if err != nil {
 			return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create infrared_state_device_record_state query", err)
 		}
@@ -54,6 +54,13 @@ func (p *postgresImpl) CreateWithStates(ctx context.Context, sessionId uuid.UUID
 	}
 
 	return caseId, nil
+}
+
+func scanInfraredRecordCase(row pgx.Row, item *domainmodels.InfraredStateDeviceRecordCase) error {
+	return row.Scan(
+		&item.Id, &item.InfraredRecordSessionId, &item.Step, &item.Description, &item.Status,
+		&item.CreatedAt, &item.UpdatedAt, &item.DeletedAt, &item.CreatedBy, &item.UpdatedBy, &item.DeletedBy,
+	)
 }
 
 func (p *postgresImpl) ListBySessionId(ctx context.Context, sessionId uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordCase, error) {
@@ -71,7 +78,7 @@ func (p *postgresImpl) ListBySessionId(ctx context.Context, sessionId uuid.UUID)
 	var result []domainmodels.InfraredStateDeviceRecordCase
 	for rows.Next() {
 		var item domainmodels.InfraredStateDeviceRecordCase
-		if err := rows.Scan(&item.Id, &item.InfraredRecordSessionId, &item.Step, &item.Description, &item.Status); err != nil {
+		if err := scanInfraredRecordCase(rows, &item); err != nil {
 			return nil, infrastructurerepositoryshared.MapPgxError("failed to scan infrared_state_device_record_case", err)
 		}
 		result = append(result, item)
@@ -86,7 +93,7 @@ func (p *postgresImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels
 	}
 
 	var item domainmodels.InfraredStateDeviceRecordCase
-	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&item.Id, &item.InfraredRecordSessionId, &item.Step, &item.Description, &item.Status); err != nil {
+	if err := scanInfraredRecordCase(p.Dt.QueryRow(ctx, query, args...), &item); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, infrastructurerepositoryshared.NotFound("infrared_state_device_record_case not found", err)
 		}
@@ -95,8 +102,8 @@ func (p *postgresImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels
 	return &item, nil
 }
 
-func (p *postgresImpl) UpdateStatusById(ctx context.Context, id uuid.UUID, status domainmodels.InfraredRecordCaseStatus) error {
-	query, args, err := p.queryUpdateStatusById(id, status)
+func (p *postgresImpl) UpdateStatusById(ctx context.Context, id uuid.UUID, status domainmodels.InfraredRecordCaseStatus, updatedBy *uuid.UUID) error {
+	query, args, err := p.queryUpdateStatusById(id, status, updatedBy)
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build update infrared_state_device_record_case status query", err)
 	}
@@ -109,6 +116,22 @@ func (p *postgresImpl) UpdateStatusById(ctx context.Context, id uuid.UUID, statu
 		return infrastructurerepositoryshared.NotFound("infrared_state_device_record_case not found", nil)
 	}
 
+	return nil
+}
+
+func (p *postgresImpl) DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	query, args, err := p.queryDeleteById(id, deletedBy)
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build delete infrared_state_device_record_case query", err)
+	}
+
+	commandTag, err := p.Dt.Exec(ctx, query, args...)
+	if err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to delete infrared_state_device_record_case", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return infrastructurerepositoryshared.NotFound("infrared_state_device_record_case not found", nil)
+	}
 	return nil
 }
 
@@ -127,7 +150,10 @@ func (p *postgresImpl) ListStatesByCaseId(ctx context.Context, caseId uuid.UUID)
 	var result []domainmodels.InfraredStateDeviceRecordState
 	for rows.Next() {
 		var item domainmodels.InfraredStateDeviceRecordState
-		if err := rows.Scan(&item.Id, &item.InfraredStateDeviceRecordCaseId, &item.InfraredStateId, &item.StateValue); err != nil {
+		if err := rows.Scan(
+			&item.Id, &item.InfraredStateDeviceRecordCaseId, &item.InfraredStateId, &item.StateValue,
+			&item.CreatedAt, &item.UpdatedAt, &item.DeletedAt, &item.CreatedBy, &item.UpdatedBy, &item.DeletedBy,
+		); err != nil {
 			return nil, infrastructurerepositoryshared.MapPgxError("failed to scan infrared_state_device_record_state", err)
 		}
 		result = append(result, item)
@@ -135,8 +161,24 @@ func (p *postgresImpl) ListStatesByCaseId(ctx context.Context, caseId uuid.UUID)
 	return result, nil
 }
 
-func (p *postgresImpl) CreateRaw(ctx context.Context, caseId uuid.UUID, rawData []byte) (rawId uuid.UUID, err error) {
-	query, args, err := p.queryCreateRaw(caseId, rawData)
+func (p *postgresImpl) DeleteStateById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	query, args, err := p.queryDeleteStateById(id, deletedBy)
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build delete infrared_state_device_record_state query", err)
+	}
+
+	commandTag, err := p.Dt.Exec(ctx, query, args...)
+	if err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to delete infrared_state_device_record_state", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return infrastructurerepositoryshared.NotFound("infrared_state_device_record_state not found", nil)
+	}
+	return nil
+}
+
+func (p *postgresImpl) CreateRaw(ctx context.Context, caseId uuid.UUID, rawData []byte, createdBy *uuid.UUID) (rawId uuid.UUID, err error) {
+	query, args, err := p.queryCreateRaw(caseId, rawData, createdBy)
 	if err != nil {
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create infrared_state_device_record_raw query", err)
 	}
@@ -145,6 +187,13 @@ func (p *postgresImpl) CreateRaw(ctx context.Context, caseId uuid.UUID, rawData 
 		return uuid.Nil, infrastructurerepositoryshared.MapPgxError("failed to create infrared_state_device_record_raw", err)
 	}
 	return rawId, nil
+}
+
+func scanInfraredRecordRaw(row pgx.Row, item *domainmodels.InfraredStateDeviceRecordRaw) error {
+	return row.Scan(
+		&item.Id, &item.InfraredStateDeviceRecordCaseId, &item.RawData, &item.Status, &item.DiscardedReason,
+		&item.CreatedAt, &item.UpdatedAt, &item.DeletedAt, &item.CreatedBy, &item.UpdatedBy, &item.DeletedBy,
+	)
 }
 
 func (p *postgresImpl) ListRawByCaseId(ctx context.Context, caseId uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordRaw, error) {
@@ -162,7 +211,7 @@ func (p *postgresImpl) ListRawByCaseId(ctx context.Context, caseId uuid.UUID) ([
 	var result []domainmodels.InfraredStateDeviceRecordRaw
 	for rows.Next() {
 		var item domainmodels.InfraredStateDeviceRecordRaw
-		if err := rows.Scan(&item.Id, &item.InfraredStateDeviceRecordCaseId, &item.RawData, &item.Status, &item.DiscardedReason); err != nil {
+		if err := scanInfraredRecordRaw(rows, &item); err != nil {
 			return nil, infrastructurerepositoryshared.MapPgxError("failed to scan infrared_state_device_record_raw", err)
 		}
 		result = append(result, item)
@@ -170,8 +219,8 @@ func (p *postgresImpl) ListRawByCaseId(ctx context.Context, caseId uuid.UUID) ([
 	return result, nil
 }
 
-func (p *postgresImpl) UpdateRawStatusById(ctx context.Context, id uuid.UUID, status domainmodels.InfraredRecordRawStatus, discardedReason *string) error {
-	query, args, err := p.queryUpdateRawStatusById(id, status, discardedReason)
+func (p *postgresImpl) UpdateRawStatusById(ctx context.Context, id uuid.UUID, status domainmodels.InfraredRecordRawStatus, discardedReason *string, updatedBy *uuid.UUID) error {
+	query, args, err := p.queryUpdateRawStatusById(id, status, discardedReason, updatedBy)
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build update infrared_state_device_record_raw status query", err)
 	}
@@ -187,6 +236,22 @@ func (p *postgresImpl) UpdateRawStatusById(ctx context.Context, id uuid.UUID, st
 	return nil
 }
 
+func (p *postgresImpl) DeleteRawById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	query, args, err := p.queryDeleteRawById(id, deletedBy)
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build delete infrared_state_device_record_raw query", err)
+	}
+
+	commandTag, err := p.Dt.Exec(ctx, query, args...)
+	if err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to delete infrared_state_device_record_raw", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return infrastructurerepositoryshared.NotFound("infrared_state_device_record_raw not found", nil)
+	}
+	return nil
+}
+
 func (p *postgresImpl) GetRawById(ctx context.Context, rawId uuid.UUID) (*domainmodels.InfraredStateDeviceRecordRaw, error) {
 	query, args, err := p.queryGetRawById(rawId)
 	if err != nil {
@@ -194,7 +259,7 @@ func (p *postgresImpl) GetRawById(ctx context.Context, rawId uuid.UUID) (*domain
 	}
 
 	var item domainmodels.InfraredStateDeviceRecordRaw
-	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&item.Id, &item.InfraredStateDeviceRecordCaseId, &item.RawData, &item.Status, &item.DiscardedReason); err != nil {
+	if err := scanInfraredRecordRaw(p.Dt.QueryRow(ctx, query, args...), &item); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, infrastructurerepositoryshared.NotFound("infrared_state_device_record_raw not found", err)
 		}

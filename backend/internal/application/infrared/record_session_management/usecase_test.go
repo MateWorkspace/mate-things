@@ -29,9 +29,12 @@ type fakeSessionRepository struct {
 	getResult            *domainmodels.InfraredRecordSession
 	currentCaseSessionId uuid.UUID
 	currentCaseId        *uuid.UUID
+	deleteErr            error
+	deletedId            uuid.UUID
+	deletedBy            *uuid.UUID
 }
 
-func (f *fakeSessionRepository) Create(_ context.Context, nodeId uuid.UUID, deviceId uuid.UUID) (uuid.UUID, error) {
+func (f *fakeSessionRepository) Create(_ context.Context, nodeId uuid.UUID, deviceId uuid.UUID, _ *uuid.UUID) (uuid.UUID, error) {
 	f.createdNodeId, f.createdDeviceId = nodeId, deviceId
 	f.created = uuid.New()
 	return f.created, nil
@@ -39,11 +42,15 @@ func (f *fakeSessionRepository) Create(_ context.Context, nodeId uuid.UUID, devi
 func (f *fakeSessionRepository) GetById(_ context.Context, id uuid.UUID) (*domainmodels.InfraredRecordSession, error) {
 	return f.getResult, nil
 }
-func (f *fakeSessionRepository) UpdateRecordingStateById(_ context.Context, _ uuid.UUID, state string, _ bool) error {
+func (f *fakeSessionRepository) UpdateRecordingStateById(_ context.Context, _ uuid.UUID, state string, _ bool, _ *uuid.UUID) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.statusUpdates = append(f.statusUpdates, state)
 	return nil
+}
+func (f *fakeSessionRepository) DeleteById(_ context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	f.deletedId, f.deletedBy = id, deletedBy
+	return f.deleteErr
 }
 
 // StatusUpdates returns a snapshot, safe to read while the background
@@ -53,7 +60,7 @@ func (f *fakeSessionRepository) StatusUpdates() []string {
 	defer f.mu.Unlock()
 	return append([]string(nil), f.statusUpdates...)
 }
-func (f *fakeSessionRepository) UpdateCurrentRecordCaseIdById(_ context.Context, sessionId uuid.UUID, currentRecordCaseId *uuid.UUID) error {
+func (f *fakeSessionRepository) UpdateCurrentRecordCaseIdById(_ context.Context, sessionId uuid.UUID, currentRecordCaseId *uuid.UUID, _ *uuid.UUID) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.currentCaseSessionId = sessionId
@@ -92,12 +99,15 @@ type fakeDeviceRepository struct {
 	created uuid.UUID
 }
 
-func (f *fakeDeviceRepository) Create(_ context.Context, _ uuid.UUID, _ string, _ string) (uuid.UUID, error) {
+func (f *fakeDeviceRepository) Create(_ context.Context, _ uuid.UUID, _ string, _ string, _ *uuid.UUID) (uuid.UUID, error) {
 	f.created = uuid.New()
 	return f.created, nil
 }
 func (f *fakeDeviceRepository) GetById(_ context.Context, id uuid.UUID) (*domainmodels.InfraredDevice, error) {
 	return &domainmodels.InfraredDevice{Id: id}, nil
+}
+func (f *fakeDeviceRepository) DeleteById(_ context.Context, _ uuid.UUID, _ *uuid.UUID) error {
+	return nil
 }
 
 type fakeDefinitionRepository struct {
@@ -106,12 +116,15 @@ type fakeDefinitionRepository struct {
 	listByDeviceIdResult []domainmodels.InfraredStateDeviceDefinition
 }
 
-func (f *fakeDefinitionRepository) CreateMany(_ context.Context, _ []domainmodels.InfraredStateDeviceDefinition) error {
+func (f *fakeDefinitionRepository) CreateMany(_ context.Context, _ []domainmodels.InfraredStateDeviceDefinition, _ *uuid.UUID) error {
 	f.createCalls++
 	return nil
 }
 func (f *fakeDefinitionRepository) ListByDeviceId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error) {
 	return f.listByDeviceIdResult, nil
+}
+func (f *fakeDefinitionRepository) DeleteById(_ context.Context, _ uuid.UUID, _ *uuid.UUID) error {
+	return nil
 }
 
 type fakeStateRepository struct {
@@ -143,9 +156,12 @@ type fakeCoderRepository struct {
 	getResult     *domainmodels.InfraredStateCoder
 	getByIdResult *domainmodels.InfraredStateCoder
 	activateCalls int
+	deleteErr     error
+	deletedId     uuid.UUID
+	deletedBy     *uuid.UUID
 }
 
-func (f *fakeCoderRepository) Create(_ context.Context, coder domainmodels.InfraredStateCoder) (uuid.UUID, error) {
+func (f *fakeCoderRepository) Create(_ context.Context, coder domainmodels.InfraredStateCoder, _ *uuid.UUID) (uuid.UUID, error) {
 	f.created = coder
 	f.createCalled = true
 	return uuid.New(), nil
@@ -156,9 +172,13 @@ func (f *fakeCoderRepository) GetBySessionId(_ context.Context, _ uuid.UUID) (*d
 func (f *fakeCoderRepository) GetById(_ context.Context, _ uuid.UUID) (*domainmodels.InfraredStateCoder, error) {
 	return f.getByIdResult, nil
 }
-func (f *fakeCoderRepository) Activate(_ context.Context, _ uuid.UUID, _ uuid.UUID) error {
+func (f *fakeCoderRepository) Activate(_ context.Context, _ uuid.UUID, _ uuid.UUID, _ *uuid.UUID) error {
 	f.activateCalls++
 	return nil
+}
+func (f *fakeCoderRepository) DeleteById(_ context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	f.deletedId, f.deletedBy = id, deletedBy
+	return f.deleteErr
 }
 
 type fakeTestCaseRepository struct {
@@ -168,9 +188,13 @@ type fakeTestCaseRepository struct {
 	getResult                    *domainmodels.InfraredTestCase
 	listStatesByTestCaseIdResult []domainmodels.InfraredTestCaseState
 	listByCoderIdResult          []domainmodels.InfraredTestCase
+	deleteErr                    error
+	deletedId                    uuid.UUID
+	deleteStateErr               error
+	deletedStateId               uuid.UUID
 }
 
-func (f *fakeTestCaseRepository) CreateWithStates(_ context.Context, _ uuid.UUID, _ int32, _ string, _ []domainmodels.InfraredTestCaseState) (uuid.UUID, error) {
+func (f *fakeTestCaseRepository) CreateWithStates(_ context.Context, _ uuid.UUID, _ int32, _ string, _ []domainmodels.InfraredTestCaseState, _ *uuid.UUID) (uuid.UUID, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	id := uuid.New()
@@ -194,8 +218,16 @@ func (f *fakeTestCaseRepository) ListStatesByTestCaseId(_ context.Context, _ uui
 func (f *fakeTestCaseRepository) ListByCoderId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredTestCase, error) {
 	return f.listByCoderIdResult, nil
 }
-func (f *fakeTestCaseRepository) UpdateStatusById(_ context.Context, _ uuid.UUID, _ domainmodels.InfraredTestCaseStatus) error {
+func (f *fakeTestCaseRepository) UpdateStatusById(_ context.Context, _ uuid.UUID, _ domainmodels.InfraredTestCaseStatus, _ *uuid.UUID) error {
 	return nil
+}
+func (f *fakeTestCaseRepository) DeleteById(_ context.Context, id uuid.UUID, _ *uuid.UUID) error {
+	f.deletedId = id
+	return f.deleteErr
+}
+func (f *fakeTestCaseRepository) DeleteStateById(_ context.Context, id uuid.UUID, _ *uuid.UUID) error {
+	f.deletedStateId = id
+	return f.deleteStateErr
 }
 
 type fakePublish struct {
@@ -231,14 +263,20 @@ type fakeCaseRepository struct {
 	statusValuesByCase       map[uuid.UUID][]domainmodels.InfraredRecordCaseStatus
 	listRawByCaseIdResult    []domainmodels.InfraredStateDeviceRecordRaw
 	listStatesByCaseIdResult []domainmodels.InfraredStateDeviceRecordState
+	deleteErr                error
+	deletedId                uuid.UUID
+	deleteStateErr           error
+	deletedStateId           uuid.UUID
+	deleteRawErr             error
+	deletedRawId             uuid.UUID
 }
 
-func (f *fakeCaseRepository) CreateRaw(_ context.Context, caseId uuid.UUID, rawData []byte) (uuid.UUID, error) {
+func (f *fakeCaseRepository) CreateRaw(_ context.Context, caseId uuid.UUID, rawData []byte, _ *uuid.UUID) (uuid.UUID, error) {
 	f.createRawCaseId, f.createRawData = caseId, rawData
 	f.createRawCalls++
 	return uuid.New(), nil
 }
-func (f *fakeCaseRepository) CreateWithStates(_ context.Context, _ uuid.UUID, step int32, _ string, _ []domainmodels.InfraredStateDeviceRecordState) (uuid.UUID, error) {
+func (f *fakeCaseRepository) CreateWithStates(_ context.Context, _ uuid.UUID, step int32, _ string, _ []domainmodels.InfraredStateDeviceRecordState, _ *uuid.UUID) (uuid.UUID, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	id := uuid.New()
@@ -263,7 +301,7 @@ func (f *fakeCaseRepository) CreatedSteps() []int32 {
 	defer f.mu.Unlock()
 	return append([]int32(nil), f.createdSteps...)
 }
-func (f *fakeCaseRepository) UpdateStatusById(_ context.Context, id uuid.UUID, status domainmodels.InfraredRecordCaseStatus) error {
+func (f *fakeCaseRepository) UpdateStatusById(_ context.Context, id uuid.UUID, status domainmodels.InfraredRecordCaseStatus, _ *uuid.UUID) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.statusUpdateIds = append(f.statusUpdateIds, id)
@@ -276,8 +314,20 @@ func (f *fakeCaseRepository) UpdateStatusById(_ context.Context, id uuid.UUID, s
 func (f *fakeCaseRepository) GetById(_ context.Context, _ uuid.UUID) (*domainmodels.InfraredStateDeviceRecordCase, error) {
 	return f.getResult, f.getErr
 }
-func (f *fakeCaseRepository) UpdateRawStatusById(_ context.Context, _ uuid.UUID, _ domainmodels.InfraredRecordRawStatus, _ *string) error {
+func (f *fakeCaseRepository) UpdateRawStatusById(_ context.Context, _ uuid.UUID, _ domainmodels.InfraredRecordRawStatus, _ *string, _ *uuid.UUID) error {
 	return nil
+}
+func (f *fakeCaseRepository) DeleteById(_ context.Context, id uuid.UUID, _ *uuid.UUID) error {
+	f.deletedId = id
+	return f.deleteErr
+}
+func (f *fakeCaseRepository) DeleteStateById(_ context.Context, id uuid.UUID, _ *uuid.UUID) error {
+	f.deletedStateId = id
+	return f.deleteStateErr
+}
+func (f *fakeCaseRepository) DeleteRawById(_ context.Context, id uuid.UUID, _ *uuid.UUID) error {
+	f.deletedRawId = id
+	return f.deleteRawErr
 }
 func (f *fakeCaseRepository) ListRawByCaseId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordRaw, error) {
 	return f.listRawByCaseIdResult, nil
@@ -503,7 +553,7 @@ func TestDiscardRawRequiresNonEmptyReason(t *testing.T) {
 		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
 	)
 
-	err := usecase.DiscardRaw(context.Background(), uuid.New(), "")
+	err := usecase.DiscardRaw(context.Background(), uuid.New(), "", nil)
 	if !errors.Is(err, domainmodels.ErrTypeValidation) {
 		t.Fatalf("DiscardRaw() error = %v, want validation error", err)
 	}
@@ -614,7 +664,7 @@ func TestSetCurrentCaseRejectsCaseFromDifferentSession(t *testing.T) {
 		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
 	)
 
-	err := usecase.SetCurrentCase(context.Background(), sessionId, caseId)
+	err := usecase.SetCurrentCase(context.Background(), sessionId, caseId, nil)
 	if !errors.Is(err, domainmodels.ErrTypeValidation) {
 		t.Fatalf("SetCurrentCase() error = %v, want validation error", err)
 	}
@@ -638,7 +688,7 @@ func TestSetCurrentCaseSetsSessionCurrentCase(t *testing.T) {
 		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := usecase.SetCurrentCase(context.Background(), sessionId, caseId); err != nil {
+	if err := usecase.SetCurrentCase(context.Background(), sessionId, caseId, nil); err != nil {
 		t.Fatalf("SetCurrentCase() error = %v, want nil", err)
 	}
 
@@ -668,7 +718,7 @@ func TestRetryCaseSetsCurrentCase(t *testing.T) {
 		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := usecase.RetryCase(context.Background(), caseId); err != nil {
+	if err := usecase.RetryCase(context.Background(), caseId, nil); err != nil {
 		t.Fatalf("RetryCase() error = %v, want nil", err)
 	}
 
@@ -704,7 +754,7 @@ func TestAcceptRawAdvancesCursorToNextPendingCase(t *testing.T) {
 		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := usecase.AcceptRaw(context.Background(), rawId); err != nil {
+	if err := usecase.AcceptRaw(context.Background(), rawId, nil); err != nil {
 		t.Fatalf("AcceptRaw() error = %v, want nil", err)
 	}
 
@@ -747,7 +797,7 @@ func TestAcceptRawTriggersAnalyzingWhenNoPendingCaseRemains(t *testing.T) {
 		&fakeLlmClientFactory{err: errors.New("llm not configured for this test")}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := usecase.AcceptRaw(context.Background(), rawId); err != nil {
+	if err := usecase.AcceptRaw(context.Background(), rawId, nil); err != nil {
 		t.Fatalf("AcceptRaw() error = %v, want nil", err)
 	}
 
@@ -784,7 +834,7 @@ func TestAcceptRawDoesNotAdvanceCursorBeforeSecondRawAccepted(t *testing.T) {
 		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := usecase.AcceptRaw(context.Background(), rawId); err != nil {
+	if err := usecase.AcceptRaw(context.Background(), rawId, nil); err != nil {
 		t.Fatalf("AcceptRaw() error = %v, want nil", err)
 	}
 	if updates := caseRepo.StatusUpdatesForCase(caseId); len(updates) != 0 {
@@ -1113,7 +1163,7 @@ func TestRecordTestCaseResultDoesNothingElseWhilePendingCasesRemain(t *testing.T
 		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := impl.RecordTestCaseResult(context.Background(), firstCaseId, true); err != nil {
+	if err := impl.RecordTestCaseResult(context.Background(), firstCaseId, true, nil); err != nil {
 		t.Fatalf("RecordTestCaseResult() error = %v, want nil", err)
 	}
 	if coderRepo.activateCalls != 0 {
@@ -1146,7 +1196,7 @@ func TestRecordTestCaseResultCompletesSessionWhenAllPass(t *testing.T) {
 		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := impl.RecordTestCaseResult(context.Background(), onlyCaseId, true); err != nil {
+	if err := impl.RecordTestCaseResult(context.Background(), onlyCaseId, true, nil); err != nil {
 		t.Fatalf("RecordTestCaseResult() error = %v, want nil", err)
 	}
 	if coderRepo.activateCalls != 1 {
@@ -1196,7 +1246,7 @@ func TestRecordTestCaseResultTriggersRetryLoopWhenAnyFail(t *testing.T) {
 		llmFactory, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := impl.RecordTestCaseResult(context.Background(), failedCaseId, false); err != nil {
+	if err := impl.RecordTestCaseResult(context.Background(), failedCaseId, false, nil); err != nil {
 		t.Fatalf("RecordTestCaseResult() error = %v, want nil", err)
 	}
 
@@ -1249,7 +1299,7 @@ func TestRecordTestCaseResultIsIdempotentAgainstDoubleSubmit(t *testing.T) {
 		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := impl.RecordTestCaseResult(context.Background(), testCaseId, true); err != nil {
+	if err := impl.RecordTestCaseResult(context.Background(), testCaseId, true, nil); err != nil {
 		t.Fatalf("RecordTestCaseResult() error = %v, want nil", err)
 	}
 	if coderRepo.activateCalls != 0 {
@@ -1285,7 +1335,7 @@ func TestRecordTestCaseResultIgnoresSupersededCoderRound(t *testing.T) {
 		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
 	)
 
-	if err := impl.RecordTestCaseResult(context.Background(), testCaseId, true); err != nil {
+	if err := impl.RecordTestCaseResult(context.Background(), testCaseId, true, nil); err != nil {
 		t.Fatalf("RecordTestCaseResult() error = %v, want nil", err)
 	}
 	if coderRepo.activateCalls != 0 {
@@ -1324,5 +1374,129 @@ func TestRunTestCaseGenerationFailsSessionWhenNoPlansProposed(t *testing.T) {
 	}
 	if len(testCaseRepo.CreatedTestCaseIds()) != 0 {
 		t.Fatal("test cases were created despite the llm proposing zero plans")
+	}
+}
+
+func TestDeleteRecordSessionByIdForwardsToRepository(t *testing.T) {
+	id, deletedBy := uuid.New(), uuid.New()
+	sessionRepo := &fakeSessionRepository{}
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	if err := usecase.DeleteRecordSessionById(context.Background(), id, &deletedBy); err != nil {
+		t.Fatalf("DeleteRecordSessionById() error = %v, want nil", err)
+	}
+	if sessionRepo.deletedId != id || sessionRepo.deletedBy != &deletedBy {
+		t.Fatalf("session repository DeleteById() called with (%v, %v), want (%v, %v)", sessionRepo.deletedId, sessionRepo.deletedBy, id, &deletedBy)
+	}
+
+	sessionRepo.deleteErr = errors.New("not found")
+	if err := usecase.DeleteRecordSessionById(context.Background(), id, &deletedBy); !errors.Is(err, sessionRepo.deleteErr) {
+		t.Fatalf("DeleteRecordSessionById() error = %v, want the repository's error propagated", err)
+	}
+}
+
+func TestDeleteRecordCaseByIdForwardsToRepository(t *testing.T) {
+	id, deletedBy := uuid.New(), uuid.New()
+	caseRepo := &fakeCaseRepository{}
+	usecase := NewUsecaseImpl(
+		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	if err := usecase.DeleteRecordCaseById(context.Background(), id, &deletedBy); err != nil {
+		t.Fatalf("DeleteRecordCaseById() error = %v, want nil", err)
+	}
+	if caseRepo.deletedId != id {
+		t.Fatalf("case repository DeleteById() called with id %v, want %v", caseRepo.deletedId, id)
+	}
+}
+
+func TestDeleteRecordStateByIdForwardsToRepository(t *testing.T) {
+	id, deletedBy := uuid.New(), uuid.New()
+	caseRepo := &fakeCaseRepository{}
+	usecase := NewUsecaseImpl(
+		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	if err := usecase.DeleteRecordStateById(context.Background(), id, &deletedBy); err != nil {
+		t.Fatalf("DeleteRecordStateById() error = %v, want nil", err)
+	}
+	if caseRepo.deletedStateId != id {
+		t.Fatalf("case repository DeleteStateById() called with id %v, want %v", caseRepo.deletedStateId, id)
+	}
+}
+
+func TestDeleteRecordRawByIdForwardsToRepository(t *testing.T) {
+	id, deletedBy := uuid.New(), uuid.New()
+	caseRepo := &fakeCaseRepository{}
+	usecase := NewUsecaseImpl(
+		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	if err := usecase.DeleteRecordRawById(context.Background(), id, &deletedBy); err != nil {
+		t.Fatalf("DeleteRecordRawById() error = %v, want nil", err)
+	}
+	if caseRepo.deletedRawId != id {
+		t.Fatalf("case repository DeleteRawById() called with id %v, want %v", caseRepo.deletedRawId, id)
+	}
+}
+
+func TestDeleteStateCoderByIdForwardsToRepository(t *testing.T) {
+	id, deletedBy := uuid.New(), uuid.New()
+	coderRepo := &fakeCoderRepository{}
+	usecase := NewUsecaseImpl(
+		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	if err := usecase.DeleteStateCoderById(context.Background(), id, &deletedBy); err != nil {
+		t.Fatalf("DeleteStateCoderById() error = %v, want nil", err)
+	}
+	if coderRepo.deletedId != id {
+		t.Fatalf("coder repository DeleteById() called with id %v, want %v", coderRepo.deletedId, id)
+	}
+}
+
+func TestDeleteTestCaseByIdForwardsToRepository(t *testing.T) {
+	id, deletedBy := uuid.New(), uuid.New()
+	testCaseRepo := &fakeTestCaseRepository{}
+	usecase := NewUsecaseImpl(
+		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, testCaseRepo, &fakePublish{}, &noopLogger{},
+	)
+
+	if err := usecase.DeleteTestCaseById(context.Background(), id, &deletedBy); err != nil {
+		t.Fatalf("DeleteTestCaseById() error = %v, want nil", err)
+	}
+	if testCaseRepo.deletedId != id {
+		t.Fatalf("test case repository DeleteById() called with id %v, want %v", testCaseRepo.deletedId, id)
+	}
+}
+
+func TestDeleteTestCaseStateByIdForwardsToRepository(t *testing.T) {
+	id, deletedBy := uuid.New(), uuid.New()
+	testCaseRepo := &fakeTestCaseRepository{}
+	usecase := NewUsecaseImpl(
+		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, testCaseRepo, &fakePublish{}, &noopLogger{},
+	)
+
+	if err := usecase.DeleteTestCaseStateById(context.Background(), id, &deletedBy); err != nil {
+		t.Fatalf("DeleteTestCaseStateById() error = %v, want nil", err)
+	}
+	if testCaseRepo.deletedStateId != id {
+		t.Fatalf("test case repository DeleteStateById() called with id %v, want %v", testCaseRepo.deletedStateId, id)
 	}
 }

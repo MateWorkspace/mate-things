@@ -7,8 +7,14 @@ import (
 )
 
 type InfraredDeviceType struct {
-	Id   uuid.UUID
-	Name string
+	Id        uuid.UUID
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt *time.Time
+	DeletedAt *time.Time
+	CreatedBy *uuid.UUID
+	UpdatedBy *uuid.UUID
+	DeletedBy *uuid.UUID
 }
 
 type InfraredDevice struct {
@@ -16,6 +22,12 @@ type InfraredDevice struct {
 	InfraredDeviceTypeId uuid.UUID
 	Brand                string
 	Model                string
+	CreatedAt            time.Time
+	UpdatedAt            *time.Time
+	DeletedAt            *time.Time
+	CreatedBy            *uuid.UUID
+	UpdatedBy            *uuid.UUID
+	DeletedBy            *uuid.UUID
 }
 
 const (
@@ -38,6 +50,11 @@ type InfraredRecordSession struct {
 	CurrentRecordCaseId *uuid.UUID
 	IsCompleted         bool
 	CreatedAt           time.Time
+	UpdatedAt           *time.Time
+	DeletedAt           *time.Time
+	CreatedBy           *uuid.UUID
+	UpdatedBy           *uuid.UUID
+	DeletedBy           *uuid.UUID
 }
 
 type InfraredStateType string
@@ -52,6 +69,12 @@ type InfraredState struct {
 	InfraredDeviceTypeId uuid.UUID
 	Name                 string
 	Type                 InfraredStateType
+	CreatedAt            time.Time
+	UpdatedAt            *time.Time
+	DeletedAt            *time.Time
+	CreatedBy            *uuid.UUID
+	UpdatedBy            *uuid.UUID
+	DeletedBy            *uuid.UUID
 }
 
 type InfraredStateDeviceDefinition struct {
@@ -62,6 +85,12 @@ type InfraredStateDeviceDefinition struct {
 	Minimum          *float64
 	Maximum          *float64
 	Step             *float64
+	CreatedAt        time.Time
+	UpdatedAt        *time.Time
+	DeletedAt        *time.Time
+	CreatedBy        *uuid.UUID
+	UpdatedBy        *uuid.UUID
+	DeletedBy        *uuid.UUID
 }
 
 type InfraredRecordCaseStatus string
@@ -78,6 +107,12 @@ type InfraredStateDeviceRecordCase struct {
 	Step                    int32
 	Description             string
 	Status                  InfraredRecordCaseStatus
+	CreatedAt               time.Time
+	UpdatedAt               *time.Time
+	DeletedAt               *time.Time
+	CreatedBy               *uuid.UUID
+	UpdatedBy               *uuid.UUID
+	DeletedBy               *uuid.UUID
 }
 
 type InfraredStateDeviceRecordState struct {
@@ -85,6 +120,12 @@ type InfraredStateDeviceRecordState struct {
 	InfraredStateDeviceRecordCaseId uuid.UUID
 	InfraredStateId                 uuid.UUID
 	StateValue                      string
+	CreatedAt                       time.Time
+	UpdatedAt                       *time.Time
+	DeletedAt                       *time.Time
+	CreatedBy                       *uuid.UUID
+	UpdatedBy                       *uuid.UUID
+	DeletedBy                       *uuid.UUID
 }
 
 type InfraredRecordRawStatus string
@@ -101,6 +142,12 @@ type InfraredStateDeviceRecordRaw struct {
 	RawData                         []byte
 	Status                          InfraredRecordRawStatus
 	DiscardedReason                 *string
+	CreatedAt                       time.Time
+	UpdatedAt                       *time.Time
+	DeletedAt                       *time.Time
+	CreatedBy                       *uuid.UUID
+	UpdatedBy                       *uuid.UUID
+	DeletedBy                       *uuid.UUID
 }
 
 type InfraredRecordSessionEvent struct {
@@ -127,6 +174,11 @@ type InfraredStateCoder struct {
 	DetailReadme            string
 	Status                  InfraredStateCoderStatus
 	CreatedAt               time.Time
+	UpdatedAt               *time.Time
+	DeletedAt               *time.Time
+	CreatedBy               *uuid.UUID
+	UpdatedBy               *uuid.UUID
+	DeletedBy               *uuid.UUID
 }
 
 type InfraredTestCaseStatus string
@@ -143,6 +195,12 @@ type InfraredTestCase struct {
 	Step                 int32
 	Description          string
 	Status               InfraredTestCaseStatus
+	CreatedAt            time.Time
+	UpdatedAt            *time.Time
+	DeletedAt            *time.Time
+	CreatedBy            *uuid.UUID
+	UpdatedBy            *uuid.UUID
+	DeletedBy            *uuid.UUID
 }
 
 type InfraredTestCaseState struct {
@@ -150,4 +208,10 @@ type InfraredTestCaseState struct {
 	InfraredTestCaseId uuid.UUID
 	InfraredStateId    uuid.UUID
 	StateValue         string
+	CreatedAt          time.Time
+	UpdatedAt          *time.Time
+	DeletedAt          *time.Time
+	CreatedBy          *uuid.UUID
+	UpdatedBy          *uuid.UUID
+	DeletedBy          *uuid.UUID
 }

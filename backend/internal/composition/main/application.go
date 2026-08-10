@@ -15,6 +15,7 @@ import (
 	applicationauthapikey "github.com/MateWorkspace/mate-things/backend/internal/application/auth/api_key"
 	applicationauthsession "github.com/MateWorkspace/mate-things/backend/internal/application/auth/session"
 	applicationinfraredrecordsessionmanagement "github.com/MateWorkspace/mate-things/backend/internal/application/infrared/record_session_management"
+	applicationinfraredreferencemanagement "github.com/MateWorkspace/mate-things/backend/internal/application/infrared/reference_management"
 	applicationnodeclassmanagement "github.com/MateWorkspace/mate-things/backend/internal/application/node/class_management"
 	applicationnodeconfigparameter "github.com/MateWorkspace/mate-things/backend/internal/application/node/config_parameter"
 	applicationnodeconfigvalue "github.com/MateWorkspace/mate-things/backend/internal/application/node/config_value"
@@ -82,6 +83,7 @@ type application struct {
 	authApiKey  domainusecasesauth.ApiKey
 
 	infraredRecordSessionManagement domainusecasesinfrared.RecordSessionManagement
+	infraredReferenceManagement     domainusecasesinfrared.ReferenceManagement
 
 	nodeClassManagement    domainusecasesnode.ClassManagement
 	nodeConfigParameter    domainusecasesnode.ConfigParameter
@@ -189,6 +191,12 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		l.infra.nodePublisher,
 		l.infra.logger,
 	)
+	infraredReferenceManagement := applicationinfraredreferencemanagement.NewUsecaseImpl(
+		l.infra.infraredDeviceTypeRepository,
+		l.infra.infraredDeviceRepository,
+		l.infra.infraredStateRepository,
+		l.infra.infraredStateDeviceDefinitionRepository,
+	)
 
 	nodeClassManagement := applicationnodeclassmanagement.NewUsecaseImpl(nodeClassRepoCache, nodeClassActionRepoCache, l.infra.logger)
 	nodeConfigParameter := applicationnodeconfigparameter.NewUsecaseImpl(l.infra.firmwareConfigParameterRepository, l.infra.logger)
@@ -281,6 +289,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		authApiKey:  authApiKey,
 
 		infraredRecordSessionManagement: infraredRecordSessionManagement,
+		infraredReferenceManagement:     infraredReferenceManagement,
 
 		nodeClassManagement:    nodeClassManagement,
 		nodeConfigParameter:    nodeConfigParameter,

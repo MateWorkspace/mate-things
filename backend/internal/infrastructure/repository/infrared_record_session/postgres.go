@@ -31,8 +31,16 @@ func NewPostgresImpl(
 	}
 }
 
-func (p *postgresImpl) Create(ctx context.Context, nodeId uuid.UUID, infraredDeviceId uuid.UUID) (id uuid.UUID, err error) {
-	query, args, err := p.queryCreate(nodeId, infraredDeviceId)
+func scanInfraredRecordSession(row pgx.Row, item *domainmodels.InfraredRecordSession) error {
+	return row.Scan(
+		&item.Id, &item.NodeId, &item.InfraredDeviceId, &item.RecordingState,
+		&item.CurrentRecordCaseId, &item.IsCompleted, &item.CreatedAt,
+		&item.UpdatedAt, &item.DeletedAt, &item.CreatedBy, &item.UpdatedBy, &item.DeletedBy,
+	)
+}
+
+func (p *postgresImpl) Create(ctx context.Context, nodeId uuid.UUID, infraredDeviceId uuid.UUID, createdBy *uuid.UUID) (id uuid.UUID, err error) {
+	query, args, err := p.queryCreate(nodeId, infraredDeviceId, createdBy)
 	if err != nil {
 		return uuid.Nil, infrastructurerepositoryshared.QueryBuildError("failed to build create infrared_record_session query", err)
 	}
@@ -50,10 +58,7 @@ func (p *postgresImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels
 	}
 
 	var item domainmodels.InfraredRecordSession
-	if err := p.Dt.QueryRow(ctx, query, args...).Scan(
-		&item.Id, &item.NodeId, &item.InfraredDeviceId, &item.RecordingState,
-		&item.CurrentRecordCaseId, &item.IsCompleted, &item.CreatedAt,
-	); err != nil {
+	if err := scanInfraredRecordSession(p.Dt.QueryRow(ctx, query, args...), &item); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, infrastructurerepositoryshared.NotFound("infrared_record_session not found", err)
 		}
@@ -69,10 +74,7 @@ func (p *postgresImpl) GetActiveByNodeId(ctx context.Context, nodeId uuid.UUID) 
 	}
 
 	var item domainmodels.InfraredRecordSession
-	if err := p.Dt.QueryRow(ctx, query, args...).Scan(
-		&item.Id, &item.NodeId, &item.InfraredDeviceId, &item.RecordingState,
-		&item.CurrentRecordCaseId, &item.IsCompleted, &item.CreatedAt,
-	); err != nil {
+	if err := scanInfraredRecordSession(p.Dt.QueryRow(ctx, query, args...), &item); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
@@ -81,8 +83,8 @@ func (p *postgresImpl) GetActiveByNodeId(ctx context.Context, nodeId uuid.UUID) 
 	return &item, nil
 }
 
-func (p *postgresImpl) UpdateRecordingStateById(ctx context.Context, id uuid.UUID, recordingState string, isCompleted bool) error {
-	query, args, err := p.queryUpdateRecordingStateById(id, recordingState, isCompleted)
+func (p *postgresImpl) UpdateRecordingStateById(ctx context.Context, id uuid.UUID, recordingState string, isCompleted bool, updatedBy *uuid.UUID) error {
+	query, args, err := p.queryUpdateRecordingStateById(id, recordingState, isCompleted, updatedBy)
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build update infrared_record_session recording state query", err)
 	}
@@ -98,8 +100,8 @@ func (p *postgresImpl) UpdateRecordingStateById(ctx context.Context, id uuid.UUI
 	return nil
 }
 
-func (p *postgresImpl) UpdateCurrentRecordCaseIdById(ctx context.Context, id uuid.UUID, currentRecordCaseId *uuid.UUID) error {
-	query, args, err := p.queryUpdateCurrentRecordCaseIdById(id, currentRecordCaseId)
+func (p *postgresImpl) UpdateCurrentRecordCaseIdById(ctx context.Context, id uuid.UUID, currentRecordCaseId *uuid.UUID, updatedBy *uuid.UUID) error {
+	query, args, err := p.queryUpdateCurrentRecordCaseIdById(id, currentRecordCaseId, updatedBy)
 	if err != nil {
 		return infrastructurerepositoryshared.QueryBuildError("failed to build update infrared_record_session current record case id query", err)
 	}
@@ -112,5 +114,21 @@ func (p *postgresImpl) UpdateCurrentRecordCaseIdById(ctx context.Context, id uui
 		return infrastructurerepositoryshared.NotFound("infrared_record_session not found", nil)
 	}
 
+	return nil
+}
+
+func (p *postgresImpl) DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
+	query, args, err := p.queryDeleteById(id, deletedBy)
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build delete infrared_record_session query", err)
+	}
+
+	commandTag, err := p.Dt.Exec(ctx, query, args...)
+	if err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to delete infrared_record_session", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return infrastructurerepositoryshared.NotFound("infrared_record_session not found", nil)
+	}
 	return nil
 }
