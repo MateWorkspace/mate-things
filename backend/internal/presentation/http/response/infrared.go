@@ -108,3 +108,23 @@ func InfraredStateDeviceRecordCases(cases []domainusecasesinfrared.CaseWithState
 	}
 	return responses
 }
+
+type InfraredStateCoderResponse struct {
+	Id            string `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+	EncoderSource string `json:"encoder_source"`
+	DecoderSource string `json:"decoder_source"`
+	SummaryReadme string `json:"summary_readme"`
+	DetailReadme  string `json:"detail_readme"`
+	Status        string `json:"status" example:"UNVERIFIED"`
+}
+
+func InfraredStateCoder(model domainmodels.InfraredStateCoder) InfraredStateCoderResponse {
+	return InfraredStateCoderResponse{
+		Id:            UUIDString(model.Id),
+		EncoderSource: model.EncoderSource,
+		DecoderSource: model.DecoderSource,
+		SummaryReadme: model.SummaryReadme,
+		DetailReadme:  model.DetailReadme,
+		Status:        string(model.Status),
+	}
+}

@@ -259,3 +259,34 @@ func (h *handler) RecordSessionCaseCurrentPost(c *echo.Context) error {
 
 	return c.NoContent(http.StatusNoContent)
 }
+
+// RecordSessionCoderGetById godoc
+//
+// @Summary Infrared Record Session Coder Get By ID
+// @Tags Infrared
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 200 {object} presentationhttpresponse.InfraredStateCoderResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/infrared/record-sessions/{id}/coder [get]
+func (h *handler) RecordSessionCoderGetById(c *echo.Context) error {
+	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	coder, err := h.recordSessionUseCase.GetCoderBySessionId(c.Request().Context(), id)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	if coder == nil {
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("coder"))
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.InfraredStateCoder(*coder))
+}
