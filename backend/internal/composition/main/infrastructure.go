@@ -46,6 +46,7 @@ import (
 	infrastructurerepositoryinfraredstatecoder "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state_coder"
 	infrastructurerepositoryinfraredstatedevicedefinition "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state_device_definition"
 	infrastructurerepositoryinfraredstatedevicerecordcase "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state_device_record_case"
+	infrastructurerepositoryinfraredtestcase "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_test_case"
 	infrastructurerepositoryllmconfig "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/llm_config"
 	infrastructurerepositorynode "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node"
 	infrastructurerepositorynodeclass "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/node_class"
@@ -84,6 +85,7 @@ type infrastructure struct {
 	infraredRecordSessionRepository         domaincontractsrepository.InfraredRecordSession
 	infraredStateDeviceRecordCaseRepository domaincontractsrepository.InfraredStateDeviceRecordCase
 	infraredStateCoderRepository            domaincontractsrepository.InfraredStateCoder
+	infraredTestCaseRepository              domaincontractsrepository.InfraredTestCase
 	nodeRepository                          domaincontractsrepository.Node
 	nodeConfigValueRepository               domaincontractsrepository.NodeConfigValue
 	nodeLogRepository                       domaincontractsrepository.NodeLog
@@ -161,6 +163,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	infraredRecordSessionRepository := infrastructurerepositoryinfraredrecordsession.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	infraredStateDeviceRecordCaseRepository := infrastructurerepositoryinfraredstatedevicerecordcase.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	infraredStateCoderRepository := infrastructurerepositoryinfraredstatecoder.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredTestCaseRepository := infrastructurerepositoryinfraredtestcase.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeRepository := infrastructurerepositorynode.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeConfigValueRepository := infrastructurerepositorynodeconfigvalue.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeLogRepository := infrastructurerepositorynodelog.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -230,6 +233,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		infraredRecordSessionRepository:         infraredRecordSessionRepository,
 		infraredStateDeviceRecordCaseRepository: infraredStateDeviceRecordCaseRepository,
 		infraredStateCoderRepository:            infraredStateCoderRepository,
+		infraredTestCaseRepository:              infraredTestCaseRepository,
 		nodeRepository:                          nodeRepository,
 		nodeConfigValueRepository:               nodeConfigValueRepository,
 		nodeLogRepository:                       nodeLogRepository,

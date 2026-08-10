@@ -185,6 +185,8 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		l.infra.nodeRepository,
 		l.infra.encoderRunner,
 		l.infra.infraredStateCoderRepository,
+		l.infra.infraredTestCaseRepository,
+		l.infra.nodePublisher,
 		l.infra.logger,
 	)
 
