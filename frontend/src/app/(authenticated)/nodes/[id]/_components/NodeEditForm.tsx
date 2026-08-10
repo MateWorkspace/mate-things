@@ -1,13 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useActionState, useContext, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
-import { ToastContext } from "@/components/ui/toast-provider";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { NodeResponse } from "@/lib/api";
 
 import { saveNodeAction, type NodeActionState } from "../_lib/actions";
@@ -56,29 +59,10 @@ function NodeEditDialog({ node, onClose }: NodeEditDialogProps) {
     saveNodeAction,
     INITIAL_STATE,
   );
-  const toast = useContext(ToastContext);
-  const router = useRouter();
-  const lastShown = useRef<NodeActionState | null>(null);
-
-  useEffect(() => {
-    if (
-      state.status === "idle" ||
-      !state.title ||
-      state === lastShown.current
-    ) {
-      return;
-    }
-
-    lastShown.current = state;
-    const message = state.message ?? "";
-
-    if (state.status === "success") {
-      toast?.success(state.title, message);
-      router.refresh();
-    } else {
-      toast?.error(state.title, message);
-    }
-  }, [state, toast, router]);
+  const formRef = useRef<HTMLFormElement>(null);
+  useActionFeedback(state);
+  useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
 
   return (
     <Dialog
@@ -86,8 +70,14 @@ function NodeEditDialog({ node, onClose }: NodeEditDialogProps) {
       onClose={onClose}
       title={`Edit ${node.name}`}
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        ref={formRef}
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="node_id" value={node.id} />
 
         <div>
@@ -102,14 +92,9 @@ function NodeEditDialog({ node, onClose }: NodeEditDialogProps) {
               state.fieldErrors?.name ? "node-edit-name-error" : undefined
             }
           />
-          {state.fieldErrors?.name ? (
-            <p
-              id="node-edit-name-error"
-              className="text-critical mt-1.5 text-sm"
-            >
-              {state.fieldErrors.name}
-            </p>
-          ) : null}
+          <FieldError id="node-edit-name-error">
+            {state.fieldErrors?.name}
+          </FieldError>
         </div>
 
         <div>
@@ -136,16 +121,7 @@ function NodeEditDialog({ node, onClose }: NodeEditDialogProps) {
           />
         </div>
 
-        <p
-          aria-live="polite"
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
 
         <div className="flex flex-wrap justify-end gap-2">
           <Button

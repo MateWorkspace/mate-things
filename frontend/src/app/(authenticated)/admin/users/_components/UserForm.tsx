@@ -1,13 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useId, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useState } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { RoleResponse } from "@/lib/api/roles";
 import type { UserResponse } from "@/lib/api/users";
 
@@ -16,21 +18,7 @@ import {
   deleteUserAction,
   updateUserAction,
 } from "../_lib/actions";
-import { EMPTY_USER_STATE, type UserActionState } from "../_lib/state";
-
-function useActionToast(state: UserActionState): void {
-  const toast = useToast();
-  const lastShown = useRef<UserActionState | null>(null);
-  useEffect(() => {
-    if (state.status === "idle" || state === lastShown.current) return;
-    lastShown.current = state;
-    if (state.status === "error") {
-      toast.error(state.title ?? "Something went wrong", state.message ?? "");
-    } else {
-      toast.success(state.title ?? "Success", state.message ?? "");
-    }
-  }, [state, toast]);
-}
+import { EMPTY_USER_STATE } from "../_lib/state";
 
 interface UserFormProps {
   roles: readonly RoleResponse[];
@@ -116,14 +104,13 @@ function EditorDialog({
     user ? updateUserAction : createUserAction,
     EMPTY_USER_STATE,
   );
-  useActionToast(state);
-  const router = useRouter();
+  useActionFeedback(state);
+  useRefreshAfterAction(state);
   useEffect(() => {
     if (state.status === "success") {
       onClose();
-      router.refresh();
     }
-  }, [state, onClose, router]);
+  }, [state, onClose]);
   const id = useId();
 
   // Controlled, not defaultValue: React resets a <form action={...}> to its
@@ -144,8 +131,13 @@ function EditorDialog({
       onClose={onClose}
       title={user ? `Edit ${user.name}` : "Create user"}
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={action} className="space-y-4">
+      <form
+        action={action}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         {user ? <input type="hidden" name="user_id" value={user.id} /> : null}
         <Field
           id={`${id}-name`}
@@ -240,7 +232,7 @@ function DeleteDialog({
     deleteUserAction,
     EMPTY_USER_STATE,
   );
-  useActionToast(state);
+  useActionFeedback(state);
   const [confirmation, setConfirmation] = useState("");
   return (
     <Dialog
@@ -248,8 +240,13 @@ function DeleteDialog({
       onClose={onClose}
       title={`Delete ${user.name}`}
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={action} className="space-y-4">
+      <form
+        action={action}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="user_id" value={user.id} />
         <input type="hidden" name="username" value={user.username} />
         <p className="border-critical/40 bg-critical/5 rounded-xl border p-4 text-sm">
@@ -267,13 +264,18 @@ function DeleteDialog({
         />
         <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <button
             type="submit"
             disabled={pending || confirmation !== user.username}
-            className="bg-critical text-background hover:opacity-90 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-critical text-background rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pending ? "Deleting…" : "Delete account"}
           </button>
@@ -315,26 +317,7 @@ function Field({
         aria-invalid={Boolean(error)}
         autoComplete={autoComplete}
       />
-      {error ? <p className="text-critical mt-1 text-sm">{error}</p> : null}
+      <FieldError>{error}</FieldError>
     </div>
-  );
-}
-
-function ActionMessage({
-  state,
-}: {
-  state: { status: string; message?: string };
-}) {
-  return (
-    <p
-      aria-live="polite"
-      className={
-        state.status === "error"
-          ? "text-critical text-sm"
-          : "text-success text-sm"
-      }
-    >
-      {state.message}
-    </p>
   );
 }

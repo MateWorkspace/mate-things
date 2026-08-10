@@ -2,6 +2,7 @@
 
 import { useActionState, useId } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
@@ -116,6 +117,7 @@ function ConfigParameterForm({
   return (
     <form
       action={formAction}
+      onReset={(event) => event.preventDefault()}
       className="border-border bg-surface rounded-2xl border p-4"
     >
       <input type="hidden" name="node_id" value={nodeId} />
@@ -162,16 +164,7 @@ function ConfigParameterForm({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <p
-          aria-live="polite"
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
         {editable ? (
           <Button type="submit" disabled={isPending}>
             {isPending ? "Saving…" : "Save value"}

@@ -13,6 +13,7 @@ interface DialogProps {
   title: string;
   children: ReactNode;
   variant?: DialogVariant;
+  dismissible?: boolean;
 }
 
 export default function Dialog({
@@ -21,6 +22,7 @@ export default function Dialog({
   title,
   children,
   variant = "default",
+  dismissible = true,
 }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -52,7 +54,13 @@ export default function Dialog({
         const closeButton = dialog.querySelector<HTMLButtonElement>(
           "[data-dialog-close]",
         );
-        (closeButton ?? dialog).focus();
+        const firstControl = dialog.querySelector<HTMLElement>(
+          "button:not(:disabled):not([data-dialog-close]), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex='-1'])",
+        );
+        (closeButton && !closeButton.disabled
+          ? closeButton
+          : (firstControl ?? dialog)
+        ).focus();
       });
       return;
     }
@@ -73,10 +81,10 @@ export default function Dialog({
       }
       const target = event.target;
       event.preventDefault();
-      if (
-        target instanceof Element &&
-        target.closest("[data-escape-local]")
-      ) {
+      if (target instanceof Element && target.closest("[data-escape-local]")) {
+        return;
+      }
+      if (!dismissible) {
         return;
       }
       onClose();
@@ -84,7 +92,7 @@ export default function Dialog({
 
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [onClose, open]);
+  }, [dismissible, onClose, open]);
 
   return (
     <dialog
@@ -94,10 +102,12 @@ export default function Dialog({
       aria-modal="true"
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        if (dismissible) {
+          onClose();
+        }
       }}
       onClick={(event) => {
-        if (event.target === event.currentTarget) {
+        if (dismissible && event.target === event.currentTarget) {
           onClose();
         }
       }}
@@ -128,10 +138,15 @@ export default function Dialog({
           </h2>
           <IconButton
             data-dialog-close
+            disabled={!dismissible}
             aria-label={
               variant === "drawer" ? "Close navigation" : `Close ${title}`
             }
-            onClick={onClose}
+            onClick={() => {
+              if (dismissible) {
+                onClose();
+              }
+            }}
           >
             <X aria-hidden="true" className="size-5" />
           </IconButton>

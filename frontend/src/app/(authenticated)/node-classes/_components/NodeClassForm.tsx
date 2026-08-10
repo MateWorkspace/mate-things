@@ -1,20 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import {
-  useActionState,
-  useContext,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
+import { useActionState, useId, useState } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
-import { ToastContext } from "@/components/ui/toast-provider";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { NodeClassResponse } from "@/lib/api/node-classes";
 
 import {
@@ -30,32 +25,6 @@ interface NodeClassFormProps {
   canDelete?: boolean;
   canEdit?: boolean;
   nodeClass?: NodeClassResponse;
-}
-
-function useActionToast(state: FormActionState): void {
-  const toast = useContext(ToastContext);
-  const router = useRouter();
-  const lastShown = useRef<FormActionState | null>(null);
-
-  useEffect(() => {
-    if (
-      state.status === "idle" ||
-      !state.title ||
-      state === lastShown.current
-    ) {
-      return;
-    }
-
-    lastShown.current = state;
-    const message = state.message ?? "";
-
-    if (state.status === "success") {
-      toast?.success(state.title, message);
-      router.refresh();
-    } else {
-      toast?.error(state.title, message);
-    }
-  }, [state, toast, router]);
 }
 
 export default function NodeClassForm({
@@ -134,7 +103,8 @@ function NodeClassEditorDialog({
   const action = nodeClass ? updateNodeClassAction : createNodeClassAction;
   const [state, formAction, isPending] = useActionState(action, INITIAL_STATE);
   const fieldId = useId();
-  useActionToast(state);
+  useActionFeedback(state);
+  useRefreshAfterAction(state);
   const close = () => {
     if (!isPending) {
       onClose();
@@ -147,8 +117,13 @@ function NodeClassEditorDialog({
       onClose={close}
       title={nodeClass ? `Edit ${nodeClass.name}` : "Create node class"}
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         {nodeClass ? (
           <input type="hidden" name="node_class_id" value={nodeClass.id} />
         ) : null}
@@ -165,14 +140,9 @@ function NodeClassEditorDialog({
               state.fieldErrors?.name ? `${fieldId}-name-error` : undefined
             }
           />
-          {state.fieldErrors?.name ? (
-            <p
-              id={`${fieldId}-name-error`}
-              className="text-critical mt-1.5 text-sm"
-            >
-              {state.fieldErrors.name}
-            </p>
-          ) : null}
+          <FieldError id={`${fieldId}-name-error`}>
+            {state.fieldErrors?.name}
+          </FieldError>
         </div>
 
         <div>
@@ -186,16 +156,7 @@ function NodeClassEditorDialog({
           />
         </div>
 
-        <p
-          aria-live="polite"
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
 
         <div className="flex flex-wrap justify-end gap-2">
           <Button
@@ -242,8 +203,13 @@ function DeleteNodeClassDialog({
       onClose={close}
       title={`Delete ${nodeClass.name}`}
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="node_class_id" value={nodeClass.id} />
         <input type="hidden" name="node_class_name" value={nodeClass.name} />
 
@@ -277,19 +243,12 @@ function DeleteNodeClassDialog({
             }
             onChange={(event) => setConfirmation(event.target.value)}
           />
-          {state.fieldErrors?.confirmation ? (
-            <p
-              id={`${fieldId}-confirmation-error`}
-              className="text-critical mt-1.5 text-sm"
-            >
-              {state.fieldErrors.confirmation}
-            </p>
-          ) : null}
+          <FieldError id={`${fieldId}-confirmation-error`}>
+            {state.fieldErrors?.confirmation}
+          </FieldError>
         </div>
 
-        <p aria-live="assertive" className="text-critical text-sm">
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
 
         <div className="flex flex-wrap justify-end gap-2">
           <Button

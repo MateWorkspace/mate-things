@@ -1,9 +1,9 @@
-export interface PreferencesActionState {
-  status: "idle" | "success" | "error";
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
+import {
+  INITIAL_ACTION_STATE,
+  type ActionState,
+} from "@/lib/forms/action-state";
 
-export const EMPTY_PREFERENCES_STATE: PreferencesActionState = {
-  status: "idle",
-};
+export type PreferencesActionState = ActionState<string>;
+
+export const EMPTY_PREFERENCES_STATE: PreferencesActionState =
+  INITIAL_ACTION_STATE;

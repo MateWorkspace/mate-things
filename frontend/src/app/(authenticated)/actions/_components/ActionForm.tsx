@@ -1,14 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useId, useState } from "react";
+import { useActionState, useId, useState } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { ActionResponse } from "@/lib/api/actions";
 import type { PayloadSchemaResponse } from "@/lib/api/payload-schemas";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
   createActionFormAction,
@@ -33,14 +34,19 @@ export default function ActionForm({
   canDelete = false,
 }: ActionFormProps) {
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorGeneration, setEditorGeneration] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteGeneration, setDeleteGeneration] = useState(0);
   return (
     <div className="flex flex-wrap gap-2">
       {canEdit ? (
         <Button
           type="button"
           variant={action ? "secondary" : "primary"}
-          onClick={() => setEditorOpen(true)}
+          onClick={() => {
+            setEditorGeneration((generation) => generation + 1);
+            setEditorOpen(true);
+          }}
         >
           {action ? "Edit action" : "Create action"}
         </Button>
@@ -49,13 +55,17 @@ export default function ActionForm({
         <button
           type="button"
           className="border-critical text-critical hover:bg-critical/10 active:bg-critical/15 focus-visible:ring-critical rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
-          onClick={() => setDeleteOpen(true)}
+          onClick={() => {
+            setDeleteGeneration((generation) => generation + 1);
+            setDeleteOpen(true);
+          }}
         >
           Delete action
         </button>
       ) : null}
       {canEdit ? (
         <EditorDialog
+          key={editorGeneration}
           action={action}
           schemas={schemas}
           open={editorOpen}
@@ -64,6 +74,7 @@ export default function ActionForm({
       ) : null}
       {action && canDelete ? (
         <DeleteDialog
+          key={deleteGeneration}
           action={action}
           open={deleteOpen}
           onClose={() => setDeleteOpen(false)}
@@ -86,12 +97,7 @@ function EditorDialog({
     action ? updateActionFormAction : createActionFormAction,
     EMPTY_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  useRefreshAfterAction(state);
   const id = useId();
   return (
     <Dialog
@@ -99,8 +105,13 @@ function EditorDialog({
       onClose={onClose}
       title={action ? `Edit ${action.name}` : "Create action"}
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         {action ? (
           <input type="hidden" name="action_id" value={action.id} />
         ) : null}
@@ -173,16 +184,7 @@ function EditorDialog({
             defaultValue={action?.payload_schema_version}
           />
         </div>
-        <p
-          aria-live="polite"
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
           <Button
             type="button"
@@ -222,8 +224,13 @@ function DeleteDialog({
       onClose={onClose}
       title={`Delete ${action.name}`}
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="action_id" value={action.id} />
         <input type="hidden" name="action_name" value={action.name} />
         <p className="text-sm">
@@ -239,11 +246,14 @@ function DeleteDialog({
             onChange={(event) => setConfirmation(event.target.value)}
           />
         </div>
-        <p aria-live="assertive" className="text-critical text-sm">
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <button

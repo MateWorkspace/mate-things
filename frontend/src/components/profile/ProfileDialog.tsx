@@ -44,6 +44,7 @@ export default function ProfileDialog({
   const tabs = canChangePassword ? [PROFILE_TAB, SECURITY_TAB] : [PROFILE_TAB];
   const [activeTab, setActiveTab] = useState(PROFILE_TAB.id);
   const [editing, setEditing] = useState(false);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     if (!canEditProfile) {
@@ -58,10 +59,11 @@ export default function ProfileDialog({
   }, [activeTab, canChangePassword]);
 
   const closeDialog = useCallback(() => {
+    if (pending) return;
     setActiveTab(PROFILE_TAB.id);
     setEditing(false);
     onClose();
-  }, [onClose]);
+  }, [onClose, pending]);
 
   return (
     <Dialog
@@ -69,11 +71,13 @@ export default function ProfileDialog({
       onClose={closeDialog}
       title="Your profile"
       variant="sheet"
+      dismissible={!pending}
     >
       <Tabs
         tabs={tabs}
         activeTab={activeTab}
         onChange={(tab) => {
+          if (pending) return;
           setActiveTab(tab);
           setEditing(false);
         }}
@@ -88,7 +92,11 @@ export default function ProfileDialog({
           className="pt-5"
         >
           {editing ? (
-            <ProfileForm user={user} onCancel={() => setEditing(false)} />
+            <ProfileForm
+              user={user}
+              onCancel={() => setEditing(false)}
+              onPendingChange={setPending}
+            />
           ) : (
             <ProfileView
               user={user}
@@ -105,13 +113,18 @@ export default function ProfileDialog({
           aria-labelledby={getTabId(SECURITY_TAB.panelId)}
           className="pt-5"
         >
-          <SecurityForm />
+          <SecurityForm onPendingChange={setPending} />
         </section>
       )}
 
       <footer className="border-border mt-6 flex items-center justify-between gap-3 border-t pt-4">
         <LogoutButton />
-        <Button type="button" variant="secondary" onClick={closeDialog}>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={pending}
+          onClick={closeDialog}
+        >
           Close
         </Button>
       </footer>

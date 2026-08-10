@@ -11,14 +11,10 @@ import {
   type FirmwareConfigSchemaItem,
 } from "@/lib/api/firmwares";
 import { dispatchOtaByNodeId } from "@/lib/api/ota";
+import type { ActionState } from "@/lib/forms/action-state";
 import { requireSessionContext } from "@/lib/session";
 
-export interface FormActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
+export type FormActionState = ActionState<string>;
 
 export interface DispatchOtaInput {
   nodeId: string;

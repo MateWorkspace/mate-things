@@ -12,13 +12,9 @@ import {
   updateNodeClass,
 } from "@/lib/api/node-classes";
 import { requireSessionContext } from "@/lib/session";
+import type { ActionState } from "@/lib/forms/action-state";
 
-export interface FormActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
+export type FormActionState = ActionState<string>;
 
 function permissionDenied(): FormActionState {
   return {

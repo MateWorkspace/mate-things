@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import ResourceCard from "@/components/collection/ResourceCard";
 import Button from "@/components/ui/button";
@@ -10,6 +10,7 @@ import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { PermissionResponse } from "@/lib/api/permissions";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import { removePermissionAction, savePermissionAction } from "../_lib/actions";
 import { EMPTY_ACCESS_STATE } from "../_lib/state";
@@ -23,7 +24,9 @@ export default function PermissionCard({
 }) {
   const allowed = new Set(grants);
   const [editOpen, setEditOpen] = useState(false);
+  const [editGeneration, setEditGeneration] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteGeneration, setDeleteGeneration] = useState(0);
   return (
     <ResourceCard title={permission.name}>
       <p className="text-foreground/70 min-h-15">
@@ -31,7 +34,13 @@ export default function PermissionCard({
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         {allowed.has("permission:set") ? (
-          <Button variant="secondary" onClick={() => setEditOpen(true)}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setEditGeneration((generation) => generation + 1);
+              setEditOpen(true);
+            }}
+          >
             Edit
           </Button>
         ) : null}
@@ -43,18 +52,26 @@ export default function PermissionCard({
           label="Preferences"
         />
         {allowed.has("permission:remove") ? (
-          <Button variant="critical" onClick={() => setDeleteOpen(true)}>
+          <Button
+            variant="critical"
+            onClick={() => {
+              setDeleteGeneration((generation) => generation + 1);
+              setDeleteOpen(true);
+            }}
+          >
             Delete
           </Button>
         ) : null}
       </div>
       <PermissionDialog
+        key={editGeneration}
         permission={permission}
         open={editOpen}
         onClose={() => setEditOpen(false)}
         title={`Edit ${permission.name}`}
       />
       <DeletePermissionDialog
+        key={deleteGeneration}
         permission={permission}
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
@@ -78,20 +95,20 @@ export function PermissionDialog({
     savePermissionAction,
     EMPTY_ACCESS_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  useRefreshAfterAction(state);
   return (
     <Dialog
       open={open && state.status !== "success"}
       onClose={onClose}
       title={title}
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={action} className="space-y-4">
+      <form
+        action={action}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         {permission ? (
           <input type="hidden" name="permission_id" value={permission.id} />
         ) : null}
@@ -115,17 +132,14 @@ export function PermissionDialog({
             className="border-control-border bg-background w-full rounded-xl border p-3 text-sm"
           />
         </div>
-        <p
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={pending}>
@@ -150,20 +164,20 @@ function DeletePermissionDialog({
     removePermissionAction,
     EMPTY_ACCESS_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  useRefreshAfterAction(state);
   return (
     <Dialog
       open={open && state.status !== "success"}
       onClose={onClose}
       title={`Delete ${permission.name}`}
       variant="sheet"
+      dismissible={!pending}
     >
-      <form action={action} className="space-y-4">
+      <form
+        action={action}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="permission_id" value={permission.id} />
         <input type="hidden" name="permission_name" value={permission.name} />
         <p className="bg-muted rounded-xl p-4 text-sm">
@@ -175,17 +189,14 @@ function DeletePermissionDialog({
           aria-label="Confirm permission name"
           required
         />
-        <p
-          className={
-            state.status === "error"
-              ? "text-critical text-sm"
-              : "text-success text-sm"
-          }
-        >
-          {state.message}
-        </p>
+        <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={pending}>

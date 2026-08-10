@@ -2,14 +2,10 @@
 
 import { ApiError } from "@/lib/api/client";
 import { updateProfile, updateProfilePassword } from "@/lib/api/profile";
+import type { ActionState } from "@/lib/forms/action-state";
 import { requireSessionContext } from "@/lib/session";
 
-export interface FormActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
+export type FormActionState = ActionState<string>;
 
 function permissionDenied(): FormActionState {
   return {

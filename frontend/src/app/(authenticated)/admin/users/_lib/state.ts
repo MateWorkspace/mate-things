@@ -1,8 +1,8 @@
-export interface UserActionState {
-  status: "idle" | "success" | "error";
-  title?: string;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
+import {
+  INITIAL_ACTION_STATE,
+  type ActionState,
+} from "@/lib/forms/action-state";
 
-export const EMPTY_USER_STATE: UserActionState = { status: "idle" };
+export type UserActionState = ActionState<string>;
+
+export const EMPTY_USER_STATE: UserActionState = INITIAL_ACTION_STATE;

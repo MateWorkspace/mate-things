@@ -1,15 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import {
-  useActionState,
-  useEffect,
-  useId,
-  useState,
-  type ChangeEvent,
-} from "react";
+import { useActionState, useId, useState, type ChangeEvent } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
@@ -18,6 +13,7 @@ import type {
   FirmwareConfigSchemaItem,
   FirmwareResponse,
 } from "@/lib/api/firmwares";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
   createFirmwareAction,
@@ -46,21 +42,6 @@ interface SchemaRow extends FirmwareConfigSchemaItem {
 }
 
 const INITIAL_STATE: FormActionState = { status: "idle" };
-
-function StateMessage({ state }: { state: FormActionState }) {
-  return (
-    <p
-      aria-live={state.status === "error" ? "assertive" : "polite"}
-      className={
-        state.status === "error"
-          ? "text-critical text-sm"
-          : "text-success text-sm"
-      }
-    >
-      {state.message}
-    </p>
-  );
-}
 
 function NodeClassField({
   defaultValue,
@@ -231,12 +212,7 @@ function UploadDialog({
     createFirmwareAction,
     INITIAL_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  useRefreshAfterAction(state);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -248,8 +224,13 @@ function UploadDialog({
       onClose={close}
       title="Upload firmware"
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <div>
           <Label htmlFor={`${id}-name`}>Firmware name</Label>
           <Input id={`${id}-name`} name="name" required />
@@ -264,19 +245,11 @@ function UploadDialog({
             accept=".bin,application/octet-stream"
             required
           />
-          {state.fieldErrors?.file ? (
-            <p className="text-critical mt-1.5 text-sm">
-              {state.fieldErrors.file}
-            </p>
-          ) : null}
+          <FieldError>{state.fieldErrors?.file}</FieldError>
         </div>
         <ConfigSchemaFields initialSchema={[]} />
-        {state.fieldErrors?.config_schema ? (
-          <p className="text-critical text-sm">
-            {state.fieldErrors.config_schema}
-          </p>
-        ) : null}
-        <StateMessage state={state} />
+        <FieldError>{state.fieldErrors?.config_schema}</FieldError>
+        <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"
@@ -310,12 +283,7 @@ function EditDialog({
     updateFirmwareAction,
     INITIAL_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  useRefreshAfterAction(state);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -327,8 +295,13 @@ function EditDialog({
       onClose={close}
       title={`Edit ${firmware.name}`}
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="firmware_id" value={firmware.id} />
         <div>
           <Label htmlFor={`${id}-name`}>Firmware name</Label>
@@ -344,7 +317,7 @@ function EditDialog({
           fieldId={id}
           nodeClasses={nodeClasses}
         />
-        <StateMessage state={state} />
+        <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"
@@ -378,12 +351,7 @@ function ReplaceDialog({
     replaceFirmwareBinaryAction,
     INITIAL_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  useRefreshAfterAction(state);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -395,8 +363,13 @@ function ReplaceDialog({
       onClose={close}
       title={`Replace ${firmware.name} binary`}
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="firmware_id" value={firmware.id} />
         <p className="border-warning/40 bg-warning/10 rounded-xl border p-4 text-sm">
           Replacing the binary also replaces its submitted configuration schema.
@@ -411,19 +384,11 @@ function ReplaceDialog({
             accept=".bin,application/octet-stream"
             required
           />
-          {state.fieldErrors?.file ? (
-            <p className="text-critical mt-1.5 text-sm">
-              {state.fieldErrors.file}
-            </p>
-          ) : null}
+          <FieldError>{state.fieldErrors?.file}</FieldError>
         </div>
         <ConfigSchemaFields initialSchema={configSchema} />
-        {state.fieldErrors?.config_schema ? (
-          <p className="text-critical text-sm">
-            {state.fieldErrors.config_schema}
-          </p>
-        ) : null}
-        <StateMessage state={state} />
+        <FieldError>{state.fieldErrors?.config_schema}</FieldError>
+        <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"
@@ -467,8 +432,13 @@ function DeleteDialog({
       onClose={close}
       title={`Delete ${firmware.name}`}
       variant="sheet"
+      dismissible={!isPending}
     >
-      <form action={formAction} className="space-y-4">
+      <form
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="space-y-4"
+      >
         <input type="hidden" name="firmware_id" value={firmware.id} />
         <p className="border-critical/40 bg-critical/5 rounded-xl border p-4 text-sm">
           Nodes or other dependent resources can prevent deletion. Enter the
@@ -484,13 +454,9 @@ function DeleteDialog({
             autoComplete="off"
             onChange={(event) => setConfirmation(event.target.value)}
           />
-          {state.fieldErrors?.confirmation ? (
-            <p className="text-critical mt-1.5 text-sm">
-              {state.fieldErrors.confirmation}
-            </p>
-          ) : null}
+          <FieldError>{state.fieldErrors?.confirmation}</FieldError>
         </div>
-        <StateMessage state={state} />
+        <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"

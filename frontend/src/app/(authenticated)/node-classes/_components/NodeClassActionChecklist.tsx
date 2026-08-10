@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 
+import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
+import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { ActionResponse } from "@/lib/api/actions";
 
 import { updateNodeClassActionsAction } from "../_lib/actions";
@@ -26,15 +27,14 @@ export default function NodeClassActionChecklist({
     updateNodeClassActionsAction,
     EMPTY_STATE,
   );
-  const router = useRouter();
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
+  useRefreshAfterAction(state);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form
+      action={formAction}
+      onReset={(event) => event.preventDefault()}
+      className="space-y-4"
+    >
       <input type="hidden" name="node_class_id" value={nodeClassId} />
       <fieldset className="border-border rounded-xl border p-4">
         <legend className="sr-only">Compatible actions</legend>
@@ -69,16 +69,7 @@ export default function NodeClassActionChecklist({
           ))}
         </div>
       </fieldset>
-      <p
-        aria-live="polite"
-        className={
-          state.status === "error"
-            ? "text-critical text-sm"
-            : "text-success text-sm"
-        }
-      >
-        {state.message}
-      </p>
+      <ActionMessage state={state} />
       {editable ? (
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save assignments"}
