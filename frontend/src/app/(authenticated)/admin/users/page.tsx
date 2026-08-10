@@ -10,6 +10,7 @@ import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
+import { getOptionalById } from "@/lib/api/optional";
 import { getRoleById, listAllRoles } from "@/lib/api/roles";
 import { listUsers } from "@/lib/api/users";
 import {
@@ -41,7 +42,7 @@ export default async function UsersPage({
     listUsers({ ...query, role_id: roleId }),
     canReadRoles ? listAllRoles() : Promise.resolve([]),
     canReadRoles && roleId
-      ? getRoleById(roleId).catch(() => null)
+      ? getOptionalById(() => getRoleById(roleId))
       : Promise.resolve(null),
   ]);
   const target = getOutOfRangePageRedirect("/admin/users", raw, users.page);
