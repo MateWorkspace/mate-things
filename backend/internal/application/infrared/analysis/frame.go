@@ -3,9 +3,13 @@ package applicationinfraredanalysis
 const frameGapThresholdMicros = 5000
 
 // SegmentFrames splits a flat mark/space duration sequence into candidate
-// frames, treating any value longer than frameGapThresholdMicros as an
-// inter-frame gap rather than a data bit. See this task's design note in
-// the implementation plan for why this threshold and not a per-protocol one.
+// frames, treating any SPACE (odd index — raw alternates mark, space,
+// mark, space...) longer than frameGapThresholdMicros as an inter-frame
+// gap rather than a data bit. Marks are never checked against this
+// threshold: a long header mark (e.g. ~9000µs, common in NEC-style
+// protocols) is not a gap and must not trigger a split. See this task's
+// design note in the implementation plan for why this threshold and not a
+// per-protocol one.
 func SegmentFrames(raw []int32) [][]int32 {
 	if len(raw) == 0 {
 		return nil
@@ -13,21 +17,13 @@ func SegmentFrames(raw []int32) [][]int32 {
 
 	var frames [][]int32
 	start := 0
-	i := 1
-	for i < len(raw) {
+	for i := 1; i < len(raw); i += 2 {
 		if raw[i] > frameGapThresholdMicros {
-			if i > start {
-				frames = append(frames, raw[start:i])
-			}
+			frames = append(frames, raw[start:i])
 			start = i + 1
-			i += 2 // Skip next index (likely a mark after the gap)
-		} else {
-			i++
 		}
 	}
-	if len(raw) > start {
-		frames = append(frames, raw[start:])
-	}
+	frames = append(frames, raw[start:])
 	return frames
 }
 

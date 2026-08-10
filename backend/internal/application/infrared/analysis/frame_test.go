@@ -6,14 +6,18 @@ import (
 )
 
 func TestSegmentFramesSplitsOnLongGap(t *testing.T) {
-	// header(9000,4500) + 2 data bits (560,560=0) (560,1690=1) + long gap(20000) + repeat frame
-	raw := []int32{9000, 4500, 560, 560, 560, 1690, 20000, 9000, 4500, 560, 560}
+	// header(9000,4500) + 2 data bits (560,560=0) (560,1690=1) + a trailing
+	// mark(560) whose SPACE is the long inter-frame gap(20000) + repeat
+	// frame. raw strictly alternates mark(even index), space(odd index);
+	// the gap must land on an odd index to be detected as a space, not a
+	// mark — a long header mark (9000µs) is not a gap.
+	raw := []int32{9000, 4500, 560, 560, 560, 1690, 560, 20000, 9000, 4500, 560, 560}
 	frames := SegmentFrames(raw)
 	if len(frames) != 2 {
 		t.Fatalf("SegmentFrames() returned %d frames, want 2", len(frames))
 	}
-	if !reflect.DeepEqual(frames[0], []int32{9000, 4500, 560, 560, 560, 1690}) {
-		t.Errorf("frames[0] = %v, want the first 6 values", frames[0])
+	if !reflect.DeepEqual(frames[0], []int32{9000, 4500, 560, 560, 560, 1690, 560}) {
+		t.Errorf("frames[0] = %v, want the first 7 values (including the trailing mark)", frames[0])
 	}
 	if !reflect.DeepEqual(frames[1], []int32{9000, 4500, 560, 560}) {
 		t.Errorf("frames[1] = %v, want the repeat frame", frames[1])
