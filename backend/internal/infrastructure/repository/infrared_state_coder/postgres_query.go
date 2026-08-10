@@ -30,5 +30,7 @@ func (p *postgresImpl) queryGetBySessionId(sessionId uuid.UUID) (query string, a
 	return p.SqrD.Select(infraredStateCoderColumns...).
 		From("infrared_state_coder").
 		Where(squirrel.Eq{"infrared_record_session_id": sessionId}).
+		OrderBy("created_at DESC").
+		Limit(1).
 		ToSql()
 }

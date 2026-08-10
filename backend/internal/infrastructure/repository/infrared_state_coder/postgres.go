@@ -64,3 +64,29 @@ func (p *postgresImpl) GetBySessionId(ctx context.Context, sessionId uuid.UUID) 
 	item.Status = domainmodels.InfraredStateCoderStatus(status)
 	return &item, nil
 }
+
+func (p *postgresImpl) Activate(ctx context.Context, coderId uuid.UUID, deviceId uuid.UUID) error {
+	activateQuery, activateArgs, err := p.SqrD.Update("infrared_state_coder").
+		Set("status", domainmodels.InfraredStateCoderStatusActive).
+		Where(squirrel.Eq{"id": coderId}).
+		ToSql()
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build activate infrared_state_coder query", err)
+	}
+	if _, err := p.Dt.Exec(ctx, activateQuery, activateArgs...); err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to activate infrared_state_coder", err)
+	}
+
+	supersedeQuery, supersedeArgs, err := p.SqrD.Update("infrared_state_coder").
+		Set("status", domainmodels.InfraredStateCoderStatusSuperseded).
+		Where(squirrel.Eq{"infrared_device_id": deviceId, "status": domainmodels.InfraredStateCoderStatusActive}).
+		Where(squirrel.NotEq{"id": coderId}).
+		ToSql()
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build supersede infrared_state_coder query", err)
+	}
+	if _, err := p.Dt.Exec(ctx, supersedeQuery, supersedeArgs...); err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to supersede prior infrared_state_coder", err)
+	}
+	return nil
+}
