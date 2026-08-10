@@ -1,4 +1,4 @@
-package infrastructurellmopenai
+package infrastructurellmclient
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
 )
 
-func TestGenerateTextFreeForm(t *testing.T) {
+func TestOpenAIGenerateTextFreeForm(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{
@@ -24,7 +24,7 @@ func TestGenerateTextFreeForm(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL
-	client := NewClient("test-api-key", &baseURL, "gpt-test")
+	client := NewOpenAIClient("test-api-key", &baseURL, "gpt-test")
 
 	result, err := client.GenerateText(context.Background(), domaincontractsllm.GenerateTextRequest{
 		System:          "You write JavaScript IR encoders.",
@@ -42,7 +42,7 @@ func TestGenerateTextFreeForm(t *testing.T) {
 	}
 }
 
-func TestGenerateTextRejectsZeroMaxOutputTokens(t *testing.T) {
+func TestOpenAIGenerateTextRejectsZeroMaxOutputTokens(t *testing.T) {
 	var requestCount int
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestCount++
@@ -50,7 +50,7 @@ func TestGenerateTextRejectsZeroMaxOutputTokens(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL
-	client := NewClient("test-api-key", &baseURL, "gpt-test")
+	client := NewOpenAIClient("test-api-key", &baseURL, "gpt-test")
 
 	_, err := client.GenerateText(context.Background(), domaincontractsllm.GenerateTextRequest{
 		Prompt:          "Describe the case.",
@@ -64,7 +64,7 @@ func TestGenerateTextRejectsZeroMaxOutputTokens(t *testing.T) {
 	}
 }
 
-func TestGenerateTextStructuredSendsResponseFormat(t *testing.T) {
+func TestOpenAIGenerateTextStructuredSendsResponseFormat(t *testing.T) {
 	var capturedBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewDecoder(r.Body).Decode(&capturedBody); err != nil {
@@ -82,7 +82,7 @@ func TestGenerateTextStructuredSendsResponseFormat(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL
-	client := NewClient("test-api-key", &baseURL, "gpt-test")
+	client := NewOpenAIClient("test-api-key", &baseURL, "gpt-test")
 
 	schema := json.RawMessage(`{"type":"object","properties":{"description":{"type":"string"}},"required":["description"],"additionalProperties":false}`)
 	result, err := client.GenerateText(context.Background(), domaincontractsllm.GenerateTextRequest{

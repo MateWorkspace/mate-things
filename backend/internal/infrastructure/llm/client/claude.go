@@ -1,4 +1,4 @@
-package infrastructurellmclaude
+package infrastructurellmclient
 
 import (
 	"context"
@@ -16,10 +16,7 @@ type claudeClient struct {
 	model string
 }
 
-// NewClient constructs a Claude-backed llm.Client. Called per-call by the
-// ClientFactory (internal/infrastructure/llm) — never held as a singleton,
-// so a credential/provider change takes effect on the very next call.
-func NewClient(apiKey string, baseURL *string, model string) domaincontractsllm.Client {
+func NewClaudeClient(apiKey string, baseURL *string, model string) domaincontractsllm.Client {
 	opts := []option.RequestOption{option.WithAPIKey(apiKey)}
 	if baseURL != nil {
 		opts = append(opts, option.WithBaseURL(*baseURL))

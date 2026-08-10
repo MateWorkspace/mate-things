@@ -31,3 +31,7 @@ func LlmConfig(model *domainmodels.LlmConfig) LlmConfigResponse {
 		UpdatedBy: UUIDPtrString(model.UpdatedBy),
 	}
 }
+
+type LlmConnectionStatusResponse struct {
+	Status string `json:"status" example:"CONNECTED"`
+}

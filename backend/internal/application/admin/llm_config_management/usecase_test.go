@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesadmin "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/admin"
@@ -39,9 +40,40 @@ func (recordingEncryptor) Decrypt(ciphertext []byte) (string, error) { return st
 
 type noopLogger struct{ domaincontractslogger.Leveled }
 
+func (f *noopLogger) Error(_ context.Context, _ string, _ string, _ domainmodels.LoggerMeta) {}
+func (f *noopLogger) Warn(_ context.Context, _ string, _ string, _ domainmodels.LoggerMeta)  {}
+func (f *noopLogger) Info(_ context.Context, _ string, _ string, _ domainmodels.LoggerMeta)  {}
+func (f *noopLogger) Debug(_ context.Context, _ string, _ string, _ domainmodels.LoggerMeta) {}
+
+type fakeClient struct {
+	generateErr error
+}
+
+func (f *fakeClient) GenerateText(_ context.Context, _ domaincontractsllm.GenerateTextRequest) (domaincontractsllm.GenerateTextResult, error) {
+	if f.generateErr != nil {
+		return domaincontractsllm.GenerateTextResult{}, f.generateErr
+	}
+	return domaincontractsllm.GenerateTextResult{Text: "OK"}, nil
+}
+
+type fakeClientFactory struct {
+	client     *fakeClient
+	currentErr error
+}
+
+func (f *fakeClientFactory) Current(_ context.Context) (domaincontractsllm.Client, error) {
+	if f.currentErr != nil {
+		return nil, f.currentErr
+	}
+	if f.client != nil {
+		return f.client, nil
+	}
+	return &fakeClient{}, nil
+}
+
 func TestUpdateRejectsUnknownProvider(t *testing.T) {
 	repository := &recordingLlmConfigRepository{}
-	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &noopLogger{})
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &fakeClientFactory{}, &noopLogger{})
 
 	err := usecase.Update(context.Background(), domainusecasesadmin.UpdateLlmConfigRequest{
 		Provider: domainmodels.LlmProvider("GEMINI"),
@@ -59,7 +91,7 @@ func TestUpdateRejectsUnknownProvider(t *testing.T) {
 
 func TestUpdateEncryptsApiKeyBeforeStoring(t *testing.T) {
 	repository := &recordingLlmConfigRepository{}
-	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &noopLogger{})
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &fakeClientFactory{}, &noopLogger{})
 
 	err := usecase.Update(context.Background(), domainusecasesadmin.UpdateLlmConfigRequest{
 		Provider: domainmodels.LlmProviderClaude,
@@ -84,7 +116,7 @@ func TestUpdateEncryptsApiKeyBeforeStoring(t *testing.T) {
 func TestGetReturnsConfigUnchanged(t *testing.T) {
 	config := &domainmodels.LlmConfig{Provider: domainmodels.LlmProviderOpenAI, Model: "gpt-test"}
 	repository := &recordingLlmConfigRepository{getConfig: config}
-	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &noopLogger{})
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &fakeClientFactory{}, &noopLogger{})
 
 	got, err := usecase.Get(context.Background())
 	if err != nil {
@@ -97,7 +129,7 @@ func TestGetReturnsConfigUnchanged(t *testing.T) {
 
 func TestGetReturnsNilWhenNoConfigExists(t *testing.T) {
 	repository := &recordingLlmConfigRepository{getConfig: nil}
-	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &noopLogger{})
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &fakeClientFactory{}, &noopLogger{})
 
 	got, err := usecase.Get(context.Background())
 	if err != nil {
@@ -105,5 +137,43 @@ func TestGetReturnsNilWhenNoConfigExists(t *testing.T) {
 	}
 	if got != nil {
 		t.Fatalf("Get() = %+v, want nil when the repository has no config yet", got)
+	}
+}
+
+func TestTestConnectionReturnsConnectedStatusOnSuccess(t *testing.T) {
+	client := &fakeClient{}
+	factory := &fakeClientFactory{client: client}
+	repository := &recordingLlmConfigRepository{}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	status, err := usecase.TestConnection(context.Background())
+	if err != nil {
+		t.Fatalf("TestConnection() error = %v, want nil", err)
+	}
+	if status != domainmodels.LlmClientStatusConnected {
+		t.Fatalf("TestConnection() status = %v, want CONNECTED", status)
+	}
+}
+
+func TestTestConnectionPropagatesResolveError(t *testing.T) {
+	factory := &fakeClientFactory{currentErr: errors.New("no config configured")}
+	repository := &recordingLlmConfigRepository{}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	_, err := usecase.TestConnection(context.Background())
+	if err == nil {
+		t.Fatal("TestConnection() error = nil, want the factory's resolve error propagated")
+	}
+}
+
+func TestTestConnectionPropagatesGenerateTextError(t *testing.T) {
+	client := &fakeClient{generateErr: errors.New("invalid api key")}
+	factory := &fakeClientFactory{client: client}
+	repository := &recordingLlmConfigRepository{}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	_, err := usecase.TestConnection(context.Background())
+	if err == nil {
+		t.Fatal("TestConnection() error = nil, want the client's GenerateText error propagated")
 	}
 }

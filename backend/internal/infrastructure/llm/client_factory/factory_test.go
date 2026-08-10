@@ -1,4 +1,4 @@
-package infrastructurellm
+package infrastructurellmclientfactory
 
 import (
 	"context"
@@ -39,7 +39,7 @@ func TestCurrentBuildsClaudeAdapterForClaudeProvider(t *testing.T) {
 		Model:           "claude-opus-5",
 		ApiKeyEncrypted: []byte("secret"),
 	}}
-	factory := NewClientFactory(repo, stubEncryptor{})
+	factory := &ClientFactory{repository: repo, encryptor: stubEncryptor{}}
 	factory.newClaudeClient = func(apiKey string, baseURL *string, model string) domaincontractsllm.Client {
 		return &recordingClient{provider: "claude:" + apiKey + ":" + model}
 	}
@@ -68,7 +68,7 @@ func TestCurrentBuildsOpenAIAdapterForOpenAIProvider(t *testing.T) {
 		Model:           "gpt-test",
 		ApiKeyEncrypted: []byte("secret"),
 	}}
-	factory := NewClientFactory(repo, stubEncryptor{})
+	factory := &ClientFactory{repository: repo, encryptor: stubEncryptor{}}
 	factory.newClaudeClient = func(apiKey string, baseURL *string, model string) domaincontractsllm.Client {
 		t.Fatalf("newClaudeClient should not be called for an OpenAI config")
 		return nil

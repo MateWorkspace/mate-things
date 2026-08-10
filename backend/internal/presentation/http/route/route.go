@@ -35,6 +35,7 @@ type AdminHandler interface {
 
 	LlmConfigGet(c *echo.Context) error
 	LlmConfigPut(c *echo.Context) error
+	LlmConfigTestConnectionPost(c *echo.Context) error
 
 	RolePost(c *echo.Context) error
 	RoleGetList(c *echo.Context) error
@@ -258,6 +259,7 @@ func routeAdmin(v1 *echo.Group, handler AdminHandler, permission PermissionMiddl
 
 	v1.GET("/admin/llm-config", handler.LlmConfigGet, permission("llm_config:get"))
 	v1.PUT("/admin/llm-config", handler.LlmConfigPut, permission("llm_config:set"))
+	v1.POST("/admin/llm-config/test", handler.LlmConfigTestConnectionPost, permission("llm_config:set"))
 
 	v1.GET("/admin/roles", handler.RoleGetList, permission("role:get"))
 	v1.POST("/admin/roles", handler.RolePost, permission("role:add"))

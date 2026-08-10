@@ -14,24 +14,11 @@ import (
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
 	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	domainusecasesinfrared "github.com/MateWorkspace/mate-things/backend/internal/domain/usecases/infrared"
 	"github.com/google/uuid"
 )
-
-// LlmClientFactory is the subset of infrastructurellm.ClientFactory this
-// usecase needs — declared as a domain-layer interface so the usecase
-// doesn't import the infrastructure package directly.
-type LlmClientFactory interface {
-	Current(ctx context.Context) (domaincontractsllm.Client, error)
-}
-
-// EncoderRunner is the subset of infrastructurejsengine's exported surface
-// this usecase needs — declared locally so the usecase doesn't import the
-// infrastructure package directly, same pattern as LlmClientFactory.
-type EncoderRunner interface {
-	RunEncoder(source string, state map[string]string, timeout time.Duration) ([]int32, error)
-}
 
 const caseGenerationTimeout = 2 * time.Minute
 const analysisTimeout = 3 * time.Minute
@@ -47,9 +34,9 @@ type usecase struct {
 	recordCase    domaincontractsrepository.InfraredStateDeviceRecordCase
 	broadcaster   domaincontractsbroadcaster.InfraredRecordSession
 	subscriptions domaincontractsnode.Subscriptions
-	llmFactory    LlmClientFactory
+	llmFactory    domaincontractsllm.ClientFactory
 	node          domaincontractsrepository.Node
-	encoderRunner EncoderRunner
+	encoderRunner domaincontractsutility.JSEngine
 	coder         domaincontractsrepository.InfraredStateCoder
 	testCase      domaincontractsrepository.InfraredTestCase
 	publish       domaincontractsnode.Publish
@@ -64,9 +51,9 @@ func NewUsecaseImpl(
 	recordCase domaincontractsrepository.InfraredStateDeviceRecordCase,
 	broadcaster domaincontractsbroadcaster.InfraredRecordSession,
 	subscriptions domaincontractsnode.Subscriptions,
-	llmFactory LlmClientFactory,
+	llmFactory domaincontractsllm.ClientFactory,
 	node domaincontractsrepository.Node,
-	encoderRunner EncoderRunner,
+	encoderRunner domaincontractsutility.JSEngine,
 	coder domaincontractsrepository.InfraredStateCoder,
 	testCase domaincontractsrepository.InfraredTestCase,
 	publish domaincontractsnode.Publish,

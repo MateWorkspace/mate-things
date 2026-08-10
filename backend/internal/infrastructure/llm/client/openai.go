@@ -1,4 +1,4 @@
-package infrastructurellmopenai
+package infrastructurellmclient
 
 import (
 	"context"
@@ -16,9 +16,7 @@ type openAIClient struct {
 	model string
 }
 
-// NewClient constructs an OpenAI-backed llm.Client. Called per-call by the
-// ClientFactory (internal/infrastructure/llm) — never held as a singleton.
-func NewClient(apiKey string, baseURL *string, model string) domaincontractsllm.Client {
+func NewOpenAIClient(apiKey string, baseURL *string, model string) domaincontractsllm.Client {
 	opts := []option.RequestOption{option.WithAPIKey(apiKey)}
 	if baseURL != nil {
 		opts = append(opts, option.WithBaseURL(*baseURL))

@@ -3,12 +3,12 @@ package compositionmain
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/MateWorkspace/mate-things/backend/internal/config"
 	domaincontractsbroadcaster "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/broadcaster"
 	domaincontractscache "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/cache"
+	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
 	domaincontractslogger "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/logger"
 	domaincontractsnode "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/node"
 	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
@@ -29,8 +29,7 @@ import (
 	infrastructurecacherolepermission "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/role_permission"
 	infrastructurecacheshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/shared"
 	infrastructurecacheuser "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/user"
-	infrastructurejsengine "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/jsengine"
-	infrastructurellm "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/llm"
+	infrastructurellmclientfactory "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/llm/client_factory"
 	infrastructureloggerleveled "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/logger/leveled"
 	infrastructurenodepublish "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/node/publish"
 	infrastructurenodesubscriptions "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/node/subscriptions"
@@ -62,6 +61,7 @@ import (
 	infrastructurestoragefirmware "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/storage/firmware"
 	infrastructureutilityapikey "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/apikey"
 	infrastructureutilityencryption "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/encryption"
+	infrastructureutilityjsengine "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/jsengine"
 	infrastructureutilitypassword "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/password"
 	infrastructureutilitypayloadschemavalidator "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/payload_schema_validator"
 	infrastructureutilitytoken "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/utility/token"
@@ -125,14 +125,8 @@ type infrastructure struct {
 	apiKeyGenerator        domaincontractsutility.ApiKey
 	llmEncryptor           domaincontractsutility.Encryptor
 
-	llmClientFactory *infrastructurellm.ClientFactory
-	encoderRunner    encoderRunnerAdapter
-}
-
-type encoderRunnerAdapter struct{}
-
-func (encoderRunnerAdapter) RunEncoder(source string, state map[string]string, timeout time.Duration) ([]int32, error) {
-	return infrastructurejsengine.RunEncoder(source, state, timeout)
+	llmClientFactory domaincontractsllm.ClientFactory
+	jsRunner         domaincontractsutility.JSEngine
 }
 
 func (l *launcher) newInfrastructure(ctx context.Context) error {
@@ -213,8 +207,8 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to construct llm encryptor (check BE_LLM_ENCRYPTION_KEY is set to exactly 32 bytes): %w", err)
 	}
-	llmClientFactory := infrastructurellm.NewClientFactory(llmConfigRepository, llmEncryptor)
-	encoderRunner := encoderRunnerAdapter{}
+	llmClientFactory := infrastructurellmclientfactory.NewClientFactory(llmConfigRepository, llmEncryptor)
+	jsRunner := infrastructureutilityjsengine.NewGojaImpl()
 
 	l.infra = &infrastructure{
 		logger: logger,
@@ -274,7 +268,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		llmEncryptor:           llmEncryptor,
 
 		llmClientFactory: llmClientFactory,
-		encoderRunner:    encoderRunner,
+		jsRunner:         jsRunner,
 	}
 
 	logger.Info(ctx, tag, "Infrastructure initialized", domainmodels.LoggerMeta{})

@@ -1,4 +1,4 @@
-package infrastructurellm
+package infrastructurellmclientfactory
 
 import (
 	"context"
@@ -48,7 +48,7 @@ func TestCurrentDecryptsRealEncryptedApiKeyEndToEnd(t *testing.T) {
 		ApiKeyEncrypted: encrypted,
 	}}
 
-	factory := NewClientFactory(repo, encryptor)
+	factory := &ClientFactory{repository: repo, encryptor: encryptor}
 
 	var capturedApiKey string
 	factory.newClaudeClient = func(apiKey string, baseURL *string, model string) domaincontractsllm.Client {

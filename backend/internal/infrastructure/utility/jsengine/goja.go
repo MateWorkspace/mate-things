@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"time"
 
+	domaincontractsutility "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/utility"
 	"github.com/dop251/goja"
 )
 
-// RunEncoder loads source into a fresh goja VM (never reused across calls),
-// calls its global encode(state) function with state, and converts the
-// result to a mark/space duration array. Execution is interrupted if it
-// runs past timeout, so a generated encoder with a runaway loop cannot
-// hang the caller forever.
-func RunEncoder(source string, state map[string]string, timeout time.Duration) ([]int32, error) {
+type gojaImpl struct{}
+
+func NewGojaImpl() domaincontractsutility.JSEngine {
+	return &gojaImpl{}
+}
+
+func (g *gojaImpl) RunEncoder(source string, state map[string]string, timeout time.Duration) ([]int32, error) {
 	vm := goja.New()
 
 	timer := time.AfterFunc(timeout, func() {

@@ -158,7 +158,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 	adminSchemaRegistry := applicationadminschemaregistry.NewUsecaseImpl(payloadSchemaRepoCache, l.infra.logger)
 	adminUserManagement := applicationadminusermanagement.NewUsecaseImpl(userRepoCache, l.infra.password, l.infra.logger)
 	adminApiKeyManagement := applicationadminapikeymanagement.NewUsecaseImpl(apiKeyRepoCache, l.infra.apiKeyGenerator, l.infra.logger)
-	adminLlmConfigManagement := applicationadminllmconfigmanagement.NewUsecaseImpl(l.infra.llmConfigRepository, l.infra.llmEncryptor, l.infra.logger)
+	adminLlmConfigManagement := applicationadminllmconfigmanagement.NewUsecaseImpl(l.infra.llmConfigRepository, l.infra.llmEncryptor, l.infra.llmClientFactory, l.infra.logger)
 
 	authSession := applicationauthsession.NewUsecaseImpl(
 		userRepoCache,
@@ -185,7 +185,7 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		l.infra.nodeSubscriptions,
 		l.infra.llmClientFactory,
 		l.infra.nodeRepository,
-		l.infra.encoderRunner,
+		l.infra.jsRunner,
 		l.infra.infraredStateCoderRepository,
 		l.infra.infraredTestCaseRepository,
 		l.infra.nodePublisher,

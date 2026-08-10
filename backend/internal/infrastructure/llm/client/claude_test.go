@@ -1,4 +1,4 @@
-package infrastructurellmclaude
+package infrastructurellmclient
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
 )
 
-func TestGenerateTextFreeForm(t *testing.T) {
+func TestClaudeGenerateTextFreeForm(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{
@@ -26,7 +26,7 @@ func TestGenerateTextFreeForm(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL
-	client := NewClient("test-api-key", &baseURL, "claude-opus-5")
+	client := NewClaudeClient("test-api-key", &baseURL, "claude-opus-5")
 
 	result, err := client.GenerateText(context.Background(), domaincontractsllm.GenerateTextRequest{
 		System:          "You write JavaScript IR encoders.",
@@ -44,7 +44,7 @@ func TestGenerateTextFreeForm(t *testing.T) {
 	}
 }
 
-func TestGenerateTextRejectsZeroMaxOutputTokens(t *testing.T) {
+func TestClaudeGenerateTextRejectsZeroMaxOutputTokens(t *testing.T) {
 	var requestCount int
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestCount++
@@ -52,7 +52,7 @@ func TestGenerateTextRejectsZeroMaxOutputTokens(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL
-	client := NewClient("test-api-key", &baseURL, "claude-opus-5")
+	client := NewClaudeClient("test-api-key", &baseURL, "claude-opus-5")
 
 	_, err := client.GenerateText(context.Background(), domaincontractsllm.GenerateTextRequest{
 		Prompt:          "Describe the case.",
@@ -66,7 +66,7 @@ func TestGenerateTextRejectsZeroMaxOutputTokens(t *testing.T) {
 	}
 }
 
-func TestGenerateTextStructuredSendsOutputConfigFormat(t *testing.T) {
+func TestClaudeGenerateTextStructuredSendsOutputConfigFormat(t *testing.T) {
 	var capturedBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewDecoder(r.Body).Decode(&capturedBody); err != nil {
@@ -86,7 +86,7 @@ func TestGenerateTextStructuredSendsOutputConfigFormat(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL
-	client := NewClient("test-api-key", &baseURL, "claude-opus-5")
+	client := NewClaudeClient("test-api-key", &baseURL, "claude-opus-5")
 
 	schema := json.RawMessage(`{"type":"object","properties":{"description":{"type":"string"}},"required":["description"],"additionalProperties":false}`)
 	result, err := client.GenerateText(context.Background(), domaincontractsllm.GenerateTextRequest{

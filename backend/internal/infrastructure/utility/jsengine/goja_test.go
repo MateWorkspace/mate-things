@@ -8,7 +8,7 @@ import (
 
 func TestRunEncoderReturnsArrayFromValidSource(t *testing.T) {
 	source := `function encode(state) { return state.POWER === "ON" ? [9000, 4500, 560, 560] : [9000, 4500, 560, 1690]; }`
-	result, err := RunEncoder(source, map[string]string{"POWER": "ON"}, time.Second)
+	result, err := NewGojaImpl().RunEncoder(source, map[string]string{"POWER": "ON"}, time.Second)
 	if err != nil {
 		t.Fatalf("RunEncoder() error = %v, want nil", err)
 	}
@@ -25,7 +25,7 @@ func TestRunEncoderReturnsArrayFromValidSource(t *testing.T) {
 
 func TestRunEncoderPropagatesThrownError(t *testing.T) {
 	source := `function encode(state) { throw new Error("unsupported state"); }`
-	_, err := RunEncoder(source, map[string]string{}, time.Second)
+	_, err := NewGojaImpl().RunEncoder(source, map[string]string{}, time.Second)
 	if err == nil {
 		t.Fatal("RunEncoder() error = nil, want the thrown error propagated")
 	}
@@ -36,7 +36,7 @@ func TestRunEncoderPropagatesThrownError(t *testing.T) {
 
 func TestRunEncoderErrorsOnNonArrayReturn(t *testing.T) {
 	source := `function encode(state) { return "not an array"; }`
-	_, err := RunEncoder(source, map[string]string{}, time.Second)
+	_, err := NewGojaImpl().RunEncoder(source, map[string]string{}, time.Second)
 	if err == nil {
 		t.Fatal("RunEncoder() error = nil, want an error for a non-array return value")
 	}
@@ -45,7 +45,7 @@ func TestRunEncoderErrorsOnNonArrayReturn(t *testing.T) {
 func TestRunEncoderTimesOutOnInfiniteLoop(t *testing.T) {
 	source := `function encode(state) { while (true) {} }`
 	start := time.Now()
-	_, err := RunEncoder(source, map[string]string{}, 100*time.Millisecond)
+	_, err := NewGojaImpl().RunEncoder(source, map[string]string{}, 100*time.Millisecond)
 	elapsed := time.Since(start)
 	if err == nil {
 		t.Fatal("RunEncoder() error = nil, want a timeout error")

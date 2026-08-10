@@ -261,6 +261,25 @@ func (h *handler) LlmConfigPut(c *echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// LlmConfigTestConnectionPost godoc
+//
+// @Summary LLM Config Test Connection
+// @Tags Admin - LLM Config
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} presentationhttpresponse.LlmConnectionStatusResponse
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/admin/llm-config/test [post]
+func (h *handler) LlmConfigTestConnectionPost(c *echo.Context) error {
+	status, err := h.llmConfigUseCase.TestConnection(c.Request().Context())
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	return c.JSON(http.StatusOK, presentationhttpresponse.LlmConnectionStatusResponse{Status: string(status)})
+}
+
 // PermissionDelete godoc
 //
 // @Summary Permission Delete
