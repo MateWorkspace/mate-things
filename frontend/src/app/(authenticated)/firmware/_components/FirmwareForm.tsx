@@ -109,9 +109,11 @@ function NodeClassField({
 function ConfigSchemaFields({
   error,
   initialSchema,
+  serializedName,
 }: {
   error?: string;
   initialSchema: readonly FirmwareConfigSchemaItem[];
+  serializedName?: string;
 }) {
   const id = useId();
   const [nextId, setNextId] = useState(initialSchema.length + 1);
@@ -147,6 +149,15 @@ function ConfigSchemaFields({
         Define keys the node can configure. Supported types are string, uint32,
         and bool.
       </p>
+      {serializedName ? (
+        <input
+          type="hidden"
+          name={serializedName}
+          value={JSON.stringify(
+            rows.map(({ key, value_type }) => ({ key, value_type })),
+          )}
+        />
+      ) : null}
 
       {rows.map((row, index) => (
         <div
@@ -213,6 +224,73 @@ function ConfigSchemaFields({
         Add configuration parameter
       </Button>
       <FieldError>{error}</FieldError>
+    </fieldset>
+  );
+}
+
+type SchemaIntentMode = "keep" | "replace" | "clear";
+
+function SchemaIntentFields({
+  error,
+  initialSchema,
+  intentError,
+}: {
+  error?: string;
+  initialSchema: readonly FirmwareConfigSchemaItem[];
+  intentError?: string;
+}) {
+  const id = useId();
+  const [mode, setMode] = useState<SchemaIntentMode>("keep");
+
+  return (
+    <fieldset
+      data-field-name="schema_intent"
+      tabIndex={-1}
+      className="border-border space-y-3 rounded-xl border p-4"
+    >
+      <legend className="px-1 text-sm font-semibold">
+        Configuration schema handling
+      </legend>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {(["keep", "replace", "clear"] as const).map((value) => (
+          <label
+            key={value}
+            htmlFor={`${id}-${value}`}
+            className="border-border focus-within:ring-focus flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium focus-within:ring-2"
+          >
+            <input
+              id={`${id}-${value}`}
+              type="radio"
+              name="schema_intent"
+              value={value}
+              // Keep the chosen mode as the reset baseline for React actions.
+              defaultChecked={mode === value}
+              onChange={() => setMode(value)}
+            />
+            {value[0].toUpperCase() + value.slice(1)}
+          </label>
+        ))}
+      </div>
+      <FieldError>{intentError}</FieldError>
+      {mode === "keep" ? (
+        <p className="text-muted-foreground text-sm">
+          The existing configuration schema will remain unchanged.
+        </p>
+      ) : null}
+      {mode === "replace" ? (
+        <ConfigSchemaFields
+          error={error}
+          initialSchema={initialSchema}
+          serializedName="config_schema"
+        />
+      ) : null}
+      {mode === "clear" ? (
+        <p className="text-muted-foreground text-sm">
+          Clear will remove the existing configuration schema after the binary
+          is replaced.
+        </p>
+      ) : null}
+      {mode !== "replace" ? <FieldError>{error}</FieldError> : null}
     </fieldset>
   );
 }
@@ -408,8 +486,9 @@ function ReplaceDialog({
       >
         <input type="hidden" name="firmware_id" value={firmware.id} />
         <p className="border-warning/40 bg-warning/10 rounded-xl border p-4 text-sm">
-          Replacing the binary also replaces its submitted configuration schema.
-          Existing node values remain governed by backend compatibility rules.
+          Choose separately whether to keep, replace, or clear the configuration
+          schema. Existing node values remain governed by backend compatibility
+          rules.
         </p>
         <div>
           <Label htmlFor={`${id}-file`}>Replacement firmware binary</Label>
@@ -422,9 +501,10 @@ function ReplaceDialog({
           />
           <FieldError>{state.fieldErrors?.file}</FieldError>
         </div>
-        <ConfigSchemaFields
+        <SchemaIntentFields
           error={state.fieldErrors?.config_schema}
           initialSchema={configSchema}
+          intentError={state.fieldErrors?.schema_intent}
         />
         <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">

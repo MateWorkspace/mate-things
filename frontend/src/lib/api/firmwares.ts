@@ -26,15 +26,20 @@ export interface FirmwareBinaryStatResponse {
   checksum: string;
 }
 
-export interface FirmwareConfigParameterResponse {
+export interface FirmwareConfigParameter {
   key: string;
   value_type: string;
 }
 
-export interface FirmwareConfigSchemaItem {
-  key: string;
-  value_type: string;
-}
+export type FirmwareConfigParameterResponse = FirmwareConfigParameter;
+
+export type FirmwareConfigSchemaItem = FirmwareConfigParameter;
+
+export type ReplaceFirmwareBinaryInput = {
+  id: string;
+  binary: File;
+  configSchema?: FirmwareConfigParameter[];
+};
 
 export interface UpdateFirmwareRequest {
   node_class_id?: string;
@@ -151,15 +156,15 @@ export async function updateFirmware(
 
 /** Replaces an existing firmware row's binary content. */
 export async function replaceFirmwareBinary(
-  id: string,
-  file: File | Blob,
-  configSchema: FirmwareConfigSchemaItem[],
+  input: ReplaceFirmwareBinaryInput,
 ): Promise<FirmwareBinaryStatResponse> {
   const body = new FormData();
-  body.set("file", file);
-  body.set("config_schema", JSON.stringify(configSchema));
+  body.set("file", input.binary);
+  if (input.configSchema !== undefined) {
+    body.append("config_schema", JSON.stringify(input.configSchema));
+  }
 
-  return apiFetch(`/firmwares/${id}/binary`, { method: "PUT", body });
+  return apiFetch(`/firmwares/${input.id}/binary`, { method: "PUT", body });
 }
 
 export async function getFirmwareBinaryStatByName(
