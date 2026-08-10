@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	applicationinfraredanalysis "github.com/MateWorkspace/mate-things/backend/internal/application/infrared/analysis"
 	applicationinfraredcasegeneration "github.com/MateWorkspace/mate-things/backend/internal/application/infrared/case_generation"
+	applicationinfraredcodergeneration "github.com/MateWorkspace/mate-things/backend/internal/application/infrared/coder_generation"
 	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractsbroadcaster "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/broadcaster"
 	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
@@ -24,7 +26,16 @@ type LlmClientFactory interface {
 	Current(ctx context.Context) (domaincontractsllm.Client, error)
 }
 
+// EncoderRunner is the subset of infrastructurejsengine's exported surface
+// this usecase needs — declared locally so the usecase doesn't import the
+// infrastructure package directly, same pattern as LlmClientFactory.
+type EncoderRunner interface {
+	RunEncoder(source string, state map[string]string, timeout time.Duration) ([]int32, error)
+}
+
 const caseGenerationTimeout = 2 * time.Minute
+const analysisTimeout = 3 * time.Minute
+const encoderSmokeTestTimeout = 2 * time.Second
 
 type usecase struct {
 	session       domaincontractsrepository.InfraredRecordSession
@@ -36,6 +47,8 @@ type usecase struct {
 	subscriptions domaincontractsnode.Subscriptions
 	llmFactory    LlmClientFactory
 	node          domaincontractsrepository.Node
+	encoderRunner EncoderRunner
+	coder         domaincontractsrepository.InfraredStateCoder
 	logger        domaincontractslogger.Leveled
 }
 
@@ -49,12 +62,14 @@ func NewUsecaseImpl(
 	subscriptions domaincontractsnode.Subscriptions,
 	llmFactory LlmClientFactory,
 	node domaincontractsrepository.Node,
+	encoderRunner EncoderRunner,
+	coder domaincontractsrepository.InfraredStateCoder,
 	logger domaincontractslogger.Leveled,
 ) domainusecasesinfrared.RecordSessionManagement {
 	return &usecase{
 		session: session, device: device, definition: definition, state: state,
 		recordCase: recordCase, broadcaster: broadcaster, subscriptions: subscriptions,
-		llmFactory: llmFactory, node: node, logger: logger,
+		llmFactory: llmFactory, node: node, encoderRunner: encoderRunner, coder: coder, logger: logger,
 	}
 }
 
@@ -317,10 +332,201 @@ func (u *usecase) broadcastBestEffort(ctx context.Context, tag string, sessionId
 	}
 }
 
-// runAnalysisAndGeneration is Task 10's async job; this stub exists only so
-// AcceptRaw compiles and its cursor/transition logic can be tested in
-// isolation ahead of Task 10 filling in the real body.
-func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {}
+// runAnalysisAndGeneration is this plan's second background-goroutine job,
+// structurally identical to runCaseGeneration above: it runs the
+// deterministic bit-analysis pipeline over the session's accepted cases,
+// asks the LLM to write an encoder/decoder pair, smoke-tests the encoder
+// via goja, and persists the result.
+func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
+	const tag = "infrared/record_session_management/runAnalysisAndGeneration"
+
+	ctx, cancel := context.WithTimeout(context.Background(), analysisTimeout)
+	defer cancel()
+
+	session, err := u.session.GetById(ctx, sessionId)
+	if err != nil || session == nil {
+		u.logger.Error(ctx, tag, "failed to look up session", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
+	device, err := u.device.GetById(ctx, session.InfraredDeviceId)
+	if err != nil || device == nil {
+		u.logger.Error(ctx, tag, "failed to look up device", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	states, err := u.state.ListByDeviceTypeId(ctx, device.InfraredDeviceTypeId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to list states", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	definitions, err := u.definition.ListByDeviceId(ctx, session.InfraredDeviceId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to list definitions", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
+	cases, err := u.recordCase.ListBySessionId(ctx, sessionId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to list cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
+	payload, baselineState, err := u.buildAnalysisPayload(ctx, tag, sessionId, cases)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to analyze recorded cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFunctionGenerating)
+
+	client, err := u.llmFactory.Current(ctx)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to resolve llm client", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
+	written, err := applicationinfraredcodergeneration.WriteCoder(ctx, client, device.Brand, device.Model, states, definitions, payload)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to write coder", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
+	// RunEncoder (and the prompt WriteCoder just built) both expect a
+	// state-NAME-keyed map (e.g. state.POWER); buildAnalysisPayload's
+	// baselineState is UUID-keyed to match its own internal precision needs,
+	// so it must be converted before crossing this boundary.
+	if _, err := u.encoderRunner.RunEncoder(written.EncoderSource, stateIdToName(states, baselineState), encoderSmokeTestTimeout); err != nil {
+		u.logger.Error(ctx, tag, "generated encoder failed its smoke test", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
+	if _, err := u.coder.Create(ctx, domainmodels.InfraredStateCoder{
+		InfraredDeviceId:        session.InfraredDeviceId,
+		InfraredRecordSessionId: sessionId,
+		EncoderSource:           written.EncoderSource,
+		DecoderSource:           written.DecoderSource,
+		SummaryReadme:           written.SummaryReadme,
+		DetailReadme:            written.DetailReadme,
+	}); err != nil {
+		u.logger.Error(ctx, tag, "failed to persist coder", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+}
+
+// stateIdToName converts a state-id-keyed value map (as produced internally
+// by buildAnalysisPayload) into a state-name-keyed map, since RunEncoder and
+// WriteCoder's prompt both address states by name (e.g. state.POWER), not
+// by their internal UUID.
+func stateIdToName(states []domainmodels.InfraredState, byId map[string]string) map[string]string {
+	nameById := make(map[string]string, len(states))
+	for _, s := range states {
+		nameById[s.Id.String()] = s.Name
+	}
+	byName := make(map[string]string, len(byId))
+	for id, value := range byId {
+		if name, ok := nameById[id]; ok {
+			byName[name] = value
+		}
+	}
+	return byName
+}
+
+// buildAnalysisPayload turns every case's accepted raws into the pure
+// analysis package's inputs and runs the full frame -> demodulate ->
+// volatile -> attribute pipeline. Returns the payload plus the baseline
+// case's target state (state id -> value) for the encoder smoke test.
+func (u *usecase) buildAnalysisPayload(ctx context.Context, tag string, sessionId uuid.UUID, cases []domainmodels.InfraredStateDeviceRecordCase) (applicationinfraredanalysis.AnalysisPayload, map[string]string, error) {
+	var baselineBits []int
+	baselineState := make(map[string]string)
+	caseBits := make(map[uuid.UUID][]int)
+	caseTargetState := make(map[uuid.UUID]uuid.UUID)
+	caseTargetValue := make(map[uuid.UUID]string)
+	var volatileSets []map[int]struct{}
+
+	for _, c := range cases {
+		raws, err := u.recordCase.ListRawByCaseId(ctx, c.Id)
+		if err != nil {
+			return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+		}
+		var accepted [][]int32
+		for _, r := range raws {
+			if r.Status == domainmodels.InfraredRecordRawStatusAccepted {
+				var durations []int32
+				if err := json.Unmarshal(r.RawData, &durations); err != nil {
+					return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+				}
+				accepted = append(accepted, durations)
+			}
+		}
+		if len(accepted) < 2 {
+			continue
+		}
+
+		frameBitsPerRaw := make([][]int, 0, len(accepted))
+		for _, raw := range accepted {
+			frames := applicationinfraredanalysis.SegmentFrames(raw)
+			if len(frames) == 0 {
+				continue
+			}
+			frameBitsPerRaw = append(frameBitsPerRaw, applicationinfraredanalysis.DemodulateBits(frames[0]))
+		}
+		if len(frameBitsPerRaw) < 2 {
+			continue
+		}
+
+		volatile, err := applicationinfraredanalysis.DetectVolatileBits(frameBitsPerRaw[0], frameBitsPerRaw[1])
+		if err != nil {
+			return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+		}
+		volatileSets = append(volatileSets, volatile)
+
+		states, err := u.recordCase.ListStatesByCaseId(ctx, c.Id)
+		if err != nil {
+			return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+		}
+
+		if c.Step == 1 {
+			baselineBits = frameBitsPerRaw[0]
+			for _, s := range states {
+				baselineState[s.InfraredStateId.String()] = s.StateValue
+			}
+			continue
+		}
+
+		caseBits[c.Id] = frameBitsPerRaw[0]
+		// OFAT construction (Plan B1, Task 8): a non-baseline case differs
+		// from baseline in exactly one state — find it by comparing against
+		// the baseline's own recorded state values.
+		for _, s := range states {
+			if baselineValue, ok := baselineState[s.InfraredStateId.String()]; ok && baselineValue != s.StateValue {
+				caseTargetState[c.Id] = s.InfraredStateId
+				caseTargetValue[c.Id] = s.StateValue
+				break
+			}
+		}
+	}
+
+	volatile := applicationinfraredanalysis.UnionVolatileBits(volatileSets...)
+	payload, err := applicationinfraredanalysis.Attribute(baselineBits, caseBits, caseTargetState, caseTargetValue, volatile)
+	if err != nil {
+		return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+	}
+	return payload, baselineState, nil
+}
+
+func (u *usecase) GetCoderBySessionId(ctx context.Context, sessionId uuid.UUID) (*domainmodels.InfraredStateCoder, error) {
+	return u.coder.GetBySessionId(ctx, sessionId)
+}
 
 func (u *usecase) DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string) error {
 	if reason == "" {
