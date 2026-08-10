@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { visibleNavigation } from "@/config/navigation";
 import Dialog from "@/components/ui/dialog";
-import { setSidebarCollapsedAction } from "@/lib/api/session-actions";
+import { setSidebarCollapsedAction } from "@/lib/actions/session-actions";
 import type { UserResponse } from "@/lib/api/users";
 
 import AppBar from "./AppBar";

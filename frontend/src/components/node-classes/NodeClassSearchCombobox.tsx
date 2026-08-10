@@ -4,10 +4,8 @@ import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import Input from "@/components/ui/input";
-import {
-  listNodeClasses,
-  type NodeClassResponse,
-} from "@/lib/api/node-classes";
+import { searchNodeClassesAction } from "@/lib/actions/entity-search-actions";
+import type { SearchOption } from "@/lib/actions/search-options";
 
 const RESULTS_PER_PAGE = 6;
 const DEBOUNCE_MS = 300;
@@ -32,8 +30,8 @@ export default function NodeClassSearchCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [nodeClasses, setNodeClasses] = useState<NodeClassResponse[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
+  const [nodeClasses, setNodeClasses] = useState<SearchOption[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState(defaultNodeClassId ?? "");
   const [selectedName, setSelectedName] = useState(defaultNodeClassName ?? "");
@@ -44,20 +42,20 @@ export default function NodeClassSearchCombobox({
     const timeout = setTimeout(() => {
       let cancelled = false;
       setLoading(true);
-      listNodeClasses({
-        search: query || undefined,
+      searchNodeClassesAction({
+        query,
         page,
         limit: RESULTS_PER_PAGE,
       })
         .then((result) => {
           if (cancelled) return;
-          setNodeClasses(result.data);
-          setTotalItems(result.page.total_items);
+          setNodeClasses(result.items);
+          setTotalPages(result.totalPages);
         })
         .catch(() => {
           if (cancelled) return;
           setNodeClasses([]);
-          setTotalItems(0);
+          setTotalPages(1);
         })
         .finally(() => {
           if (!cancelled) setLoading(false);
@@ -83,11 +81,9 @@ export default function NodeClassSearchCombobox({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [open]);
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / RESULTS_PER_PAGE));
-
-  function select(nodeClass: NodeClassResponse | null) {
-    setSelectedId(nodeClass?.id ?? "");
-    setSelectedName(nodeClass?.name ?? "");
+  function select(nodeClass: SearchOption | null) {
+    setSelectedId(nodeClass?.value ?? "");
+    setSelectedName(nodeClass?.label ?? "");
     setOpen(false);
   }
 
@@ -159,19 +155,19 @@ export default function NodeClassSearchCombobox({
               </li>
             ) : nodeClasses.length ? (
               nodeClasses.map((nodeClass) => (
-                <li key={nodeClass.id}>
+                <li key={nodeClass.value}>
                   <button
                     type="button"
                     role="option"
-                    aria-selected={nodeClass.id === selectedId}
+                    aria-selected={nodeClass.value === selectedId}
                     onClick={() => select(nodeClass)}
                     className={`hover:bg-highlight/40 w-full rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                      nodeClass.id === selectedId
+                      nodeClass.value === selectedId
                         ? "bg-highlight/40 font-semibold"
                         : ""
                     }`}
                   >
-                    {nodeClass.name}
+                    {nodeClass.label}
                   </button>
                 </li>
               ))

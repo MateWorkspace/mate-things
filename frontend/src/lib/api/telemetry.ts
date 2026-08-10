@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { apiFetch, buildQuery } from "@/lib/api/client";
 import type { CountDataResponse, CountResponse } from "@/lib/api/types";

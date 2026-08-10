@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { apiFetch, apiRequest, buildQuery } from "@/lib/api/client";
 import type { AuditFields, PageDataResponse, PageQuery } from "@/lib/api/types";

@@ -16,6 +16,8 @@ import { nodeFixture, USER } from "@/test/fixtures";
 
 import NodeClassDetailPage from "./page";
 
+vi.mock("server-only", () => ({}));
+
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(),
 }));

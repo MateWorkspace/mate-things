@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import type { ActionLogResponse } from "@/lib/api/action-logs";
 import { apiFetch, buildQuery } from "@/lib/api/client";

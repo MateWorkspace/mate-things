@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import Input from "@/components/ui/input";
-import { listActions, type ActionResponse } from "@/lib/api/actions";
+import { searchActionsAction } from "@/lib/actions/entity-search-actions";
+import type { SearchOption } from "@/lib/actions/search-options";
 
 const RESULTS_PER_PAGE = 6;
 const DEBOUNCE_MS = 300;
@@ -29,8 +30,8 @@ export default function ActionSearchCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [actions, setActions] = useState<ActionResponse[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
+  const [actions, setActions] = useState<SearchOption[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState(defaultActionId ?? "");
   const [selectedName, setSelectedName] = useState(defaultActionName ?? "");
@@ -41,16 +42,16 @@ export default function ActionSearchCombobox({
     const timeout = setTimeout(() => {
       let cancelled = false;
       setLoading(true);
-      listActions({ search: query || undefined, page, limit: RESULTS_PER_PAGE })
+      searchActionsAction({ query, page, limit: RESULTS_PER_PAGE })
         .then((result) => {
           if (cancelled) return;
-          setActions(result.data);
-          setTotalItems(result.page.total_items);
+          setActions(result.items);
+          setTotalPages(result.totalPages);
         })
         .catch(() => {
           if (cancelled) return;
           setActions([]);
-          setTotalItems(0);
+          setTotalPages(1);
         })
         .finally(() => {
           if (!cancelled) setLoading(false);
@@ -76,11 +77,9 @@ export default function ActionSearchCombobox({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [open]);
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / RESULTS_PER_PAGE));
-
-  function select(action: ActionResponse | null) {
-    setSelectedId(action?.id ?? "");
-    setSelectedName(action?.name ?? "");
+  function select(action: SearchOption | null) {
+    setSelectedId(action?.value ?? "");
+    setSelectedName(action?.label ?? "");
     setOpen(false);
   }
 
@@ -152,19 +151,19 @@ export default function ActionSearchCombobox({
               </li>
             ) : actions.length ? (
               actions.map((action) => (
-                <li key={action.id}>
+                <li key={action.value}>
                   <button
                     type="button"
                     role="option"
-                    aria-selected={action.id === selectedId}
+                    aria-selected={action.value === selectedId}
                     onClick={() => select(action)}
                     className={`hover:bg-highlight/40 w-full rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                      action.id === selectedId
+                      action.value === selectedId
                         ? "bg-highlight/40 font-semibold"
                         : ""
                     }`}
                   >
-                    {action.name}
+                    {action.label}
                   </button>
                 </li>
               ))
