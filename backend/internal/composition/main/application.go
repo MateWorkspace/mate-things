@@ -183,6 +183,8 @@ func (l *launcher) newApplication(ctx context.Context) error {
 		l.infra.nodeSubscriptions,
 		l.infra.llmClientFactory,
 		l.infra.nodeRepository,
+		l.infra.encoderRunner,
+		l.infra.infraredStateCoderRepository,
 		l.infra.logger,
 	)
 

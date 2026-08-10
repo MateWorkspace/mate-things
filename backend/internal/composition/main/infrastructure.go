@@ -3,6 +3,7 @@ package compositionmain
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/MateWorkspace/mate-things/backend/internal/config"
@@ -28,6 +29,7 @@ import (
 	infrastructurecacherolepermission "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/role_permission"
 	infrastructurecacheshared "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/shared"
 	infrastructurecacheuser "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/cache/user"
+	infrastructurejsengine "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/jsengine"
 	infrastructurellm "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/llm"
 	infrastructureloggerleveled "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/logger/leveled"
 	infrastructurenodepublish "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/node/publish"
@@ -41,6 +43,7 @@ import (
 	infrastructurerepositoryinfrareddevicetype "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_device_type"
 	infrastructurerepositoryinfraredrecordsession "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_record_session"
 	infrastructurerepositoryinfraredstate "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state"
+	infrastructurerepositoryinfraredstatecoder "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state_coder"
 	infrastructurerepositoryinfraredstatedevicedefinition "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state_device_definition"
 	infrastructurerepositoryinfraredstatedevicerecordcase "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/infrared_state_device_record_case"
 	infrastructurerepositoryllmconfig "github.com/MateWorkspace/mate-things/backend/internal/infrastructure/repository/llm_config"
@@ -80,6 +83,7 @@ type infrastructure struct {
 	infraredStateDeviceDefinitionRepository domaincontractsrepository.InfraredStateDeviceDefinition
 	infraredRecordSessionRepository         domaincontractsrepository.InfraredRecordSession
 	infraredStateDeviceRecordCaseRepository domaincontractsrepository.InfraredStateDeviceRecordCase
+	infraredStateCoderRepository            domaincontractsrepository.InfraredStateCoder
 	nodeRepository                          domaincontractsrepository.Node
 	nodeConfigValueRepository               domaincontractsrepository.NodeConfigValue
 	nodeLogRepository                       domaincontractsrepository.NodeLog
@@ -120,6 +124,13 @@ type infrastructure struct {
 	llmEncryptor           domaincontractsutility.Encryptor
 
 	llmClientFactory *infrastructurellm.ClientFactory
+	encoderRunner    encoderRunnerAdapter
+}
+
+type encoderRunnerAdapter struct{}
+
+func (encoderRunnerAdapter) RunEncoder(source string, state map[string]string, timeout time.Duration) ([]int32, error) {
+	return infrastructurejsengine.RunEncoder(source, state, timeout)
 }
 
 func (l *launcher) newInfrastructure(ctx context.Context) error {
@@ -149,6 +160,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 	infraredStateDeviceDefinitionRepository := infrastructurerepositoryinfraredstatedevicedefinition.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	infraredRecordSessionRepository := infrastructurerepositoryinfraredrecordsession.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	infraredStateDeviceRecordCaseRepository := infrastructurerepositoryinfraredstatedevicerecordcase.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
+	infraredStateCoderRepository := infrastructurerepositoryinfraredstatecoder.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeRepository := infrastructurerepositorynode.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeConfigValueRepository := infrastructurerepositorynodeconfigvalue.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
 	nodeLogRepository := infrastructurerepositorynodelog.NewPostgresImpl(l.drv.dt, &sqrQuestion, &sqrDollar)
@@ -199,6 +211,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		return fmt.Errorf("failed to construct llm encryptor (check BE_LLM_ENCRYPTION_KEY is set to exactly 32 bytes): %w", err)
 	}
 	llmClientFactory := infrastructurellm.NewClientFactory(llmConfigRepository, llmEncryptor)
+	encoderRunner := encoderRunnerAdapter{}
 
 	l.infra = &infrastructure{
 		logger: logger,
@@ -216,6 +229,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		infraredStateDeviceDefinitionRepository: infraredStateDeviceDefinitionRepository,
 		infraredRecordSessionRepository:         infraredRecordSessionRepository,
 		infraredStateDeviceRecordCaseRepository: infraredStateDeviceRecordCaseRepository,
+		infraredStateCoderRepository:            infraredStateCoderRepository,
 		nodeRepository:                          nodeRepository,
 		nodeConfigValueRepository:               nodeConfigValueRepository,
 		nodeLogRepository:                       nodeLogRepository,
@@ -256,6 +270,7 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 		llmEncryptor:           llmEncryptor,
 
 		llmClientFactory: llmClientFactory,
+		encoderRunner:    encoderRunner,
 	}
 
 	logger.Info(ctx, tag, "Infrastructure initialized", domainmodels.LoggerMeta{})
