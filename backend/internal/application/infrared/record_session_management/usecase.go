@@ -376,7 +376,7 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 		return
 	}
 
-	payload, baselineState, err := u.buildAnalysisPayload(ctx, tag, sessionId, cases)
+	payload, baselineState, err := u.buildAnalysisPayload(ctx, tag, cases, states, definitions)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to analyze recorded cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
@@ -445,7 +445,23 @@ func stateIdToName(states []domainmodels.InfraredState, byId map[string]string) 
 // analysis package's inputs and runs the full frame -> demodulate ->
 // volatile -> attribute pipeline. Returns the payload plus the baseline
 // case's target state (state id -> value) for the encoder smoke test.
-func (u *usecase) buildAnalysisPayload(ctx context.Context, tag string, sessionId uuid.UUID, cases []domainmodels.InfraredStateDeviceRecordCase) (applicationinfraredanalysis.AnalysisPayload, map[string]string, error) {
+//
+// The baseline case is identified by matching its recorded state values
+// against applicationinfraredcasegeneration.Baseline(states, definitions),
+// NOT by Step == 1: a later re-ordering step (WriteScript, Plan B1) can
+// reassign every case's Step based on the LLM's chosen press order, so the
+// case that was originally cases[0] can end up at any Step value. Comparing
+// against the deterministically-known baseline values is the only reliable
+// way to find it from persisted rows alone.
+func (u *usecase) buildAnalysisPayload(
+	ctx context.Context,
+	tag string,
+	cases []domainmodels.InfraredStateDeviceRecordCase,
+	states []domainmodels.InfraredState,
+	definitions []domainmodels.InfraredStateDeviceDefinition,
+) (applicationinfraredanalysis.AnalysisPayload, map[string]string, error) {
+	expectedBaseline := applicationinfraredcasegeneration.Baseline(states, definitions)
+
 	var baselineBits []int
 	baselineState := make(map[string]string)
 	caseBits := make(map[uuid.UUID][]int)
@@ -490,14 +506,14 @@ func (u *usecase) buildAnalysisPayload(ctx context.Context, tag string, sessionI
 		}
 		volatileSets = append(volatileSets, volatile)
 
-		states, err := u.recordCase.ListStatesByCaseId(ctx, c.Id)
+		caseStates, err := u.recordCase.ListStatesByCaseId(ctx, c.Id)
 		if err != nil {
 			return applicationinfraredanalysis.AnalysisPayload{}, nil, err
 		}
 
-		if c.Step == 1 {
+		if isBaselineCase(expectedBaseline, caseStates) {
 			baselineBits = frameBitsPerRaw[0]
-			for _, s := range states {
+			for _, s := range caseStates {
 				baselineState[s.InfraredStateId.String()] = s.StateValue
 			}
 			continue
@@ -507,7 +523,7 @@ func (u *usecase) buildAnalysisPayload(ctx context.Context, tag string, sessionI
 		// OFAT construction (Plan B1, Task 8): a non-baseline case differs
 		// from baseline in exactly one state — find it by comparing against
 		// the baseline's own recorded state values.
-		for _, s := range states {
+		for _, s := range caseStates {
 			if baselineValue, ok := baselineState[s.InfraredStateId.String()]; ok && baselineValue != s.StateValue {
 				caseTargetState[c.Id] = s.InfraredStateId
 				caseTargetValue[c.Id] = s.StateValue
@@ -516,12 +532,34 @@ func (u *usecase) buildAnalysisPayload(ctx context.Context, tag string, sessionI
 		}
 	}
 
+	if baselineBits == nil {
+		return applicationinfraredanalysis.AnalysisPayload{}, nil, domainmodels.NewError(
+			"no baseline case with two accepted raws was found for analysis", domainmodels.ErrTypeFailure, nil,
+		)
+	}
+
 	volatile := applicationinfraredanalysis.UnionVolatileBits(volatileSets...)
 	payload, err := applicationinfraredanalysis.Attribute(baselineBits, caseBits, caseTargetState, caseTargetValue, volatile)
 	if err != nil {
 		return applicationinfraredanalysis.AnalysisPayload{}, nil, err
 	}
 	return payload, baselineState, nil
+}
+
+// isBaselineCase reports whether a case's recorded state values match the
+// deterministically-known baseline exactly (same states, same values) —
+// the only reliable way to identify the baseline case once Step may have
+// been reassigned by a later re-ordering step.
+func isBaselineCase(expectedBaseline map[uuid.UUID]string, caseStates []domainmodels.InfraredStateDeviceRecordState) bool {
+	if len(caseStates) != len(expectedBaseline) {
+		return false
+	}
+	for _, s := range caseStates {
+		if expectedBaseline[s.InfraredStateId] != s.StateValue {
+			return false
+		}
+	}
+	return true
 }
 
 func (u *usecase) GetCoderBySessionId(ctx context.Context, sessionId uuid.UUID) (*domainmodels.InfraredStateCoder, error) {

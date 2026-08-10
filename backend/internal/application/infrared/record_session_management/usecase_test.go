@@ -2,7 +2,9 @@ package applicationinfraredrecordsessionmanagement
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -100,7 +102,8 @@ func (f *fakeDeviceRepository) GetById(_ context.Context, id uuid.UUID) (*domain
 
 type fakeDefinitionRepository struct {
 	domaincontractsrepository.InfraredStateDeviceDefinition
-	createCalls int
+	createCalls          int
+	listByDeviceIdResult []domainmodels.InfraredStateDeviceDefinition
 }
 
 func (f *fakeDefinitionRepository) CreateMany(_ context.Context, _ []domainmodels.InfraredStateDeviceDefinition) error {
@@ -108,7 +111,7 @@ func (f *fakeDefinitionRepository) CreateMany(_ context.Context, _ []domainmodel
 	return nil
 }
 func (f *fakeDefinitionRepository) ListByDeviceId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error) {
-	return nil, nil
+	return f.listByDeviceIdResult, nil
 }
 
 type fakeStateRepository struct {
@@ -121,10 +124,12 @@ func (f *fakeStateRepository) ListByDeviceTypeId(_ context.Context, _ uuid.UUID)
 }
 
 type fakeEncoderRunner struct {
-	err error
+	err           error
+	receivedState map[string]string
 }
 
-func (f *fakeEncoderRunner) RunEncoder(_ string, _ map[string]string, _ time.Duration) ([]int32, error) {
+func (f *fakeEncoderRunner) RunEncoder(_ string, state map[string]string, _ time.Duration) ([]int32, error) {
+	f.receivedState = state
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -133,12 +138,14 @@ func (f *fakeEncoderRunner) RunEncoder(_ string, _ map[string]string, _ time.Dur
 
 type fakeCoderRepository struct {
 	domaincontractsrepository.InfraredStateCoder
-	created   domainmodels.InfraredStateCoder
-	getResult *domainmodels.InfraredStateCoder
+	created      domainmodels.InfraredStateCoder
+	createCalled bool
+	getResult    *domainmodels.InfraredStateCoder
 }
 
 func (f *fakeCoderRepository) Create(_ context.Context, coder domainmodels.InfraredStateCoder) (uuid.UUID, error) {
 	f.created = coder
+	f.createCalled = true
 	return uuid.New(), nil
 }
 func (f *fakeCoderRepository) GetBySessionId(_ context.Context, _ uuid.UUID) (*domainmodels.InfraredStateCoder, error) {
@@ -156,10 +163,12 @@ type fakeCaseRepository struct {
 	getResult       *domainmodels.InfraredStateDeviceRecordCase
 	getErr          error
 
-	acceptedRawCounts     map[uuid.UUID]int
-	listBySessionIdResult []domainmodels.InfraredStateDeviceRecordCase
-	rawById               map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw
-	statusValuesByCase    map[uuid.UUID][]domainmodels.InfraredRecordCaseStatus
+	acceptedRawCounts        map[uuid.UUID]int
+	listBySessionIdResult    []domainmodels.InfraredStateDeviceRecordCase
+	rawById                  map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw
+	statusValuesByCase       map[uuid.UUID][]domainmodels.InfraredRecordCaseStatus
+	listRawByCaseIdResult    []domainmodels.InfraredStateDeviceRecordRaw
+	listStatesByCaseIdResult []domainmodels.InfraredStateDeviceRecordState
 }
 
 func (f *fakeCaseRepository) CreateRaw(_ context.Context, caseId uuid.UUID, rawData []byte) (uuid.UUID, error) {
@@ -199,7 +208,10 @@ func (f *fakeCaseRepository) UpdateRawStatusById(_ context.Context, _ uuid.UUID,
 	return nil
 }
 func (f *fakeCaseRepository) ListRawByCaseId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordRaw, error) {
-	return nil, nil
+	return f.listRawByCaseIdResult, nil
+}
+func (f *fakeCaseRepository) ListStatesByCaseId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordState, error) {
+	return f.listStatesByCaseIdResult, nil
 }
 func (f *fakeCaseRepository) CountAcceptedRawByCaseId(_ context.Context, caseId uuid.UUID) (int, error) {
 	return f.acceptedRawCounts[caseId], nil
@@ -705,6 +717,16 @@ func TestRunAnalysisAndGenerationPersistsCoderAndStaysInFunctionGenerating(t *te
 	sessionId := uuid.New()
 	powerId := uuid.New()
 
+	// A single-bit "header + one bit" capture (matches the fixtures already
+	// established in the analysis package's own tests): header(9000,4500)
+	// then one data bit with a short space (=> bit 0). Two identical
+	// accepted raws so DetectVolatileBits finds no volatile bits.
+	rawBytes, err := json.Marshal([]int32{9000, 4500, 560, 560})
+	if err != nil {
+		t.Fatalf("failed to marshal fixture raw data: %v", err)
+	}
+	baselineCaseId := uuid.New()
+
 	// runAnalysisAndGeneration looks the session up by id before anything
 	// else; fakeSessionRepository{}'s default getResult is nil, which the
 	// implementation treats as "session not found" and fails fast on — give
@@ -712,9 +734,24 @@ func TestRunAnalysisAndGenerationPersistsCoderAndStaysInFunctionGenerating(t *te
 	// pipeline instead of bailing out on the very first lookup.
 	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
 	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}}
+	definitionRepo := &fakeDefinitionRepository{listByDeviceIdResult: []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"ON", "OFF"}},
+	}}
 	caseRepo := &fakeCaseRepository{
+		// The case's Step is deliberately NOT 1 — the baseline must be
+		// identified by its recorded state values matching
+		// applicationinfraredcasegeneration.Baseline, never by Step, since
+		// an earlier LLM-driven re-ordering step can reassign Step away
+		// from 1 for the true baseline case.
 		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
-			{Id: uuid.New(), InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+			{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 3, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		},
+		listRawByCaseIdResult: []domainmodels.InfraredStateDeviceRecordRaw{
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+		},
+		listStatesByCaseIdResult: []domainmodels.InfraredStateDeviceRecordState{
+			{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "ON"},
 		},
 	}
 	coderRepo := &fakeCoderRepository{}
@@ -731,18 +768,29 @@ func TestRunAnalysisAndGenerationPersistsCoderAndStaysInFunctionGenerating(t *te
 	// compile error (the identifier would resolve to the variable, not the
 	// type, in that scope).
 	impl := NewUsecaseImpl(
-		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
 		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
 		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &noopLogger{},
 	).(*usecase)
 
 	impl.runAnalysisAndGeneration(sessionId)
 
+	if !coderRepo.createCalled {
+		t.Fatal("coder repository Create() was never called, want the analysis pipeline to produce and persist a coder")
+	}
 	if coderRepo.created.InfraredRecordSessionId != sessionId {
 		t.Fatalf("created coder session id = %v, want %v", coderRepo.created.InfraredRecordSessionId, sessionId)
 	}
 	if coderRepo.created.EncoderSource == "" {
 		t.Fatal("created coder has empty EncoderSource")
+	}
+
+	// The encoder smoke test must receive a state-NAME-keyed map (e.g.
+	// "POWER"), not the UUID-keyed map buildAnalysisPayload builds
+	// internally — this was a real bug caught during implementation.
+	wantState := map[string]string{"POWER": "ON"}
+	if !reflect.DeepEqual(encoderRunner.receivedState, wantState) {
+		t.Fatalf("RunEncoder() received state = %v, want %v (name-keyed, not uuid-keyed)", encoderRunner.receivedState, wantState)
 	}
 
 	found := false
@@ -758,28 +806,54 @@ func TestRunAnalysisAndGenerationPersistsCoderAndStaysInFunctionGenerating(t *te
 
 func TestRunAnalysisAndGenerationFailsSessionWhenEncoderThrows(t *testing.T) {
 	sessionId := uuid.New()
+	powerId := uuid.New()
+
+	rawBytes, err := json.Marshal([]int32{9000, 4500, 560, 560})
+	if err != nil {
+		t.Fatalf("failed to marshal fixture raw data: %v", err)
+	}
+	baselineCaseId := uuid.New()
+
 	// See the sibling test above for why getResult must be non-nil: without
 	// it this test would still end in FAILED, but for the wrong reason (the
 	// session lookup itself failing rather than the encoder smoke test).
 	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}}
+	definitionRepo := &fakeDefinitionRepository{listByDeviceIdResult: []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"ON", "OFF"}},
+	}}
 	caseRepo := &fakeCaseRepository{
 		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
-			{Id: uuid.New(), InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+			{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		},
+		listRawByCaseIdResult: []domainmodels.InfraredStateDeviceRecordRaw{
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+		},
+		listStatesByCaseIdResult: []domainmodels.InfraredStateDeviceRecordState{
+			{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "ON"},
 		},
 	}
 	coderRepo := &fakeCoderRepository{}
+	// Must be a coder-shaped response so WriteCoder actually succeeds and
+	// the pipeline reaches the encoder smoke test — a bare
+	// &fakeLlmClientFactory{} defaults to the case-generation JSON array
+	// shape, which fails to unmarshal here and returns before RunEncoder is
+	// ever called, making the "encoder throws" scenario this test names
+	// never actually happen.
+	llmFactory := &fakeLlmClientFactory{responseText: `{"encoder_source": "function encode(state) { return [9000, 4500]; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "summary", "detail_readme": "detail"}`}
 	encoderRunner := &fakeEncoderRunner{err: errors.New("encoder threw")}
 
 	impl := NewUsecaseImpl(
-		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
-		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
-		&fakeLlmClientFactory{}, &fakeNodeRepository{}, encoderRunner, coderRepo, &noopLogger{},
+		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
+		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &noopLogger{},
 	).(*usecase)
 
 	impl.runAnalysisAndGeneration(sessionId)
 
-	if coderRepo.created.Id != uuid.Nil {
-		t.Fatal("coder was created despite the encoder smoke test failing, want no persisted row")
+	if coderRepo.createCalled {
+		t.Fatal("coder repository Create() was called despite the encoder smoke test failing, want no persisted row")
 	}
 	found := false
 	for _, s := range sessionRepo.StatusUpdates() {

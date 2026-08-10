@@ -33,7 +33,7 @@ func Generate(states []domainmodels.InfraredState, definitions []domainmodels.In
 	copy(orderedStates, states)
 	sort.Slice(orderedStates, func(i, j int) bool { return orderedStates[i].Name < orderedStates[j].Name })
 
-	baseline := make(map[uuid.UUID]string, len(orderedStates))
+	baseline := Baseline(states, definitions)
 	valuesByStateId := make(map[uuid.UUID][]string, len(orderedStates))
 	for _, state := range orderedStates {
 		values := allValues(definitionByStateId[state.Id])
@@ -41,7 +41,6 @@ func Generate(states []domainmodels.InfraredState, definitions []domainmodels.In
 			continue
 		}
 		valuesByStateId[state.Id] = values
-		baseline[state.Id] = values[0]
 	}
 
 	cases := []GeneratedCase{{Step: 1, States: cloneMap(baseline)}}
@@ -56,6 +55,30 @@ func Generate(states []domainmodels.InfraredState, definitions []domainmodels.In
 		}
 	}
 	return cases
+}
+
+// Baseline computes the same first-value-of-every-state map Generate uses
+// for its own baseline case (cases[0]). It's exported so callers that only
+// have the persisted case rows (not the original GeneratedCase slice) can
+// identify which recorded case is the true baseline by matching its stored
+// state values against this map — the case's Step is not reliable for this,
+// since a later re-ordering step (e.g. an LLM-chosen press order) can
+// reassign Step away from 1.
+func Baseline(states []domainmodels.InfraredState, definitions []domainmodels.InfraredStateDeviceDefinition) map[uuid.UUID]string {
+	definitionByStateId := make(map[uuid.UUID]domainmodels.InfraredStateDeviceDefinition, len(definitions))
+	for _, definition := range definitions {
+		definitionByStateId[definition.InfraredStateId] = definition
+	}
+
+	baseline := make(map[uuid.UUID]string, len(states))
+	for _, state := range states {
+		values := allValues(definitionByStateId[state.Id])
+		if len(values) == 0 {
+			continue
+		}
+		baseline[state.Id] = values[0]
+	}
+	return baseline
 }
 
 func allValues(definition domainmodels.InfraredStateDeviceDefinition) []string {
