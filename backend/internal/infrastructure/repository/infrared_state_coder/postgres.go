@@ -65,6 +65,28 @@ func (p *postgresImpl) GetBySessionId(ctx context.Context, sessionId uuid.UUID) 
 	return &item, nil
 }
 
+func (p *postgresImpl) GetById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredStateCoder, error) {
+	query, args, err := p.queryGetById(id)
+	if err != nil {
+		return nil, infrastructurerepositoryshared.QueryBuildError("failed to build get infrared_state_coder query", err)
+	}
+
+	var item domainmodels.InfraredStateCoder
+	var status string
+	if err := p.Dt.QueryRow(ctx, query, args...).Scan(
+		&item.Id, &item.InfraredDeviceId, &item.InfraredRecordSessionId,
+		&item.EncoderSource, &item.DecoderSource, &item.SummaryReadme, &item.DetailReadme,
+		&status, &item.CreatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, infrastructurerepositoryshared.NotFound("infrared_state_coder not found", err)
+		}
+		return nil, infrastructurerepositoryshared.MapPgxError("failed to get infrared_state_coder", err)
+	}
+	item.Status = domainmodels.InfraredStateCoderStatus(status)
+	return &item, nil
+}
+
 func (p *postgresImpl) Activate(ctx context.Context, coderId uuid.UUID, deviceId uuid.UUID) error {
 	activateQuery, activateArgs, err := p.SqrD.Update("infrared_state_coder").
 		Set("status", domainmodels.InfraredStateCoderStatusActive).

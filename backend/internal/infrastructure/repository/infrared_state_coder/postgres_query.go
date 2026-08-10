@@ -26,6 +26,13 @@ func (p *postgresImpl) queryCreate(coder domainmodels.InfraredStateCoder) (query
 		ToSql()
 }
 
+func (p *postgresImpl) queryGetById(id uuid.UUID) (query string, args []any, err error) {
+	return p.SqrD.Select(infraredStateCoderColumns...).
+		From("infrared_state_coder").
+		Where(squirrel.Eq{"id": id}).
+		ToSql()
+}
+
 func (p *postgresImpl) queryGetBySessionId(sessionId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(infraredStateCoderColumns...).
 		From("infrared_state_coder").

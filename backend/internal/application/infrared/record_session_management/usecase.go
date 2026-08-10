@@ -51,6 +51,7 @@ type usecase struct {
 	encoderRunner EncoderRunner
 	coder         domaincontractsrepository.InfraredStateCoder
 	testCase      domaincontractsrepository.InfraredTestCase
+	publish       domaincontractsnode.Publish
 	logger        domaincontractslogger.Leveled
 }
 
@@ -67,12 +68,13 @@ func NewUsecaseImpl(
 	encoderRunner EncoderRunner,
 	coder domaincontractsrepository.InfraredStateCoder,
 	testCase domaincontractsrepository.InfraredTestCase,
+	publish domaincontractsnode.Publish,
 	logger domaincontractslogger.Leveled,
 ) domainusecasesinfrared.RecordSessionManagement {
 	return &usecase{
 		session: session, device: device, definition: definition, state: state,
 		recordCase: recordCase, broadcaster: broadcaster, subscriptions: subscriptions,
-		llmFactory: llmFactory, node: node, encoderRunner: encoderRunner, coder: coder, testCase: testCase, logger: logger,
+		llmFactory: llmFactory, node: node, encoderRunner: encoderRunner, coder: coder, testCase: testCase, publish: publish, logger: logger,
 	}
 }
 
@@ -522,6 +524,89 @@ func (u *usecase) ListTestCases(ctx context.Context, sessionId uuid.UUID) ([]dom
 		result = append(result, domainusecasesinfrared.TestCaseWithStates{TestCase: tc, States: states})
 	}
 	return result, nil
+}
+
+func (u *usecase) TransmitTestCase(ctx context.Context, testCaseId uuid.UUID) error {
+	const tag = "infrared/record_session_management/TransmitTestCase"
+
+	testCase, err := u.testCase.GetById(ctx, testCaseId)
+	if err != nil {
+		return err
+	}
+	if testCase == nil {
+		return domainmodels.NewError("test case not found", domainmodels.ErrTypeNotFound, nil)
+	}
+
+	testCaseStates, err := u.testCase.ListStatesByTestCaseId(ctx, testCaseId)
+	if err != nil {
+		return err
+	}
+
+	coder, err := u.coderById(ctx, testCase.InfraredStateCoderId)
+	if err != nil {
+		return err
+	}
+
+	session, err := u.session.GetById(ctx, coder.InfraredRecordSessionId)
+	if err != nil || session == nil {
+		u.logger.Error(ctx, tag, "failed to look up session for test case", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
+		return err
+	}
+	node, err := u.node.ReadById(ctx, session.NodeId)
+	if err != nil || node == nil {
+		u.logger.Error(ctx, tag, "failed to look up node for test case", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
+		return err
+	}
+
+	device, err := u.device.GetById(ctx, session.InfraredDeviceId)
+	if err != nil || device == nil {
+		return err
+	}
+	states, err := u.state.ListByDeviceTypeId(ctx, device.InfraredDeviceTypeId)
+	if err != nil {
+		return err
+	}
+
+	stateByName := make(map[string]string, len(testCaseStates))
+	for _, s := range testCaseStates {
+		stateByName[stateIdToNameLookup(states, s.InfraredStateId)] = s.StateValue
+	}
+
+	rawData, err := u.encoderRunner.RunEncoder(coder.EncoderSource, stateByName, encoderSmokeTestTimeout)
+	if err != nil {
+		u.logger.Error(ctx, tag, "encoder failed while transmitting test case", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
+		return err
+	}
+
+	executionId := uuid.New()
+	if err := u.publish.IrTransmit(ctx, node.DeviceId, executionId, rawData); err != nil {
+		u.logger.Error(ctx, tag, "failed to publish ir transmit", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
+		return err
+	}
+	return nil
+}
+
+// coderById is a small helper since InfraredStateCoder's repository only
+// exposes GetBySessionId (Task 3 of this plan deliberately did not add a
+// GetById, since nothing before this task ever needed to look a coder up
+// by its own id) — TransmitTestCase is the first caller that has a coder id
+// (from the test case) but not yet a session id, so it must go by coder id
+// specifically.
+func (u *usecase) coderById(ctx context.Context, coderId uuid.UUID) (*domainmodels.InfraredStateCoder, error) {
+	return u.coder.GetById(ctx, coderId)
+}
+
+// stateIdToNameLookup scans states for a matching Id and returns its Name —
+// a different shape from stateIdToName below (which converts a whole map at
+// once), since TransmitTestCase already iterates testCaseStates one at a
+// time to build stateByName.
+func stateIdToNameLookup(states []domainmodels.InfraredState, id uuid.UUID) string {
+	for _, s := range states {
+		if s.Id == id {
+			return s.Name
+		}
+	}
+	return ""
 }
 
 // stateIdToName converts a state-id-keyed value map (as produced internally
