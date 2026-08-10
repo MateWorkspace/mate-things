@@ -36,11 +36,6 @@ func NewUsecaseImpl(
 	}
 }
 
-// ReadByNodeId returns only the values whose key still exists in the node's
-// CURRENT firmware's config schema. Stored rows stay keyed to the firmware they
-// were set under, so a node that was reassigned to another firmware keeps its
-// old rows as history, but they are hidden here to keep the read surface
-// identical to what SetByNodeId will accept.
 func (u *usecase) ReadByNodeId(
 	ctx context.Context,
 	request domainusecasesnode.ReadConfigValuesByNodeIdRequest,
@@ -56,6 +51,10 @@ func (u *usecase) ReadByNodeId(
 		return nil, err
 	}
 
+	if node.FirmwareId == nil {
+		return []domainmodels.NodeConfigValue{}, nil
+	}
+
 	values, err := u.repository.ReadByNodeId(ctx, request.NodeId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to read node config values", domainmodels.LoggerMeta{
@@ -65,7 +64,7 @@ func (u *usecase) ReadByNodeId(
 		return nil, err
 	}
 
-	params, err := u.parameterRepository.ReadByFirmwareId(ctx, node.FirmwareId)
+	params, err := u.parameterRepository.ReadByFirmwareId(ctx, *node.FirmwareId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to read firmware config parameters", domainmodels.LoggerMeta{
 			"err":         err,
@@ -101,7 +100,11 @@ func (u *usecase) SetByNodeId(ctx context.Context, request domainusecasesnode.Se
 		return err
 	}
 
-	params, err := u.parameterRepository.ReadByFirmwareId(ctx, node.FirmwareId)
+	if node.FirmwareId == nil {
+		return domainmodels.NewError("config key does not exist on the node's current firmware", domainmodels.ErrTypeNotFound, nil)
+	}
+
+	params, err := u.parameterRepository.ReadByFirmwareId(ctx, *node.FirmwareId)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to read firmware config parameters", domainmodels.LoggerMeta{
 			"err":         err,
@@ -127,7 +130,7 @@ func (u *usecase) SetByNodeId(ctx context.Context, request domainusecasesnode.Se
 		return err
 	}
 
-	if err := u.repository.Upsert(ctx, request.NodeId, node.FirmwareId, request.Key, request.Value, request.ActorId); err != nil {
+	if err := u.repository.Upsert(ctx, request.NodeId, *node.FirmwareId, request.Key, request.Value, request.ActorId); err != nil {
 		u.logger.Error(ctx, tag, "failed to upsert node config value", domainmodels.LoggerMeta{
 			"err":     err,
 			"node_id": request.NodeId,

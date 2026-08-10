@@ -19,10 +19,11 @@ type MessagingCallback interface {
 }
 
 type RegisterNodeMessageRequest struct {
-	DeviceId     string
-	DeviceInfo   string
-	FirmwareName string
-	Config       map[string]string
+	DeviceId      string
+	DeviceInfo    string
+	NodeClassName string
+	FirmwareName  string
+	Config        map[string]string
 }
 
 type NodeStatusMessageRequest struct {

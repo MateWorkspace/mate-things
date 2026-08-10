@@ -31,7 +31,7 @@ func (p *postgresImpl) queryCreate(
 	deviceId string,
 	deviceInfo string,
 	name string,
-	firmwareId uuid.UUID,
+	firmwareId *uuid.UUID,
 	description *string,
 	isConnected bool,
 	createdBy *uuid.UUID,
@@ -54,8 +54,14 @@ func (p *postgresImpl) queryCreate(
 func (p *postgresImpl) queryUpsertRegistration(
 	deviceId string,
 	deviceInfo string,
+	nodeClassName string,
 	firmwareName string,
 ) (query string, args []any, err error) {
+	var firmwareNameArg *string
+	if firmwareName != "" {
+		firmwareNameArg = &firmwareName
+	}
+
 	return `
 		INSERT INTO nodes (
 			node_class_id,
@@ -66,15 +72,16 @@ func (p *postgresImpl) queryUpsertRegistration(
 			is_connected
 		)
 		SELECT
-			f.node_class_id,
+			nc.id,
 			$1,
 			$2,
 			$3,
 			f.id,
 			TRUE
-		FROM firmwares f
-		WHERE f.name = $4
-			AND f.deleted_at IS NULL
+		FROM node_classes nc
+		LEFT JOIN firmwares f ON f.name = $4 AND f.deleted_at IS NULL
+		WHERE nc.name = $5
+			AND nc.deleted_at IS NULL
 		LIMIT 1
 		ON CONFLICT (device_id) DO UPDATE SET
 			node_class_id = EXCLUDED.node_class_id,
@@ -85,7 +92,7 @@ func (p *postgresImpl) queryUpsertRegistration(
 			deleted_at = NULL,
 			deleted_by = NULL
 		RETURNING (xmax = 0) AS created, ` + joinNodeColumns("nodes"),
-		[]any{deviceId, deviceInfo, "node_" + deviceId, firmwareName},
+		[]any{deviceId, deviceInfo, "node_" + deviceId, firmwareNameArg, nodeClassName},
 		nil
 }
 

@@ -32,7 +32,7 @@ func (u *usecase) Create(
 	deviceId string,
 	deviceInfo string,
 	name string,
-	firmwareId uuid.UUID,
+	firmwareId *uuid.UUID,
 	description *string,
 	isConnected bool,
 	createdBy *uuid.UUID,
@@ -53,9 +53,10 @@ func (u *usecase) UpsertRegistration(
 	ctx context.Context,
 	deviceId string,
 	deviceInfo string,
+	nodeClassName string,
 	firmwareName string,
 ) (*domainmodels.Node, bool, error) {
-	item, created, err := u.repository.UpsertRegistration(ctx, deviceId, deviceInfo, firmwareName)
+	item, created, err := u.repository.UpsertRegistration(ctx, deviceId, deviceInfo, nodeClassName, firmwareName)
 	if err != nil {
 		return nil, false, err
 	}

@@ -12,7 +12,7 @@ type NodeResponse struct {
 	DeviceId    string          `json:"device_id" example:"ESP32-BARISTA-07"`
 	DeviceInfo  string          `json:"device_info" example:"ESP32-WROOM-32E, rev 3, 240MHz dual-core"`
 	Name        string          `json:"name" example:"Kitchen Espresso Machine"`
-	FirmwareId  string          `json:"firmware_id" example:"9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"`
+	FirmwareId  *string         `json:"firmware_id,omitempty" example:"9c4e2b7a-1f3d-4a6c-8b5e-2d7f9a1c3e08"`
 	Description string          `json:"description" example:"The espresso machine behind the office kitchen counter."`
 	IsConnected bool            `json:"is_connected" example:"true"`
 	Preferences json.RawMessage `json:"preferences" swaggertype:"object"`
@@ -26,7 +26,7 @@ func Node(node domainmodels.Node) NodeResponse {
 		DeviceId:    node.DeviceId,
 		DeviceInfo:  node.DeviceInfo,
 		Name:        node.Name,
-		FirmwareId:  UUIDString(node.FirmwareId),
+		FirmwareId:  UUIDPtrString(node.FirmwareId),
 		Description: node.Description,
 		IsConnected: node.IsConnected,
 		Preferences: NormalizeJSON(node.Preferences),

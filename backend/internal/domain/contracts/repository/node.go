@@ -15,7 +15,7 @@ type Node interface {
 		deviceId string,
 		deviceInfo string,
 		name string,
-		firmwareId uuid.UUID,
+		firmwareId *uuid.UUID,
 		description *string,
 		isConnected bool,
 		createdBy *uuid.UUID,
@@ -25,6 +25,7 @@ type Node interface {
 		ctx context.Context,
 		deviceId string,
 		deviceInfo string,
+		nodeClassName string,
 		firmwareName string,
 	) (node *domainmodels.Node, created bool, err error)
 

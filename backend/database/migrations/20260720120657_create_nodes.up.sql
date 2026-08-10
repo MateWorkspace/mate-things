@@ -3,7 +3,7 @@ CREATE TABLE nodes (
     node_class_id UUID NOT NULL REFERENCES node_classes (id),
     device_id TEXT NOT NULL UNIQUE,
     device_info TEXT NOT NULL,
-    firmware_id UUID NOT NULL REFERENCES firmwares (id),
+    firmware_id UUID REFERENCES firmwares (id),
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     is_connected BOOLEAN NOT NULL DEFAULT FALSE,

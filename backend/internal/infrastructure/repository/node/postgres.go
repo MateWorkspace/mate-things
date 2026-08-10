@@ -38,7 +38,7 @@ func (p *postgresImpl) Create(
 	deviceId string,
 	deviceInfo string,
 	name string,
-	firmwareId uuid.UUID,
+	firmwareId *uuid.UUID,
 	description *string,
 	isConnected bool,
 	createdBy *uuid.UUID,
@@ -62,9 +62,10 @@ func (p *postgresImpl) UpsertRegistration(
 	ctx context.Context,
 	deviceId string,
 	deviceInfo string,
+	nodeClassName string,
 	firmwareName string,
 ) (node *domainmodels.Node, created bool, err error) {
-	query, args, err := p.queryUpsertRegistration(deviceId, deviceInfo, firmwareName)
+	query, args, err := p.queryUpsertRegistration(deviceId, deviceInfo, nodeClassName, firmwareName)
 	if err != nil {
 		return nil, false, infrastructurerepositoryshared.QueryBuildError("failed to build upsert node registration query", err)
 	}
@@ -91,7 +92,7 @@ func (p *postgresImpl) UpsertRegistration(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, false, infrastructurerepositoryshared.NotFound("firmware not found", err)
+			return nil, false, infrastructurerepositoryshared.NotFound("node class not found", err)
 		}
 		return nil, false, infrastructurerepositoryshared.MapPgxError(
 			"failed to upsert node registration", err,

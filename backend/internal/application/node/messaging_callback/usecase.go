@@ -68,6 +68,30 @@ func (u *usecase) Register(ctx context.Context, request domainusecasesnode.Regis
 		return err
 	}
 
+	nodeClassName, err := applicationshared.RequiredNodeClassName(request.NodeClassName, "node_class_name")
+	if err != nil {
+		u.logger.Warn(ctx, tag, "invalid node_class_name in registration", domainmodels.LoggerMeta{
+			"err":             err,
+			"device_id":       request.DeviceId,
+			"node_class_name": request.NodeClassName,
+		})
+		return err
+	}
+
+	firmwareName := ""
+	if request.FirmwareName != "" {
+		validated, err := applicationshared.RequiredFirmwareName(request.FirmwareName, "firmware_name")
+		if err != nil {
+			u.logger.Warn(ctx, tag, "invalid firmware_name in registration", domainmodels.LoggerMeta{
+				"err":           err,
+				"device_id":     request.DeviceId,
+				"firmware_name": request.FirmwareName,
+			})
+			return err
+		}
+		firmwareName = validated
+	}
+
 	success := false
 	defer func() {
 		if ackErr := u.publisher.RegistrationAck(ctx, deviceId, success); ackErr != nil {
@@ -79,12 +103,13 @@ func (u *usecase) Register(ctx context.Context, request domainusecasesnode.Regis
 		}
 	}()
 
-	node, created, err := u.node.UpsertRegistration(ctx, deviceId, request.DeviceInfo, request.FirmwareName)
+	node, created, err := u.node.UpsertRegistration(ctx, deviceId, request.DeviceInfo, nodeClassName, firmwareName)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to upsert node registration", domainmodels.LoggerMeta{
-			"err":           err,
-			"device_id":     request.DeviceId,
-			"firmware_name": request.FirmwareName,
+			"err":             err,
+			"device_id":       request.DeviceId,
+			"node_class_name": nodeClassName,
+			"firmware_name":   firmwareName,
 		})
 		return err
 	}
@@ -306,11 +331,11 @@ func (u *usecase) subscribeNode(ctx context.Context, deviceId string) error {
 func (u *usecase) syncReportedConfig(ctx context.Context, node *domainmodels.Node, reported map[string]string) error {
 	const tag = "node/messaging_callback/syncReportedConfig"
 
-	if len(reported) == 0 {
+	if len(reported) == 0 || node.FirmwareId == nil {
 		return nil
 	}
 
-	params, err := u.firmwareConfigParams.ReadByFirmwareId(ctx, node.FirmwareId)
+	params, err := u.firmwareConfigParams.ReadByFirmwareId(ctx, *node.FirmwareId)
 	if err != nil {
 		return err
 	}
@@ -343,7 +368,7 @@ func (u *usecase) syncReportedConfig(ctx context.Context, node *domainmodels.Nod
 			continue
 		}
 
-		if err := u.nodeConfigValues.Upsert(ctx, node.Id, node.FirmwareId, key, value, nil); err != nil {
+		if err := u.nodeConfigValues.Upsert(ctx, node.Id, *node.FirmwareId, key, value, nil); err != nil {
 			return err
 		}
 	}

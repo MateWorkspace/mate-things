@@ -9,10 +9,11 @@ import (
 )
 
 type Registration struct {
-	DeviceId     string            `json:"device_id"`
-	DeviceInfo   string            `json:"device_info"`
-	FirmwareName string            `json:"firmware_name"`
-	Config       map[string]string `json:"config"`
+	DeviceId      string            `json:"device_id"`
+	DeviceInfo    string            `json:"device_info"`
+	NodeClassName string            `json:"node_class_name"`
+	FirmwareName  string            `json:"firmware_name"`
+	Config        map[string]string `json:"config"`
 }
 
 func DecodeRegistration(payload []byte) (domainusecasesnode.RegisterNodeMessageRequest, error) {
@@ -23,15 +24,17 @@ func DecodeRegistration(payload []byte) (domainusecasesnode.RegisterNodeMessageR
 
 	dto.DeviceId = strings.TrimSpace(dto.DeviceId)
 	dto.DeviceInfo = strings.TrimSpace(dto.DeviceInfo)
+	dto.NodeClassName = strings.TrimSpace(dto.NodeClassName)
 	dto.FirmwareName = strings.TrimSpace(dto.FirmwareName)
-	if dto.DeviceId == "" || dto.DeviceInfo == "" || dto.FirmwareName == "" {
+	if dto.DeviceId == "" || dto.DeviceInfo == "" || dto.NodeClassName == "" {
 		return domainusecasesnode.RegisterNodeMessageRequest{}, domainmodels.NewError("invalid registration payload", domainmodels.ErrTypeValidation, nil)
 	}
 
 	return domainusecasesnode.RegisterNodeMessageRequest{
-		DeviceId:     dto.DeviceId,
-		DeviceInfo:   dto.DeviceInfo,
-		FirmwareName: dto.FirmwareName,
-		Config:       dto.Config,
+		DeviceId:      dto.DeviceId,
+		DeviceInfo:    dto.DeviceInfo,
+		NodeClassName: dto.NodeClassName,
+		FirmwareName:  dto.FirmwareName,
+		Config:        dto.Config,
 	}, nil
 }

@@ -13,7 +13,7 @@ type Node struct {
 	DeviceId    string          `db:"device_id" json:"device_id"`
 	DeviceInfo  string          `db:"device_info" json:"device_info"`
 	Name        string          `db:"name" json:"name"`
-	FirmwareId  uuid.UUID       `db:"firmware_id" json:"firmware_id"`
+	FirmwareId  *uuid.UUID      `db:"firmware_id" json:"firmware_id,omitempty"`
 	Description string          `db:"description" json:"description"`
 	IsConnected bool            `db:"is_connected" json:"is_connected"`
 	Preferences json.RawMessage `db:"preferences" json:"preferences"`
