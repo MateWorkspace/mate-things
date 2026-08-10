@@ -205,7 +205,9 @@ func (l *launcher) newInfrastructure(ctx context.Context) error {
 
 	llmEncryptor, err := infrastructureutilityencryption.NewAESGCMImpl(config.LlmEncryptionKey)
 	if err != nil {
-		return fmt.Errorf("failed to construct llm encryptor (check BE_LLM_ENCRYPTION_KEY is set to exactly 32 bytes): %w", err)
+		err = fmt.Errorf("failed to construct llm encryptor (check BE_LLM_ENCRYPTION_KEY is set to exactly 32 bytes): %w", err)
+		logger.Error(ctx, tag, "failed to construct infrastructure", domainmodels.LoggerMeta{"err": err})
+		return err
 	}
 	llmClientFactory := infrastructurellmclientfactory.NewClientFactory(llmConfigRepository, llmEncryptor)
 	jsRunner := infrastructureutilityjsengine.NewGojaImpl()

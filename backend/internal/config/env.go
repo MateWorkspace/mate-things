@@ -62,7 +62,7 @@ var (
 
 	PasswordBcryptCost int = 10
 
-	LlmEncryptionKey string = ""
+	LlmEncryptionKey string = "CHANGE_ME_32_BYTE_KEY_1234567890"
 )
 
 func LoadEnv() {

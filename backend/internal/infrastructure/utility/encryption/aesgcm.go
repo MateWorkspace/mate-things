@@ -15,8 +15,6 @@ type aesGCMImpl struct {
 	gcm cipher.AEAD
 }
 
-// NewAESGCMImpl builds an AES-256-GCM encryptor. key must be exactly 32 bytes
-// (AES-256); pass it via the BE_LLM_ENCRYPTION_KEY environment variable.
 func NewAESGCMImpl(key string) (domaincontractsutility.Encryptor, error) {
 	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
