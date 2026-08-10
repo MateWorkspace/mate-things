@@ -284,3 +284,224 @@ it("yields confirmed role assignments to refreshed props while retaining failure
     screen.getByRole("checkbox", { name: /applied-add/i }),
   ).not.toBeChecked();
 });
+
+it("releases an already-confirmed no-op role-assignment revision", async () => {
+  const user = userEvent.setup();
+  mocks.updateRoleAssignmentsAction.mockResolvedValueOnce({
+    status: "success",
+    title: "Assignments unchanged",
+    message: "No role assignments needed changes.",
+    appliedIds: [],
+    failed: [],
+  });
+  const { rerender } = render(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+
+  await user.click(screen.getByRole("checkbox", { name: /applied-add/i }));
+  rerender(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["applied-add", "authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+  await user.click(screen.getByRole("button", { name: "Save assignments" }));
+  expect(
+    await screen.findByText("No role assignments needed changes."),
+  ).toBeVisible();
+
+  rerender(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+  expect(
+    screen.getByRole("checkbox", { name: /applied-add/i }),
+  ).not.toBeChecked();
+});
+
+it("releases a role-assignment revision confirmed while its request is pending", async () => {
+  const user = userEvent.setup();
+  let resolveAction!: (value: {
+    status: "success";
+    title: string;
+    message: string;
+    appliedIds: string[];
+    failed: never[];
+  }) => void;
+  mocks.updateRoleAssignmentsAction.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveAction = resolve;
+      }),
+  );
+  const { rerender } = render(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+
+  await user.click(screen.getByRole("checkbox", { name: /applied-add/i }));
+  await user.click(screen.getByRole("button", { name: "Save assignments" }));
+  expect(await screen.findByRole("button", { name: "Saving…" })).toBeDisabled();
+  rerender(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["applied-add", "authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+
+  await act(async () => {
+    resolveAction({
+      status: "success",
+      title: "Assignments updated",
+      message: "Role assignments were updated.",
+      appliedIds: ["applied-add"],
+      failed: [],
+    });
+  });
+  expect(
+    await screen.findByText("Role assignments were updated."),
+  ).toBeVisible();
+
+  rerender(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+  expect(
+    screen.getByRole("checkbox", { name: /applied-add/i }),
+  ).not.toBeChecked();
+});
+
+it("protects a newer role-assignment revision when an older no-op resolves", async () => {
+  const user = userEvent.setup();
+  let resolveAction!: (value: {
+    status: "success";
+    title: string;
+    message: string;
+    appliedIds: never[];
+    failed: never[];
+  }) => void;
+  mocks.updateRoleAssignmentsAction.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveAction = resolve;
+      }),
+  );
+  const { rerender } = render(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+
+  await user.click(screen.getByRole("checkbox", { name: /applied-add/i }));
+  await user.click(screen.getByRole("button", { name: "Save assignments" }));
+  expect(await screen.findByRole("button", { name: "Saving…" })).toBeDisabled();
+  rerender(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["applied-add", "authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+  await user.click(screen.getByRole("checkbox", { name: /applied-add/i }));
+
+  await act(async () => {
+    resolveAction({
+      status: "success",
+      title: "Assignments unchanged",
+      message: "No role assignments needed changes.",
+      appliedIds: [],
+      failed: [],
+    });
+  });
+  expect(
+    await screen.findByText("No role assignments needed changes."),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("checkbox", { name: /applied-add/i }),
+  ).not.toBeChecked();
+
+  rerender(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+  rerender(
+    <RoleDetails
+      role={ROLE}
+      permissions={PERMISSIONS}
+      selected={["applied-add", "authoritative-off"]}
+      grants={[
+        "role_permission:get",
+        "role_permission:add",
+        "role_permission:remove",
+      ]}
+    />,
+  );
+  expect(
+    screen.getByRole("checkbox", { name: /applied-add/i }),
+  ).not.toBeChecked();
+});

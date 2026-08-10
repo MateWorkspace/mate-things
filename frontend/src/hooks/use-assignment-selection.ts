@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 type AssignmentResult = {
+  status: "idle" | "success" | "partial" | "error";
   appliedIds: readonly string[];
   failed: ReadonlyArray<{ id: string }>;
   submission?: AssignmentSubmission;
@@ -59,19 +60,32 @@ export function useAssignmentSelection<State extends AssignmentResult>(
       const submittedValues = new Map(
         actionState.submission?.values.map(({ id, ...value }) => [id, value]),
       );
-      for (const id of [
-        ...actionState.appliedIds,
-        ...actionState.failed.map(({ id }) => id),
-      ]) {
+      const failedIds = new Set(actionState.failed.map(({ id }) => id));
+      for (const id of failedIds) {
+        awaitingConfirmation.delete(id);
         const desired = submittedValues.get(id);
         if (desired && !overrides.has(id)) {
           overrides.set(id, desired);
         }
       }
-      for (const id of actionState.appliedIds) {
-        const desired = submittedValues.get(id);
-        if (desired) {
-          awaitingConfirmation.set(id, desired);
+
+      if (
+        actionState.status === "success" ||
+        actionState.status === "partial"
+      ) {
+        for (const [id, desired] of submittedValues) {
+          if (failedIds.has(id)) continue;
+          if (authoritative.has(id) === desired.checked) {
+            awaitingConfirmation.delete(id);
+            if (overrides.get(id)?.revision === desired.revision) {
+              overrides.delete(id);
+            }
+          } else {
+            awaitingConfirmation.set(id, desired);
+            if (!overrides.has(id)) {
+              overrides.set(id, desired);
+            }
+          }
         }
       }
     }

@@ -237,3 +237,184 @@ it("yields confirmed node-class actions to refreshed props while retaining failu
     screen.getByRole("checkbox", { name: /applied-add/i }),
   ).not.toBeChecked();
 });
+
+it("releases an already-confirmed no-op node-class action revision", async () => {
+  const user = userEvent.setup();
+  mocks.updateNodeClassActionsAction.mockResolvedValueOnce({
+    status: "success",
+    title: "Assignments unchanged",
+    message: "No node-class actions needed changes.",
+    appliedIds: [],
+    failed: [],
+  });
+  const { rerender } = render(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["authoritative-off"])}
+      editable
+    />,
+  );
+
+  await user.click(screen.getByRole("checkbox", { name: /applied-add/i }));
+  rerender(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["applied-add", "authoritative-off"])}
+      editable
+    />,
+  );
+  await user.click(screen.getByRole("button", { name: "Save assignments" }));
+  expect(
+    await screen.findByText("No node-class actions needed changes."),
+  ).toBeVisible();
+
+  rerender(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["authoritative-off"])}
+      editable
+    />,
+  );
+  expect(
+    screen.getByRole("checkbox", { name: /applied-add/i }),
+  ).not.toBeChecked();
+});
+
+it("releases a node-class action revision confirmed while its request is pending", async () => {
+  const user = userEvent.setup();
+  let resolveAction!: (value: {
+    status: "success";
+    title: string;
+    message: string;
+    appliedIds: string[];
+    failed: never[];
+  }) => void;
+  mocks.updateNodeClassActionsAction.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveAction = resolve;
+      }),
+  );
+  const { rerender } = render(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["authoritative-off"])}
+      editable
+    />,
+  );
+
+  await user.click(screen.getByRole("checkbox", { name: /applied-add/i }));
+  await user.click(screen.getByRole("button", { name: "Save assignments" }));
+  expect(await screen.findByRole("button", { name: "Saving…" })).toBeDisabled();
+  rerender(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["applied-add", "authoritative-off"])}
+      editable
+    />,
+  );
+
+  await act(async () => {
+    resolveAction({
+      status: "success",
+      title: "Assignments updated",
+      message: "Node-class actions were updated.",
+      appliedIds: ["applied-add"],
+      failed: [],
+    });
+  });
+  expect(
+    await screen.findByText("Node-class actions were updated."),
+  ).toBeVisible();
+
+  rerender(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["authoritative-off"])}
+      editable
+    />,
+  );
+  expect(
+    screen.getByRole("checkbox", { name: /applied-add/i }),
+  ).not.toBeChecked();
+});
+
+it("protects a newer node-class action revision when an older no-op resolves", async () => {
+  const user = userEvent.setup();
+  let resolveAction!: (value: {
+    status: "success";
+    title: string;
+    message: string;
+    appliedIds: never[];
+    failed: never[];
+  }) => void;
+  mocks.updateNodeClassActionsAction.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveAction = resolve;
+      }),
+  );
+  const { rerender } = render(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["authoritative-off"])}
+      editable
+    />,
+  );
+
+  await user.click(screen.getByRole("checkbox", { name: /applied-add/i }));
+  await user.click(screen.getByRole("button", { name: "Save assignments" }));
+  expect(await screen.findByRole("button", { name: "Saving…" })).toBeDisabled();
+  rerender(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["applied-add", "authoritative-off"])}
+      editable
+    />,
+  );
+  await user.click(screen.getByRole("checkbox", { name: /applied-add/i }));
+
+  await act(async () => {
+    resolveAction({
+      status: "success",
+      title: "Assignments unchanged",
+      message: "No node-class actions needed changes.",
+      appliedIds: [],
+      failed: [],
+    });
+  });
+  expect(
+    await screen.findByText("No node-class actions needed changes."),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("checkbox", { name: /applied-add/i }),
+  ).not.toBeChecked();
+
+  rerender(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["authoritative-off"])}
+      editable
+    />,
+  );
+  rerender(
+    <NodeClassActionChecklist
+      nodeClassId="class-1"
+      actions={ACTIONS}
+      selected={new Set(["applied-add", "authoritative-off"])}
+      editable
+    />,
+  );
+  expect(
+    screen.getByRole("checkbox", { name: /applied-add/i }),
+  ).not.toBeChecked();
+});
