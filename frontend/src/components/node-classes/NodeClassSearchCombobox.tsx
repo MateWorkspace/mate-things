@@ -95,6 +95,7 @@ export default function NodeClassSearchCombobox({
       <input type="hidden" name={name} value={selectedId} />
       <button
         type="button"
+        data-field-name={name}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => {

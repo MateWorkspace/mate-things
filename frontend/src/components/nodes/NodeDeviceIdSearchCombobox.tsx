@@ -93,6 +93,7 @@ export default function NodeDeviceIdSearchCombobox({
       <input type="hidden" name={name} value={selectedDeviceId} />
       <button
         type="button"
+        data-field-name={name}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => {
