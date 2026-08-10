@@ -2,5 +2,9 @@
   {
     "name": "base_node",
     "description": "Generic base node class used as the default example node class."
+  },
+  {
+    "name": "smart_ir",
+    "description": "Smart IR node class."
   }
 ]
