@@ -963,14 +963,21 @@ func TestRunTestCaseGenerationPersistsOneTestCasePerPlanAndTransitionsToTesting(
 	if len(testCaseRepo.CreatedTestCaseIds()) != 2 {
 		t.Fatalf("created test case ids = %v, want 2", testCaseRepo.CreatedTestCaseIds())
 	}
-	found := false
-	for _, s := range sessionRepo.StatusUpdates() {
+	statusUpdates := sessionRepo.StatusUpdates()
+	sawTestCasesGenerating, sawTesting := false, false
+	for _, s := range statusUpdates {
+		if s == domainmodels.InfraredRecordingStateTestCasesGenerating {
+			sawTestCasesGenerating = true
+		}
 		if s == domainmodels.InfraredRecordingStateTesting {
-			found = true
+			sawTesting = true
 		}
 	}
-	if !found {
-		t.Fatalf("status updates = %v, want to include TESTING", sessionRepo.StatusUpdates())
+	if !sawTestCasesGenerating {
+		t.Fatalf("status updates = %v, want to include TEST_CASES_GENERATING", statusUpdates)
+	}
+	if !sawTesting {
+		t.Fatalf("status updates = %v, want to include TESTING", statusUpdates)
 	}
 }
 

@@ -471,6 +471,8 @@ func (u *usecase) runTestCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID) 
 		return
 	}
 
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateTestCasesGenerating)
+
 	client, err := u.llmFactory.Current(ctx)
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to resolve llm client", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
