@@ -60,6 +60,12 @@ export async function collectAllPages<T>(options: {
       break;
     }
 
+    if (fetched + 1 === maxPages) {
+      throw new Error(
+        `Collection incomplete after reaching the ${maxPages}-page safety ceiling.`,
+      );
+    }
+
     requestedPage = response.page + 1;
   }
 

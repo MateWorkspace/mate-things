@@ -55,11 +55,26 @@ describe("query helpers", () => {
     expect(parseBooleanQuery(true)).toBeUndefined();
   });
 
-  it("converts a valid local datetime and rejects invalid input", () => {
-    const parsed = parseLocalDateTime("2026-08-10T14:30");
+  it("converts a valid leap-day local datetime", () => {
+    const parsed = parseLocalDateTime("2024-02-29T23:59");
 
-    expect(parsed?.getTime()).toBe(new Date(2026, 7, 10, 14, 30).getTime());
-    expect(parseLocalDateTime("not-a-date")).toBeUndefined();
+    expect(parsed?.getTime()).toBe(new Date(2024, 1, 29, 23, 59).getTime());
+  });
+
+  it.each([
+    ["impossible day", "2026-02-30T14:30"],
+    ["impossible month", "2026-13-10T14:30"],
+    ["impossible hour", "2026-08-10T24:00"],
+    ["impossible minute", "2026-08-10T14:60"],
+    ["date only", "2026-08-10"],
+    ["UTC suffix", "2026-08-10T14:30Z"],
+    ["offset suffix", "2026-08-10T14:30+07:00"],
+    ["unparseable", "not-a-date"],
+  ])("rejects %s input", (_name, value) => {
+    expect(parseLocalDateTime(value)).toBeUndefined();
+  });
+
+  it("rejects non-string local datetime input", () => {
     expect(parseLocalDateTime(123)).toBeUndefined();
   });
 

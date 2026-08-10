@@ -128,12 +128,32 @@ describe("collectAllPages", () => {
     expect(fetchPage).toHaveBeenCalledTimes(2);
   });
 
-  it("honors a configurable safety ceiling", async () => {
+  it("throws when the safety ceiling is exhausted with pages remaining", async () => {
     const fetchPage = vi.fn(async (page: number) => ({
       data: [{ id: String(page) }],
       page,
       limit: 1,
-      total: 1_000,
+      total: 3,
+    }));
+
+    await expect(
+      collectAllPages({
+        fetchPage,
+        keyOf: (item: { id: string }) => item.id,
+        maxPages: 2,
+      }),
+    ).rejects.toThrow(
+      "Collection incomplete after reaching the 2-page safety ceiling.",
+    );
+    expect(fetchPage).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns a collection completed exactly at the safety ceiling", async () => {
+    const fetchPage = vi.fn(async (page: number) => ({
+      data: [{ id: String(page) }],
+      page,
+      limit: 1,
+      total: 2,
     }));
 
     await expect(

@@ -35,12 +35,41 @@ export function parseEnumQuery<const T extends readonly string[]>(
 }
 
 export function parseLocalDateTime(value: unknown): Date | undefined {
-  if (typeof value !== "string" || value.length === 0) {
+  if (typeof value !== "string") {
     return undefined;
   }
 
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(
+      value,
+    );
+  if (!match) {
+    return undefined;
+  }
+
+  const [, yearValue, monthValue, dayValue, hourValue, minuteValue] = match;
+  const secondValue = match[6] ?? "0";
+  const millisecondValue = (match[7] ?? "0").padEnd(3, "0");
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  const day = Number(dayValue);
+  const hour = Number(hourValue);
+  const minute = Number(minuteValue);
+  const second = Number(secondValue);
+  const millisecond = Number(millisecondValue);
+  const parsed = new Date(0);
+  parsed.setFullYear(year, month - 1, day);
+  parsed.setHours(hour, minute, second, millisecond);
+
+  return parsed.getFullYear() === year &&
+    parsed.getMonth() === month - 1 &&
+    parsed.getDate() === day &&
+    parsed.getHours() === hour &&
+    parsed.getMinutes() === minute &&
+    parsed.getSeconds() === second &&
+    parsed.getMilliseconds() === millisecond
+    ? parsed
+    : undefined;
 }
 
 export function toUtcQueryValue(value: Date): string {
