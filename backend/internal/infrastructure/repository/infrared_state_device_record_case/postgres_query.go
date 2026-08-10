@@ -99,16 +99,14 @@ func (p *postgresImpl) queryUpdateRawStatusById(id uuid.UUID, status domainmodel
 
 func (p *postgresImpl) queryGetRawById(rawId uuid.UUID) (query string, args []any, err error) {
 	return p.SqrD.Select(
-		"raw.id",
-		"raw.infrared_state_device_record_case_id",
-		"cases.infrared_record_session_id",
-		"raw.raw_data",
-		"raw.status",
-		"raw.discarded_reason",
+		"id",
+		"infrared_state_device_record_case_id",
+		"raw_data",
+		"status",
+		"discarded_reason",
 	).
-		From("infrared_state_device_record_raw raw").
-		Join("infrared_state_device_record_case cases ON cases.id = raw.infrared_state_device_record_case_id").
-		Where(squirrel.Eq{"raw.id": rawId}).
+		From("infrared_state_device_record_raw").
+		Where(squirrel.Eq{"id": rawId}).
 		ToSql()
 }
 

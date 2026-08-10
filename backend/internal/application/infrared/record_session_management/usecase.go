@@ -255,9 +255,25 @@ func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
 		return err
 	}
 
-	cases, err := u.recordCase.ListBySessionId(ctx, raw.InfraredRecordSessionId)
+	// InfraredStateDeviceRecordRaw has no session id of its own (only a case
+	// id) — look the case up to get the session id from a field that's
+	// genuinely backed by a column, rather than adding a synthetic
+	// join-only field to the raw model.
+	acceptedCase, err := u.recordCase.GetById(ctx, raw.InfraredStateDeviceRecordCaseId)
 	if err != nil {
-		u.logger.Error(ctx, tag, "failed to list cases for cursor advancement", domainmodels.LoggerMeta{"err": err, "session_id": raw.InfraredRecordSessionId})
+		u.logger.Error(ctx, tag, "failed to look up accepted case", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
+		return err
+	}
+	if acceptedCase == nil {
+		err := domainmodels.NewError("accepted case not found", domainmodels.ErrTypeNotFound, nil)
+		u.logger.Error(ctx, tag, "accepted case not found", domainmodels.LoggerMeta{"case_id": raw.InfraredStateDeviceRecordCaseId})
+		return err
+	}
+	sessionId := acceptedCase.InfraredRecordSessionId
+
+	cases, err := u.recordCase.ListBySessionId(ctx, sessionId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to list cases for cursor advancement", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		return err
 	}
 
@@ -276,21 +292,21 @@ func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
 			u.logger.Error(ctx, tag, "failed to activate next case", domainmodels.LoggerMeta{"err": err, "case_id": next.Id})
 			return err
 		}
-		if err := u.session.UpdateCurrentRecordCaseIdById(ctx, raw.InfraredRecordSessionId, &next.Id); err != nil {
-			u.logger.Error(ctx, tag, "failed to advance session cursor", domainmodels.LoggerMeta{"err": err, "session_id": raw.InfraredRecordSessionId})
+		if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &next.Id); err != nil {
+			u.logger.Error(ctx, tag, "failed to advance session cursor", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 			return err
 		}
-		u.broadcastBestEffort(ctx, tag, raw.InfraredRecordSessionId, domainmodels.InfraredRecordingStateRecording, &next.Id)
+		u.broadcastBestEffort(ctx, tag, sessionId, domainmodels.InfraredRecordingStateRecording, &next.Id)
 		return nil
 	}
 
-	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, raw.InfraredRecordSessionId, nil); err != nil {
-		u.logger.Error(ctx, tag, "failed to clear session cursor before analysis", domainmodels.LoggerMeta{"err": err, "session_id": raw.InfraredRecordSessionId})
+	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, nil); err != nil {
+		u.logger.Error(ctx, tag, "failed to clear session cursor before analysis", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		return err
 	}
-	u.transition(ctx, tag, raw.InfraredRecordSessionId, domainmodels.InfraredRecordingStateAnalyzing)
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateAnalyzing)
 
-	go u.runAnalysisAndGeneration(raw.InfraredRecordSessionId)
+	go u.runAnalysisAndGeneration(sessionId)
 
 	return nil
 }

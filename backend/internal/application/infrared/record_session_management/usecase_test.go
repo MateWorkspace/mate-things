@@ -557,13 +557,14 @@ func TestAcceptRawAdvancesCursorToNextPendingCase(t *testing.T) {
 
 	sessionRepo := &fakeSessionRepository{}
 	caseRepo := &fakeCaseRepository{
+		getResult:         &domainmodels.InfraredStateDeviceRecordCase{Id: firstCaseId, InfraredRecordSessionId: sessionId},
 		acceptedRawCounts: map[uuid.UUID]int{firstCaseId: 2},
 		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
 			{Id: firstCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusActive},
 			{Id: secondCaseId, InfraredRecordSessionId: sessionId, Step: 2, Status: domainmodels.InfraredRecordCaseStatusPending},
 		},
 		rawById: map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw{
-			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: firstCaseId, InfraredRecordSessionId: sessionId},
+			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: firstCaseId},
 		},
 	}
 	usecase := NewUsecaseImpl(
@@ -596,12 +597,13 @@ func TestAcceptRawTriggersAnalyzingWhenNoPendingCaseRemains(t *testing.T) {
 
 	sessionRepo := &fakeSessionRepository{}
 	caseRepo := &fakeCaseRepository{
+		getResult:         &domainmodels.InfraredStateDeviceRecordCase{Id: onlyCaseId, InfraredRecordSessionId: sessionId},
 		acceptedRawCounts: map[uuid.UUID]int{onlyCaseId: 2},
 		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
 			{Id: onlyCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusActive},
 		},
 		rawById: map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw{
-			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: onlyCaseId, InfraredRecordSessionId: sessionId},
+			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: onlyCaseId},
 		},
 	}
 	// runAnalysisAndGeneration is still Task 9's no-op stub at this point in
@@ -636,12 +638,13 @@ func TestAcceptRawDoesNotAdvanceCursorBeforeSecondRawAccepted(t *testing.T) {
 
 	sessionRepo := &fakeSessionRepository{}
 	caseRepo := &fakeCaseRepository{
+		getResult:         &domainmodels.InfraredStateDeviceRecordCase{Id: caseId, InfraredRecordSessionId: sessionId},
 		acceptedRawCounts: map[uuid.UUID]int{caseId: 1},
 		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
 			{Id: caseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusActive},
 		},
 		rawById: map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw{
-			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: caseId, InfraredRecordSessionId: sessionId},
+			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: caseId},
 		},
 	}
 	usecase := NewUsecaseImpl(

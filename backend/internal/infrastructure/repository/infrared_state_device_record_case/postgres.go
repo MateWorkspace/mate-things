@@ -194,7 +194,7 @@ func (p *postgresImpl) GetRawById(ctx context.Context, rawId uuid.UUID) (*domain
 	}
 
 	var item domainmodels.InfraredStateDeviceRecordRaw
-	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&item.Id, &item.InfraredStateDeviceRecordCaseId, &item.InfraredRecordSessionId, &item.RawData, &item.Status, &item.DiscardedReason); err != nil {
+	if err := p.Dt.QueryRow(ctx, query, args...).Scan(&item.Id, &item.InfraredStateDeviceRecordCaseId, &item.RawData, &item.Status, &item.DiscardedReason); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, infrastructurerepositoryshared.NotFound("infrared_state_device_record_raw not found", err)
 		}

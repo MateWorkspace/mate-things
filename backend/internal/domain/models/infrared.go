@@ -98,13 +98,9 @@ const (
 type InfraredStateDeviceRecordRaw struct {
 	Id                              uuid.UUID
 	InfraredStateDeviceRecordCaseId uuid.UUID
-	// InfraredRecordSessionId is not a column on this table — it is only
-	// populated by GetRawById, which joins through the owning case to save
-	// AcceptRaw a second round trip to find the session for cursor work.
-	InfraredRecordSessionId uuid.UUID
-	RawData                 []byte
-	Status                  InfraredRecordRawStatus
-	DiscardedReason         *string
+	RawData                         []byte
+	Status                          InfraredRecordRawStatus
+	DiscardedReason                 *string
 }
 
 type InfraredRecordSessionEvent struct {
