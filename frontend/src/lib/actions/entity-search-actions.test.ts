@@ -207,7 +207,7 @@ describe("entity selector actions", () => {
     },
   );
 
-  it("preserves the default-role annotation in the presentation-safe label", async () => {
+  it("keeps the default-role annotation separate from the plain selection label", async () => {
     vi.mocked(listRoles).mockResolvedValue({
       data: [{ ...ROLE, is_default: true }],
       ...PAGE,
@@ -217,8 +217,9 @@ describe("entity selector actions", () => {
       items: [
         {
           value: "role-1",
-          label: "Operator (default)",
+          label: "Operator",
           description: "Fleet operator",
+          annotation: "(default)",
         },
       ],
       page: 2,

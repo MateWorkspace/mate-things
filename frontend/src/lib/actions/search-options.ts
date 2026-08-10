@@ -4,6 +4,7 @@ export type SearchOption = {
   value: string;
   label: string;
   description?: string;
+  annotation?: string;
 };
 
 export type SearchOptionsRequest = {

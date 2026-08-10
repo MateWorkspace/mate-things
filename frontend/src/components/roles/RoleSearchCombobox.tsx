@@ -164,6 +164,11 @@ export default function RoleSearchCombobox({
                     }`}
                   >
                     {role.label}
+                    {role.annotation ? (
+                      <span className="text-muted-foreground ml-1.5 text-xs">
+                        {role.annotation}
+                      </span>
+                    ) : null}
                   </button>
                 </li>
               ))
