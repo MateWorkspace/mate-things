@@ -7,8 +7,6 @@ import Link from "next/link";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 
-export type ConnectionFilter = "all" | "connected" | "disconnected";
-
 interface FilterOption {
   id: string;
   name: string;
@@ -16,7 +14,6 @@ interface FilterOption {
 
 interface NodeFiltersProps {
   classes: readonly FilterOption[];
-  connection: ConnectionFilter;
   firmwares: readonly FilterOption[];
   limit: number;
   nodeClassId?: string;
@@ -31,7 +28,6 @@ const SELECT_CLASS_NAME =
 
 export default function NodeFilters({
   classes,
-  connection,
   firmwareId,
   firmwares,
   limit,
@@ -103,24 +99,6 @@ export default function NodeFilters({
           </select>
         </label>
       ) : null}
-
-      <label className="lg:col-span-2">
-        <span className="text-foreground/70 mb-1.5 flex items-center gap-2 text-xs font-semibold">
-          Connection
-          <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[0.65rem] uppercase">
-            This page
-          </span>
-        </span>
-        <select
-          className={SELECT_CLASS_NAME}
-          defaultValue={connection}
-          name="connection"
-        >
-          <option value="all">All states</option>
-          <option value="connected">Connected</option>
-          <option value="disconnected">Disconnected</option>
-        </select>
-      </label>
 
       <div className="flex gap-2 lg:col-span-2">
         <Button className="min-h-11 flex-1" type="submit">

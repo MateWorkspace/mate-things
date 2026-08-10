@@ -1,11 +1,14 @@
 import ActionSearchCombobox from "@/components/actions/ActionSearchCombobox";
 import NodeSearchCombobox from "@/components/nodes/NodeSearchCombobox";
 import TimeRangeFilter from "@/components/records/TimeRangeFilter";
+import Input from "@/components/ui/input";
 import type { ActionStatus } from "@/lib/api/action-logs";
 
 import { ACTION_STATUS_LABELS } from "../_lib/status";
 
 interface ActionLogFiltersProps {
+  canReadActions: boolean;
+  canReadNodes: boolean;
   start?: string;
   end?: string;
   actionId?: string;
@@ -22,16 +25,44 @@ export default function ActionLogFilters(props: ActionLogFiltersProps) {
     <form className="border-border bg-muted space-y-3 rounded-2xl border p-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <TimeRangeFilter start={props.start} end={props.end} />
-        <ActionSearchCombobox
-          name="action_id"
-          defaultActionId={props.actionId}
-          defaultActionName={props.actionName}
-        />
-        <NodeSearchCombobox
-          name="node_id"
-          defaultNodeId={props.nodeId}
-          defaultNodeName={props.nodeName}
-        />
+        {props.canReadActions ? (
+          <ActionSearchCombobox
+            name="action_id"
+            defaultActionId={props.actionId}
+            defaultActionName={props.actionName ?? props.actionId}
+          />
+        ) : (
+          <label>
+            <span className="text-foreground/70 mb-1.5 block text-xs font-semibold">
+              Action ID
+            </span>
+            <Input
+              aria-label="Action ID"
+              name="action_id"
+              readOnly
+              value={props.actionId ?? ""}
+            />
+          </label>
+        )}
+        {props.canReadNodes ? (
+          <NodeSearchCombobox
+            name="node_id"
+            defaultNodeId={props.nodeId}
+            defaultNodeName={props.nodeName ?? props.nodeId}
+          />
+        ) : (
+          <label>
+            <span className="text-foreground/70 mb-1.5 block text-xs font-semibold">
+              Node ID
+            </span>
+            <Input
+              aria-label="Node ID"
+              name="node_id"
+              readOnly
+              value={props.nodeId ?? ""}
+            />
+          </label>
+        )}
         <div>
           <label
             className="text-foreground/70 mb-1.5 block text-xs font-semibold"

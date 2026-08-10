@@ -3,6 +3,7 @@ import TimeRangeFilter from "@/components/records/TimeRangeFilter";
 import Input from "@/components/ui/input";
 
 interface TelemetryFiltersProps {
+  canReadNodes: boolean;
   start?: string;
   end?: string;
   nodeDeviceId?: string;
@@ -15,11 +16,25 @@ export default function TelemetryFilters(props: TelemetryFiltersProps) {
     <form className="border-border bg-muted space-y-3 rounded-2xl border p-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <TimeRangeFilter start={props.start} end={props.end} />
-        <NodeDeviceIdSearchCombobox
-          name="node_device_id"
-          defaultDeviceId={props.nodeDeviceId}
-          defaultNodeName={props.nodeName}
-        />
+        {props.canReadNodes ? (
+          <NodeDeviceIdSearchCombobox
+            name="node_device_id"
+            defaultDeviceId={props.nodeDeviceId}
+            defaultNodeName={props.nodeName ?? props.nodeDeviceId}
+          />
+        ) : (
+          <label>
+            <span className="text-foreground/70 mb-1.5 block text-xs font-semibold">
+              Node device ID
+            </span>
+            <Input
+              aria-label="Node device ID"
+              name="node_device_id"
+              readOnly
+              value={props.nodeDeviceId ?? ""}
+            />
+          </label>
+        )}
         <Input
           name="metric_name"
           defaultValue={props.metricName}
