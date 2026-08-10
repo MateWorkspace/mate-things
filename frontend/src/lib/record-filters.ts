@@ -1,5 +1,6 @@
 import {
   firstQueryValue,
+  parseAbsoluteDateTime,
   parseLocalDateTime,
   parsePositiveSafeInteger,
   toUtcQueryValue,
@@ -33,7 +34,7 @@ function first(value: string | string[] | undefined): string {
 
 function iso(value: string, field: string): { value?: string; error?: string } {
   if (!value) return {};
-  const date = parseLocalDateTime(value);
+  const date = parseLocalDateTime(value) ?? parseAbsoluteDateTime(value);
   if (!date) {
     return { error: `${field} must be a valid date and time.` };
   }

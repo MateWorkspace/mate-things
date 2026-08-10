@@ -4,6 +4,7 @@ import {
   buildCollectionUrl,
   buildOutOfRangeRedirect,
   firstQueryValue,
+  parseAbsoluteDateTime,
   parseBooleanQuery,
   parseEnumQuery,
   parseLocalDateTime,
@@ -76,6 +77,24 @@ describe("query helpers", () => {
 
   it("rejects non-string local datetime input", () => {
     expect(parseLocalDateTime(123)).toBeUndefined();
+  });
+
+  it.each([
+    ["Z suffix", "2026-08-10T14:30:45.123Z"],
+    ["positive offset", "2026-08-10T14:30:00+07:00"],
+    ["negative offset without seconds", "2026-08-10T14:30-05:00"],
+  ])("accepts an absolute datetime with a %s", (_name, value) => {
+    expect(parseAbsoluteDateTime(value)?.getTime()).toBe(
+      new Date(value).getTime(),
+    );
+  });
+
+  it.each([
+    ["no offset", "2026-08-10T14:30"],
+    ["unparseable", "not-a-date"],
+    ["non-string", 123],
+  ])("rejects absolute datetime input with %s", (_name, value) => {
+    expect(parseAbsoluteDateTime(value)).toBeUndefined();
   });
 
   it("formats a date as a canonical UTC query value", () => {

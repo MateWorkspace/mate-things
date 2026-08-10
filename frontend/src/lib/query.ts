@@ -76,6 +76,26 @@ export function toUtcQueryValue(value: Date): string {
   return value.toISOString();
 }
 
+const absoluteDateTimePattern =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+
+/**
+ * Parses an absolute ISO-8601 timestamp (one carrying an explicit `Z` or
+ * `+HH:MM`/`-HH:MM` offset) - the shape `toUtcQueryValue` produces and that
+ * generated links (e.g. the dashboard's "last window" cards) pass as
+ * `start`/`end` query values. Deliberately disjoint from
+ * `parseLocalDateTime`, which rejects any offset because it treats its
+ * input as browser-local wall-clock time from a `datetime-local` field.
+ */
+export function parseAbsoluteDateTime(value: unknown): Date | undefined {
+  if (typeof value !== "string" || !absoluteDateTimePattern.test(value)) {
+    return undefined;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
 export function buildCollectionUrl(
   pathname: string,
   values: Readonly<Record<string, string | undefined>>,
