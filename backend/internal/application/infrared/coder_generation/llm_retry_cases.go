@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -27,7 +28,7 @@ func WriteRetryCases(
 	deviceBrand string,
 	deviceModel string,
 	coder domainmodels.InfraredStateCoder,
-	failedTestCaseStates map[uuid.UUID]string,
+	failedTestCaseStates []map[uuid.UUID]string,
 	states []domainmodels.InfraredState,
 ) ([]RetryCasePlan, error) {
 	stateNameById := make(map[string]string, len(states))
@@ -37,14 +38,18 @@ func WriteRetryCases(
 		stateIdByName[state.Name] = state.Id
 	}
 
-	failedDescription := ""
-	for stateId, value := range failedTestCaseStates {
-		failedDescription += fmt.Sprintf("%s=%s ", stateNameById[stateId.String()], value)
+	var failedDescription strings.Builder
+	for i, failedStates := range failedTestCaseStates {
+		fmt.Fprintf(&failedDescription, "Failure %d: ", i+1)
+		for stateId, value := range failedStates {
+			fmt.Fprintf(&failedDescription, "%s=%s ", stateNameById[stateId.String()], value)
+		}
+		failedDescription.WriteString("\n")
 	}
 
 	prompt := fmt.Sprintf(
 		"Device: %s %s\n\nProtocol summary: %s\n\nProtocol detail: %s\n\nA hardware test transmitting this target state failed: %s\n\nPropose new targeted recording scenarios (full target state plus a short description) likely to explain the discrepancy and improve the encoder. Respond as a JSON array matching the given schema.",
-		deviceBrand, deviceModel, coder.SummaryReadme, coder.DetailReadme, failedDescription,
+		deviceBrand, deviceModel, coder.SummaryReadme, coder.DetailReadme, failedDescription.String(),
 	)
 
 	result, err := client.GenerateText(ctx, domaincontractsllm.GenerateTextRequest{

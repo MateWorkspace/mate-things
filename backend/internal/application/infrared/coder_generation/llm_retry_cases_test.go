@@ -3,6 +3,7 @@ package applicationinfraredcodergeneration
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -13,14 +14,14 @@ func TestWriteRetryCasesParsesStructuredResponse(t *testing.T) {
 	powerId := uuid.New()
 	states := []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}
 	coder := domainmodels.InfraredStateCoder{SummaryReadme: "summary", DetailReadme: "detail"}
-	failedState := map[uuid.UUID]string{powerId: "OFF"}
+	failedStates := []map[uuid.UUID]string{{powerId: "OFF"}}
 
 	responseBody, _ := json.Marshal([]map[string]interface{}{
 		{"description": "Re-record POWER OFF.", "states": map[string]string{"POWER": "OFF"}},
 	})
 	client := &fakeLlmClient{responseText: string(responseBody)}
 
-	plans, err := WriteRetryCases(context.Background(), client, "Polytron", "PAC-09HDN", coder, failedState, states)
+	plans, err := WriteRetryCases(context.Background(), client, "Polytron", "PAC-09HDN", coder, failedStates, states)
 	if err != nil {
 		t.Fatalf("WriteRetryCases() error = %v, want nil", err)
 	}
@@ -37,5 +38,32 @@ func TestWriteRetryCasesPropagatesLlmError(t *testing.T) {
 	_, err := WriteRetryCases(context.Background(), client, "Polytron", "PAC-09HDN", domainmodels.InfraredStateCoder{}, nil, nil)
 	if err == nil {
 		t.Fatal("WriteRetryCases() error = nil, want propagated error")
+	}
+}
+
+func TestWriteRetryCasesDescribesEachFailureSeparately(t *testing.T) {
+	powerId := uuid.New()
+	modeId := uuid.New()
+	states := []domainmodels.InfraredState{
+		{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum},
+		{Id: modeId, Name: "MODE", Type: domainmodels.InfraredStateTypeEnum},
+	}
+	coder := domainmodels.InfraredStateCoder{SummaryReadme: "summary", DetailReadme: "detail"}
+	failedStates := []map[uuid.UUID]string{
+		{powerId: "OFF", modeId: "COOL"},
+		{powerId: "OFF", modeId: "HEAT"},
+	}
+
+	responseBody, _ := json.Marshal([]map[string]interface{}{
+		{"description": "Re-record.", "states": map[string]string{"POWER": "OFF"}},
+	})
+	client := &fakeLlmClient{responseText: string(responseBody)}
+
+	if _, err := WriteRetryCases(context.Background(), client, "Polytron", "PAC-09HDN", coder, failedStates, states); err != nil {
+		t.Fatalf("WriteRetryCases() error = %v, want nil", err)
+	}
+
+	if !strings.Contains(client.lastRequest.Prompt, "COOL") || !strings.Contains(client.lastRequest.Prompt, "HEAT") {
+		t.Fatalf("prompt = %q, want it to mention both disagreeing MODE values COOL and HEAT", client.lastRequest.Prompt)
 	}
 }

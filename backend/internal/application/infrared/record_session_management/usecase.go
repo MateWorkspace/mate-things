@@ -489,6 +489,12 @@ func (u *usecase) runTestCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID) 
 		return
 	}
 
+	if len(plans) == 0 {
+		u.logger.Error(ctx, tag, "llm proposed no test cases", domainmodels.LoggerMeta{"session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
 	for i, plan := range plans {
 		testCaseStates := make([]domainmodels.InfraredTestCaseState, 0, len(plan.States))
 		for stateId, value := range plan.States {
@@ -590,6 +596,16 @@ func (u *usecase) TransmitTestCase(ctx context.Context, testCaseId uuid.UUID) er
 func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID, passed bool) error {
 	const tag = "infrared/record_session_management/RecordTestCaseResult"
 
+	existing, err := u.testCase.GetById(ctx, testCaseId)
+	if err != nil || existing == nil {
+		u.logger.Error(ctx, tag, "failed to look up test case", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
+		return err
+	}
+	if existing.Status == domainmodels.InfraredTestCaseStatusPassed || existing.Status == domainmodels.InfraredTestCaseStatusFailed {
+		// Already recorded — idempotent no-op against a double-submit.
+		return nil
+	}
+
 	status := domainmodels.InfraredTestCaseStatusFailed
 	if passed {
 		status = domainmodels.InfraredTestCaseStatusPassed
@@ -632,6 +648,16 @@ func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID
 		return err
 	}
 
+	latestCoder, err := u.coder.GetBySessionId(ctx, coder.InfraredRecordSessionId)
+	if err != nil || latestCoder == nil {
+		u.logger.Error(ctx, tag, "failed to look up latest coder for session", domainmodels.LoggerMeta{"err": err, "session_id": coder.InfraredRecordSessionId})
+		return err
+	}
+	if latestCoder.Id != coder.Id {
+		u.logger.Error(ctx, tag, "test case belongs to a superseded coder round, ignoring", domainmodels.LoggerMeta{"test_case_id": testCaseId, "coder_id": coder.Id, "latest_coder_id": latestCoder.Id})
+		return nil
+	}
+
 	if !anyFailed {
 		if err := u.coder.Activate(ctx, coder.Id, coder.InfraredDeviceId); err != nil {
 			u.logger.Error(ctx, tag, "failed to activate coder", domainmodels.LoggerMeta{"err": err, "coder_id": coder.Id})
@@ -641,19 +667,21 @@ func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID
 		return nil
 	}
 
-	failedStates := make(map[uuid.UUID]string)
+	var failedStates []map[uuid.UUID]string
 	for _, tc := range allTestCases {
 		if tc.Status != domainmodels.InfraredTestCaseStatusFailed {
 			continue
 		}
-		states, err := u.testCase.ListStatesByTestCaseId(ctx, tc.Id)
+		tcStates, err := u.testCase.ListStatesByTestCaseId(ctx, tc.Id)
 		if err != nil {
 			u.logger.Error(ctx, tag, "failed to list states for failed test case", domainmodels.LoggerMeta{"err": err, "test_case_id": tc.Id})
 			return err
 		}
-		for _, s := range states {
-			failedStates[s.InfraredStateId] = s.StateValue
+		stateMap := make(map[uuid.UUID]string, len(tcStates))
+		for _, s := range tcStates {
+			stateMap[s.InfraredStateId] = s.StateValue
 		}
+		failedStates = append(failedStates, stateMap)
 	}
 
 	go u.runRetryCaseGeneration(coder.InfraredRecordSessionId, coder.Id, failedStates)
@@ -666,7 +694,7 @@ func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID
 // after the session's existing cases (Step is append-only and monotonic for
 // the lifetime of a session, so nextStep continues from the max existing
 // Step rather than restarting at 1), and sends the session back to RECORDING.
-func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID, failedStates map[uuid.UUID]string) {
+func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID, failedStates []map[uuid.UUID]string) {
 	const tag = "infrared/record_session_management/runRetryCaseGeneration"
 
 	ctx, cancel := context.WithTimeout(context.Background(), retryCaseGenerationTimeout)

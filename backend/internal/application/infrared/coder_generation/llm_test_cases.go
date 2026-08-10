@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -53,9 +54,19 @@ func WriteTestCases(
 		stateIdByName[state.Name] = state.Id
 	}
 
+	definitionByStateId := make(map[uuid.UUID]domainmodels.InfraredStateDeviceDefinition, len(definitions))
+	for _, definition := range definitions {
+		definitionByStateId[definition.InfraredStateId] = definition
+	}
+
+	var stateCatalog strings.Builder
+	for _, state := range states {
+		fmt.Fprintf(&stateCatalog, "- %s: %s\n", state.Name, describeLegalValues(definitionByStateId[state.Id]))
+	}
+
 	prompt := fmt.Sprintf(
-		"Device: %s %s\n\nProtocol summary: %s\n\nProtocol detail: %s\n\nPropose a minimal but sufficient set of test scenarios to verify this encoder works correctly on real hardware. Each scenario names a full target state (every field) and a short description of what a technician should observe. Respond as a JSON array matching the given schema.",
-		deviceBrand, deviceModel, coder.SummaryReadme, coder.DetailReadme,
+		"Device: %s %s\n\nProtocol summary: %s\n\nProtocol detail: %s\n\nDevice states and their legal values:\n%s\nPropose a minimal but sufficient set of test scenarios to verify this encoder works correctly on real hardware. Each scenario names a full target state (every field, using exactly the state names given above) and a short description of what a technician should observe. Respond as a JSON array matching the given schema.",
+		deviceBrand, deviceModel, coder.SummaryReadme, coder.DetailReadme, stateCatalog.String(),
 	)
 
 	result, err := client.GenerateText(ctx, domaincontractsllm.GenerateTextRequest{
@@ -86,4 +97,14 @@ func WriteTestCases(
 		plans = append(plans, TestCasePlan{Description: r.Description, States: states})
 	}
 	return plans, nil
+}
+
+func describeLegalValues(definition domainmodels.InfraredStateDeviceDefinition) string {
+	if len(definition.Options) > 0 {
+		return fmt.Sprintf("one of %v", definition.Options)
+	}
+	if definition.Minimum != nil && definition.Maximum != nil {
+		return fmt.Sprintf("a number between %g and %g", *definition.Minimum, *definition.Maximum)
+	}
+	return "any string value"
 }

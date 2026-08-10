@@ -3,6 +3,7 @@ package applicationinfraredcodergeneration
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -58,5 +59,28 @@ func TestWriteTestCasesErrorsOnUnknownStateName(t *testing.T) {
 	_, err := WriteTestCases(context.Background(), client, "Polytron", "PAC-09HDN", domainmodels.InfraredStateCoder{}, states, nil)
 	if err == nil {
 		t.Fatal("WriteTestCases() error = nil, want an error for a state name the LLM invented")
+	}
+}
+
+func TestWriteTestCasesPromptEnumeratesStateNamesAndValues(t *testing.T) {
+	powerId := uuid.New()
+	states := []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}
+	definitions := []domainmodels.InfraredStateDeviceDefinition{{InfraredStateId: powerId, Options: []string{"ON", "OFF"}}}
+	coder := domainmodels.InfraredStateCoder{SummaryReadme: "summary", DetailReadme: "detail"}
+
+	responseBody, _ := json.Marshal([]map[string]interface{}{
+		{"description": "Turn the unit on.", "states": map[string]string{"POWER": "ON"}},
+	})
+	client := &fakeLlmClient{responseText: string(responseBody)}
+
+	if _, err := WriteTestCases(context.Background(), client, "Polytron", "PAC-09HDN", coder, states, definitions); err != nil {
+		t.Fatalf("WriteTestCases() error = %v, want nil", err)
+	}
+
+	if !strings.Contains(client.lastRequest.Prompt, "POWER") {
+		t.Fatalf("prompt = %q, want it to mention state name POWER", client.lastRequest.Prompt)
+	}
+	if !strings.Contains(client.lastRequest.Prompt, "ON") || !strings.Contains(client.lastRequest.Prompt, "OFF") {
+		t.Fatalf("prompt = %q, want it to mention legal values ON/OFF", client.lastRequest.Prompt)
 	}
 }

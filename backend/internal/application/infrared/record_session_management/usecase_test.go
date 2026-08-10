@@ -220,6 +220,7 @@ type fakeCaseRepository struct {
 	createRawData   []byte
 	createRawCalls  int
 	createdCaseIds  []uuid.UUID
+	createdSteps    []int32
 	statusUpdateIds []uuid.UUID
 	getResult       *domainmodels.InfraredStateDeviceRecordCase
 	getErr          error
@@ -237,11 +238,12 @@ func (f *fakeCaseRepository) CreateRaw(_ context.Context, caseId uuid.UUID, rawD
 	f.createRawCalls++
 	return uuid.New(), nil
 }
-func (f *fakeCaseRepository) CreateWithStates(_ context.Context, _ uuid.UUID, _ int32, _ string, _ []domainmodels.InfraredStateDeviceRecordState) (uuid.UUID, error) {
+func (f *fakeCaseRepository) CreateWithStates(_ context.Context, _ uuid.UUID, step int32, _ string, _ []domainmodels.InfraredStateDeviceRecordState) (uuid.UUID, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	id := uuid.New()
 	f.createdCaseIds = append(f.createdCaseIds, id)
+	f.createdSteps = append(f.createdSteps, step)
 	return id, nil
 }
 
@@ -251,6 +253,15 @@ func (f *fakeCaseRepository) CreatedCaseIds() []uuid.UUID {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([]uuid.UUID(nil), f.createdCaseIds...)
+}
+
+// CreatedSteps returns a snapshot, safe to read while the background
+// goroutine may still be appending to createdSteps concurrently — mirrors
+// CreatedCaseIds()'s existing convention.
+func (f *fakeCaseRepository) CreatedSteps() []int32 {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]int32(nil), f.createdSteps...)
 }
 func (f *fakeCaseRepository) UpdateStatusById(_ context.Context, id uuid.UUID, status domainmodels.InfraredRecordCaseStatus) error {
 	f.mu.Lock()
@@ -1125,7 +1136,8 @@ func TestRecordTestCaseResultCompletesSessionWhenAllPass(t *testing.T) {
 			{Id: onlyCaseId, InfraredStateCoderId: coderId, Status: domainmodels.InfraredTestCaseStatusPassed},
 		},
 	}
-	coderRepo := &fakeCoderRepository{getByIdResult: &domainmodels.InfraredStateCoder{Id: coderId, InfraredDeviceId: deviceId, InfraredRecordSessionId: sessionId}}
+	fixtureCoder := &domainmodels.InfraredStateCoder{Id: coderId, InfraredDeviceId: deviceId, InfraredRecordSessionId: sessionId}
+	coderRepo := &fakeCoderRepository{getByIdResult: fixtureCoder, getResult: fixtureCoder}
 	sessionRepo := &fakeSessionRepository{}
 
 	impl := NewUsecaseImpl(
@@ -1167,7 +1179,8 @@ func TestRecordTestCaseResultTriggersRetryLoopWhenAnyFail(t *testing.T) {
 			{InfraredTestCaseId: failedCaseId, InfraredStateId: powerId, StateValue: "OFF"},
 		},
 	}
-	coderRepo := &fakeCoderRepository{getByIdResult: &domainmodels.InfraredStateCoder{Id: coderId, InfraredDeviceId: deviceId, InfraredRecordSessionId: sessionId}}
+	fixtureCoder := &domainmodels.InfraredStateCoder{Id: coderId, InfraredDeviceId: deviceId, InfraredRecordSessionId: sessionId}
+	coderRepo := &fakeCoderRepository{getByIdResult: fixtureCoder, getResult: fixtureCoder}
 	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: deviceId}}
 	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{{Id: powerId, Name: "POWER"}}}
 	caseRepo := &fakeCaseRepository{
@@ -1206,5 +1219,110 @@ func TestRecordTestCaseResultTriggersRetryLoopWhenAnyFail(t *testing.T) {
 	}
 	if coderRepo.activateCalls != 0 {
 		t.Fatal("Activate() was called despite a failed test case")
+	}
+
+	if steps := caseRepo.CreatedSteps(); len(steps) != 1 || steps[0] != 4 {
+		t.Fatalf("CreatedSteps() = %v, want [4] (continuing from the existing Step: 3 fixture)", steps)
+	}
+	createdIds := caseRepo.CreatedCaseIds()
+	if len(createdIds) != 1 {
+		t.Fatalf("CreatedCaseIds() = %v, want exactly 1 new case", createdIds)
+	}
+	if got := sessionRepo.CurrentCaseId(); got == nil || *got != createdIds[0] {
+		t.Fatalf("session cursor = %v, want it set to the new retry case %v", got, createdIds[0])
+	}
+}
+
+func TestRecordTestCaseResultIsIdempotentAgainstDoubleSubmit(t *testing.T) {
+	coderId := uuid.New()
+	testCaseId := uuid.New()
+
+	testCaseRepo := &fakeTestCaseRepository{
+		getResult: &domainmodels.InfraredTestCase{Id: testCaseId, InfraredStateCoderId: coderId, Status: domainmodels.InfraredTestCaseStatusPassed},
+	}
+	coderRepo := &fakeCoderRepository{}
+	sessionRepo := &fakeSessionRepository{}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
+	)
+
+	if err := impl.RecordTestCaseResult(context.Background(), testCaseId, true); err != nil {
+		t.Fatalf("RecordTestCaseResult() error = %v, want nil", err)
+	}
+	if coderRepo.activateCalls != 0 {
+		t.Fatal("Activate() was called on a double-submit of an already-terminal test case")
+	}
+	if len(sessionRepo.StatusUpdates()) != 0 {
+		t.Fatalf("session status updates = %v, want none (already-recorded result should be a no-op)", sessionRepo.StatusUpdates())
+	}
+}
+
+func TestRecordTestCaseResultIgnoresSupersededCoderRound(t *testing.T) {
+	staleCoderId := uuid.New()
+	latestCoderId := uuid.New()
+	deviceId := uuid.New()
+	sessionId := uuid.New()
+	testCaseId := uuid.New()
+
+	testCaseRepo := &fakeTestCaseRepository{
+		getResult: &domainmodels.InfraredTestCase{Id: testCaseId, InfraredStateCoderId: staleCoderId},
+		listByCoderIdResult: []domainmodels.InfraredTestCase{
+			{Id: testCaseId, InfraredStateCoderId: staleCoderId, Status: domainmodels.InfraredTestCaseStatusPassed},
+		},
+	}
+	coderRepo := &fakeCoderRepository{
+		getByIdResult: &domainmodels.InfraredStateCoder{Id: staleCoderId, InfraredDeviceId: deviceId, InfraredRecordSessionId: sessionId},
+		getResult:     &domainmodels.InfraredStateCoder{Id: latestCoderId, InfraredDeviceId: deviceId, InfraredRecordSessionId: sessionId},
+	}
+	sessionRepo := &fakeSessionRepository{}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
+	)
+
+	if err := impl.RecordTestCaseResult(context.Background(), testCaseId, true); err != nil {
+		t.Fatalf("RecordTestCaseResult() error = %v, want nil", err)
+	}
+	if coderRepo.activateCalls != 0 {
+		t.Fatal("Activate() was called on a test case belonging to a superseded coder round")
+	}
+	if len(sessionRepo.StatusUpdates()) != 0 {
+		t.Fatalf("session status updates = %v, want none (superseded-round result should be ignored)", sessionRepo.StatusUpdates())
+	}
+}
+
+func TestRunTestCaseGenerationFailsSessionWhenNoPlansProposed(t *testing.T) {
+	sessionId := uuid.New()
+	coderId := uuid.New()
+
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: coderId, SummaryReadme: "s", DetailReadme: "d"}}
+	testCaseRepo := &fakeTestCaseRepository{}
+	llmFactory := &fakeLlmClientFactory{responseText: "[]"}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
+	).(*usecase)
+
+	impl.runTestCaseGeneration(sessionId, coderId)
+
+	found := false
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateFailed {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("status updates = %v, want to include FAILED", sessionRepo.StatusUpdates())
+	}
+	if len(testCaseRepo.CreatedTestCaseIds()) != 0 {
+		t.Fatal("test cases were created despite the llm proposing zero plans")
 	}
 }
