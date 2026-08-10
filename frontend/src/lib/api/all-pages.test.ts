@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { listAllActions, type ActionResponse } from "./actions";
 import { apiFetch } from "./client";
+import { listAllFirmwares, type FirmwareResponse } from "./firmwares";
 import {
   listAllNodeClasses,
   listAllNodeClassActions,
@@ -85,6 +86,29 @@ const NODES: NodeResponse[] = [
     firmware_id: "firmware-1",
     description: "",
     is_connected: true,
+    preferences: {},
+  },
+];
+
+const FIRMWARES: FirmwareResponse[] = [
+  {
+    ...AUDIT,
+    id: "firmware-1",
+    node_class_id: "class-1",
+    name: "sensor-fw-1.0.0",
+    size: 1024,
+    checksum: "abc123",
+    binary_path: "firmware/sensor-fw-1.0.0.bin",
+    preferences: {},
+  },
+  {
+    ...AUDIT,
+    id: "firmware-2",
+    node_class_id: "class-1",
+    name: "sensor-fw-1.1.0",
+    size: 2048,
+    checksum: "def456",
+    binary_path: "firmware/sensor-fw-1.1.0.bin",
     preferences: {},
   },
 ];
@@ -193,6 +217,14 @@ describe("complete resource collections", () => {
       2,
       "/node-classes?search=sensor&page=2",
     );
+  });
+
+  it("collects firmwares beyond page one at the fixed option page size", async () => {
+    mockTwoPages(FIRMWARES as [FirmwareResponse, FirmwareResponse]);
+
+    await expect(listAllFirmwares()).resolves.toEqual(FIRMWARES);
+    expect(apiFetch).toHaveBeenNthCalledWith(1, "/firmwares?page=1&limit=48");
+    expect(apiFetch).toHaveBeenNthCalledWith(2, "/firmwares?page=2&limit=48");
   });
 
   it("collects roles and permissions beyond page one", async () => {
