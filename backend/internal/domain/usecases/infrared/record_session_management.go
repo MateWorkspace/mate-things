@@ -19,6 +19,7 @@ type RecordSessionManagement interface {
 	GetCoderBySessionId(ctx context.Context, sessionId uuid.UUID) (*domainmodels.InfraredStateCoder, error)
 	ListTestCases(ctx context.Context, sessionId uuid.UUID) ([]TestCaseWithStates, error)
 	TransmitTestCase(ctx context.Context, testCaseId uuid.UUID) error
+	RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID, passed bool) error
 }
 
 type StartRecordSessionRequest struct {

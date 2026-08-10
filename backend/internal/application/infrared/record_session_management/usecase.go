@@ -37,6 +37,7 @@ const caseGenerationTimeout = 2 * time.Minute
 const analysisTimeout = 3 * time.Minute
 const encoderSmokeTestTimeout = 2 * time.Second
 const testCaseGenerationTimeout = 2 * time.Minute
+const retryCaseGenerationTimeout = 2 * time.Minute
 
 type usecase struct {
 	session       domaincontractsrepository.InfraredRecordSession
@@ -584,6 +585,177 @@ func (u *usecase) TransmitTestCase(ctx context.Context, testCaseId uuid.UUID) er
 		return err
 	}
 	return nil
+}
+
+func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID, passed bool) error {
+	const tag = "infrared/record_session_management/RecordTestCaseResult"
+
+	status := domainmodels.InfraredTestCaseStatusFailed
+	if passed {
+		status = domainmodels.InfraredTestCaseStatusPassed
+	}
+	if err := u.testCase.UpdateStatusById(ctx, testCaseId, status); err != nil {
+		u.logger.Error(ctx, tag, "failed to update test case status", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
+		return err
+	}
+
+	testCase, err := u.testCase.GetById(ctx, testCaseId)
+	if err != nil || testCase == nil {
+		u.logger.Error(ctx, tag, "failed to look up updated test case", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
+		return err
+	}
+
+	allTestCases, err := u.testCase.ListByCoderId(ctx, testCase.InfraredStateCoderId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to list test cases for coder", domainmodels.LoggerMeta{"err": err, "coder_id": testCase.InfraredStateCoderId})
+		return err
+	}
+
+	allTerminal := true
+	anyFailed := false
+	for _, tc := range allTestCases {
+		if tc.Status == domainmodels.InfraredTestCaseStatusPending {
+			allTerminal = false
+			break
+		}
+		if tc.Status == domainmodels.InfraredTestCaseStatusFailed {
+			anyFailed = true
+		}
+	}
+	if !allTerminal {
+		return nil
+	}
+
+	coder, err := u.coderById(ctx, testCase.InfraredStateCoderId)
+	if err != nil || coder == nil {
+		u.logger.Error(ctx, tag, "failed to look up coder for completion check", domainmodels.LoggerMeta{"err": err, "coder_id": testCase.InfraredStateCoderId})
+		return err
+	}
+
+	if !anyFailed {
+		if err := u.coder.Activate(ctx, coder.Id, coder.InfraredDeviceId); err != nil {
+			u.logger.Error(ctx, tag, "failed to activate coder", domainmodels.LoggerMeta{"err": err, "coder_id": coder.Id})
+			return err
+		}
+		u.transition(ctx, tag, coder.InfraredRecordSessionId, domainmodels.InfraredRecordingStateCompleted)
+		return nil
+	}
+
+	failedStates := make(map[uuid.UUID]string)
+	for _, tc := range allTestCases {
+		if tc.Status != domainmodels.InfraredTestCaseStatusFailed {
+			continue
+		}
+		states, err := u.testCase.ListStatesByTestCaseId(ctx, tc.Id)
+		if err != nil {
+			u.logger.Error(ctx, tag, "failed to list states for failed test case", domainmodels.LoggerMeta{"err": err, "test_case_id": tc.Id})
+			return err
+		}
+		for _, s := range states {
+			failedStates[s.InfraredStateId] = s.StateValue
+		}
+	}
+
+	go u.runRetryCaseGeneration(coder.InfraredRecordSessionId, coder.Id, failedStates)
+	return nil
+}
+
+// runRetryCaseGeneration is launched when a test case fails and every test
+// case for the coder has reached a terminal status — it asks the LLM to
+// propose targeted re-recording cases for the failed states, appends them
+// after the session's existing cases (Step is append-only and monotonic for
+// the lifetime of a session, so nextStep continues from the max existing
+// Step rather than restarting at 1), and sends the session back to RECORDING.
+func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID, failedStates map[uuid.UUID]string) {
+	const tag = "infrared/record_session_management/runRetryCaseGeneration"
+
+	ctx, cancel := context.WithTimeout(context.Background(), retryCaseGenerationTimeout)
+	defer cancel()
+
+	coder, err := u.coderById(ctx, coderId)
+	if err != nil || coder == nil {
+		u.logger.Error(ctx, tag, "failed to look up coder", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	session, err := u.session.GetById(ctx, sessionId)
+	if err != nil || session == nil {
+		u.logger.Error(ctx, tag, "failed to look up session", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	device, err := u.device.GetById(ctx, session.InfraredDeviceId)
+	if err != nil || device == nil {
+		u.logger.Error(ctx, tag, "failed to look up device", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	states, err := u.state.ListByDeviceTypeId(ctx, device.InfraredDeviceTypeId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to list states", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
+	client, err := u.llmFactory.Current(ctx)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to resolve llm client", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	plans, err := applicationinfraredcodergeneration.WriteRetryCases(ctx, client, device.Brand, device.Model, *coder, failedStates, states)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to write retry cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	if len(plans) == 0 {
+		u.logger.Error(ctx, tag, "llm proposed no retry cases", domainmodels.LoggerMeta{"session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+
+	existingCases, err := u.recordCase.ListBySessionId(ctx, sessionId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to list existing cases for step numbering", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	nextStep := int32(1)
+	for _, c := range existingCases {
+		if c.Step >= nextStep {
+			nextStep = c.Step + 1
+		}
+	}
+
+	var firstNewCaseId uuid.UUID
+	for i, plan := range plans {
+		caseStates := make([]domainmodels.InfraredStateDeviceRecordState, 0, len(plan.States))
+		for stateId, value := range plan.States {
+			caseStates = append(caseStates, domainmodels.InfraredStateDeviceRecordState{InfraredStateId: stateId, StateValue: value})
+		}
+		caseId, err := u.recordCase.CreateWithStates(ctx, sessionId, nextStep+int32(i), plan.Description, caseStates)
+		if err != nil {
+			u.logger.Error(ctx, tag, "failed to persist retry case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+			return
+		}
+		if i == 0 {
+			firstNewCaseId = caseId
+		}
+	}
+
+	if err := u.recordCase.UpdateStatusById(ctx, firstNewCaseId, domainmodels.InfraredRecordCaseStatusActive); err != nil {
+		u.logger.Error(ctx, tag, "failed to activate first retry case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &firstNewCaseId); err != nil {
+		u.logger.Error(ctx, tag, "failed to set session cursor to first retry case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+		return
+	}
+	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateRecording)
 }
 
 // coderById is a small helper since InfraredStateCoder's repository only
