@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
@@ -11,6 +12,7 @@ import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { PermissionResponse } from "@/lib/api/permissions";
 import type { RoleResponse } from "@/lib/api/roles";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
@@ -179,7 +181,9 @@ export function RoleDialog({
     action,
     EMPTY_ACCESS_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   return (
     <Dialog
       open={open && state.status !== "success"}
@@ -189,6 +193,7 @@ export function RoleDialog({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -202,6 +207,7 @@ export function RoleDialog({
             defaultValue={role?.name}
             required
           />
+          <FieldError>{state.fieldErrors?.name}</FieldError>
         </div>
         <div>
           <Label htmlFor={`${mode}-role-description`}>Description</Label>
@@ -253,7 +259,9 @@ function ConfirmRoleDialog({
     action,
     EMPTY_ACCESS_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   return (
     <Dialog
       open={open && state.status !== "success"}
@@ -263,6 +271,7 @@ function ConfirmRoleDialog({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -273,6 +282,7 @@ function ConfirmRoleDialog({
           {warning} Enter <strong>{role.name}</strong> to continue.
         </p>
         <Input name="confirmation" aria-label="Confirm role name" required />
+        <FieldError>{state.fieldErrors?.confirmation}</FieldError>
         <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
           <Button

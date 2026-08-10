@@ -14,13 +14,26 @@ export function useFirstInvalidField<TFields extends string>(
     }
 
     const invalidNames = new Set(Object.keys(state.fieldErrors));
-    const field = Array.from(formRef.current?.elements ?? []).find(
-      (element): element is HTMLElement & { name: string } =>
-        element instanceof HTMLElement &&
-        "name" in element &&
-        typeof element.name === "string" &&
-        invalidNames.has(element.name),
-    );
+    const field = Array.from(
+      formRef.current?.querySelectorAll<HTMLElement>(
+        "[name], [data-field-name], [data-field-names]",
+      ) ?? [],
+    ).find((element) => {
+      if (
+        (element instanceof HTMLInputElement && element.type === "hidden") ||
+        element.matches(":disabled")
+      ) {
+        return false;
+      }
+
+      const names = [
+        element.getAttribute("name"),
+        element.dataset.fieldName,
+        ...(element.dataset.fieldNames?.split(/\s+/) ?? []),
+      ].filter((name): name is string => Boolean(name));
+
+      return names.some((name) => invalidNames.has(name));
+    });
     field?.focus();
   }, [formRef, state]);
 }

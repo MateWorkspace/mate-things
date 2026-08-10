@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useId, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -9,6 +9,7 @@ import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { ApiKeyResponse } from "@/lib/api/api-keys";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import { deleteApiKeyAction } from "../_lib/actions";
@@ -57,7 +58,9 @@ function DeleteApiKeyContent({
     deleteApiKeyAction,
     EMPTY_API_KEY_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   const id = useId();
 
   return (
@@ -77,6 +80,7 @@ function DeleteApiKeyContent({
         </div>
       ) : (
         <form
+          ref={formRef}
           action={action}
           onReset={(event) => event.preventDefault()}
           className="space-y-4"

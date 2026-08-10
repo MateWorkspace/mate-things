@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import PreferencesDialog from "@/components/preferences/PreferencesDialog";
 import ResourceCard from "@/components/collection/ResourceCard";
 import Button from "@/components/ui/button";
@@ -10,6 +11,7 @@ import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { PermissionResponse } from "@/lib/api/permissions";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import { removePermissionAction, savePermissionAction } from "../_lib/actions";
@@ -95,7 +97,9 @@ export function PermissionDialog({
     savePermissionAction,
     EMPTY_ACCESS_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   return (
     <Dialog
       open={open && state.status !== "success"}
@@ -105,6 +109,7 @@ export function PermissionDialog({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={action}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -121,6 +126,7 @@ export function PermissionDialog({
             placeholder="resource:operation"
             required
           />
+          <FieldError>{state.fieldErrors?.name}</FieldError>
         </div>
         <div>
           <Label htmlFor="permission-description">Description</Label>
@@ -164,7 +170,9 @@ function DeletePermissionDialog({
     removePermissionAction,
     EMPTY_ACCESS_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   return (
     <Dialog
       open={open && state.status !== "success"}
@@ -174,6 +182,7 @@ function DeletePermissionDialog({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={action}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -189,6 +198,7 @@ function DeletePermissionDialog({
           aria-label="Confirm permission name"
           required
         />
+        <FieldError>{state.fieldErrors?.confirmation}</FieldError>
         <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
           <Button

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useId, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -9,6 +9,7 @@ import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { NodeClassResponse } from "@/lib/api/node-classes";
 
@@ -103,7 +104,9 @@ function NodeClassEditorDialog({
   const action = nodeClass ? updateNodeClassAction : createNodeClassAction;
   const [state, formAction, isPending] = useActionState(action, INITIAL_STATE);
   const fieldId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
   useActionFeedback(state);
+  useFirstInvalidField(state, formRef);
   useRefreshAfterAction(state);
   const close = () => {
     if (!isPending) {
@@ -120,6 +123,7 @@ function NodeClassEditorDialog({
       dismissible={!isPending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -191,6 +195,8 @@ function DeleteNodeClassDialog({
     INITIAL_STATE,
   );
   const fieldId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   const close = () => {
     if (!isPending) {
       onClose();
@@ -206,6 +212,7 @@ function DeleteNodeClassDialog({
       dismissible={!isPending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"

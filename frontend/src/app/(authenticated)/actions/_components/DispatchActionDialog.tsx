@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId, useState } from "react";
+import { useActionState, useId, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -11,6 +11,7 @@ import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { ActionResponse } from "@/lib/api/actions";
 import type { NodeResponse } from "@/lib/api/nodes";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 
 import {
   dispatchActionFormAction,
@@ -66,6 +67,8 @@ function DispatchDialogContent({
     dispatchActionFormAction,
     EMPTY_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   const compatibleNodes = nodes.filter((node) =>
     compatibleNodeClassIds.has(node.node_class_id),
@@ -90,6 +93,7 @@ function DispatchDialogContent({
         </div>
       ) : (
         <form
+          ref={formRef}
           action={formAction}
           onReset={(event) => event.preventDefault()}
           className="space-y-4"
@@ -110,6 +114,7 @@ function DispatchDialogContent({
                 </option>
               ))}
             </select>
+            <FieldError>{state.fieldErrors?.node_id}</FieldError>
             {compatibleNodes.length === 0 ? (
               <p className="text-warning mt-2 text-sm">
                 No compatible nodes are available.
@@ -134,6 +139,7 @@ function DispatchDialogContent({
               name="executed_at"
               type="datetime-local"
             />
+            <FieldError>{state.fieldErrors?.executed_at}</FieldError>
           </div>
           <ActionMessage state={state} />
           <div className="flex justify-end gap-2">

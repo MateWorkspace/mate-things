@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useId, useRef } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
@@ -12,6 +13,7 @@ import type {
   FirmwareConfigParameterResponse,
   NodeConfigValueResponse,
 } from "@/lib/api";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 
 import { saveNodeConfigAction, type NodeActionState } from "../_lib/actions";
 
@@ -109,6 +111,8 @@ function ConfigParameterForm({
     INITIAL_STATE,
   );
   const inputId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   const isSupported = ["string", "uint32", "bool"].includes(
     parameter.value_type,
   );
@@ -116,6 +120,7 @@ function ConfigParameterForm({
 
   return (
     <form
+      ref={formRef}
       action={formAction}
       onReset={(event) => event.preventDefault()}
       className="border-border bg-surface rounded-2xl border p-4"
@@ -153,6 +158,7 @@ function ConfigParameterForm({
           inputId={inputId}
           parameter={parameter}
         />
+        <FieldError>{state.fieldErrors?.value}</FieldError>
         {!isSupported ? (
           <p
             id={`${inputId}-unsupported`}

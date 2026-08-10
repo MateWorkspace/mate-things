@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import JsonEditor from "@/components/json/JsonEditor";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import { useActionDialog } from "@/hooks/use-action-dialog";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import type { PreferencesResource } from "@/lib/api/preferences";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
@@ -73,8 +75,10 @@ function PreferencesDialogContent({
     savePreferencesAction,
     EMPTY_PREFERENCES_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useEffect(() => onStateChange(state), [onStateChange, state]);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
 
   return (
     <Dialog
@@ -85,6 +89,7 @@ function PreferencesDialogContent({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={action}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -96,6 +101,7 @@ function PreferencesDialogContent({
           label="Preferences JSON"
           defaultValue={preferences}
         />
+        <FieldError>{state.fieldErrors?.preferences}</FieldError>
         <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
           <Button

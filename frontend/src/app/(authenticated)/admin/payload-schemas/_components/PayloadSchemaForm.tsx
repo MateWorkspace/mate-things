@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -9,6 +9,7 @@ import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { PayloadSchemaResponse } from "@/lib/api/payload-schemas";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
@@ -101,7 +102,9 @@ function SchemaEditor({
     schema ? updatePayloadSchemaAction : createPayloadSchemaAction,
     EMPTY_SCHEMA_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   useEffect(() => {
     if (state.status === "success") {
       onClose();
@@ -127,6 +130,7 @@ function SchemaEditor({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={action}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -158,7 +162,7 @@ function SchemaEditor({
             />
             <FieldError>{state.fieldErrors?.version}</FieldError>
           </div>
-          <div>
+          <div data-field-name="definition" tabIndex={-1}>
             <h3 className="text-foreground/80 mb-1.5 block text-sm font-medium">
               Definition
             </h3>
@@ -169,6 +173,7 @@ function SchemaEditor({
               onRepresentableChange={setDefinitionRepresentable}
               onValidityChange={setDefinitionValid}
             />
+            <FieldError>{state.fieldErrors?.definition}</FieldError>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -179,6 +184,7 @@ function SchemaEditor({
                 type="datetime-local"
                 defaultValue={localDate(schema?.valid_from)}
               />
+              <FieldError>{state.fieldErrors?.valid_from}</FieldError>
             </div>
             <div>
               <Label htmlFor="schema-valid-to">Valid to</Label>
@@ -227,6 +233,8 @@ function DeleteSchema({
     deletePayloadSchemaAction,
     EMPTY_SCHEMA_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   const identity = `${schema.name} v${schema.version}`;
   return (
     <Dialog
@@ -237,6 +245,7 @@ function DeleteSchema({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={action}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -252,6 +261,7 @@ function DeleteSchema({
           aria-label="Confirm schema identity"
           required
         />
+        <FieldError>{state.fieldErrors?.confirmation}</FieldError>
         <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
           <Button

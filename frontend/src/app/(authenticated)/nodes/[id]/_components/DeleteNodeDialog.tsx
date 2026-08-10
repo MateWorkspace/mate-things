@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -8,6 +8,7 @@ import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 
 import { deleteNodeAction, type NodeActionState } from "../_lib/actions";
 
@@ -62,6 +63,8 @@ function DeleteNodeContent({
     deleteNodeAction,
     INITIAL_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
 
   const close = () => {
     if (!isPending) {
@@ -78,6 +81,7 @@ function DeleteNodeContent({
       dismissible={!isPending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"

@@ -38,6 +38,19 @@ function FocusHarness({ state }: { state: ActionState<"name" | "email"> }) {
   );
 }
 
+function CompositeFocusHarness({ state }: { state: ActionState<"user_id"> }) {
+  const formRef = createRef<HTMLFormElement>();
+  useFirstInvalidField(state, formRef);
+  return (
+    <form ref={formRef}>
+      <input type="hidden" name="user_id" />
+      <button type="button" data-field-name="user_id">
+        Select user
+      </button>
+    </form>
+  );
+}
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -102,6 +115,19 @@ it("focuses the first invalid field in form order", () => {
   expect(screen.getByLabelText("Name")).toHaveFocus();
 });
 
+it("skips hidden inputs and focuses a composite field control", () => {
+  render(
+    <CompositeFocusHarness
+      state={{
+        status: "error",
+        fieldErrors: { user_id: "Required" },
+      }}
+    />,
+  );
+
+  expect(screen.getByRole("button", { name: "Select user" })).toHaveFocus();
+});
+
 it("renders consistent action and field messages", () => {
   render(
     <>
@@ -114,8 +140,5 @@ it("renders consistent action and field messages", () => {
     "aria-live",
     "assertive",
   );
-  expect(screen.getByText("Enter a name.")).toHaveAttribute(
-    "id",
-    "name-error",
-  );
+  expect(screen.getByText("Enter a name.")).toHaveAttribute("id", "name-error");
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -10,6 +10,7 @@ import Dialog from "@/components/ui/dialog";
 import Label from "@/components/ui/label";
 import UserSearchCombobox from "@/components/users/UserSearchCombobox";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 
 import { generateApiKeyAction } from "../_lib/actions";
 import { EMPTY_API_KEY_STATE } from "../_lib/state";
@@ -48,7 +49,9 @@ function GenerateApiKeyContent({
     generateApiKeyAction,
     EMPTY_API_KEY_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
 
   return (
     <Dialog
@@ -75,6 +78,7 @@ function GenerateApiKeyContent({
         </div>
       ) : (
         <form
+          ref={formRef}
           action={action}
           onReset={(event) => event.preventDefault()}
           className="space-y-4"

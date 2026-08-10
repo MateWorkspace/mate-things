@@ -1,14 +1,16 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useId, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { ActionResponse } from "@/lib/api/actions";
 import type { PayloadSchemaResponse } from "@/lib/api/payload-schemas";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
@@ -98,6 +100,8 @@ function EditorDialog({
     EMPTY_STATE,
   );
   useRefreshAfterAction(state);
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   return (
     <Dialog
@@ -108,6 +112,7 @@ function EditorDialog({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -123,6 +128,7 @@ function EditorDialog({
             required
             defaultValue={action?.name}
           />
+          <FieldError>{state.fieldErrors?.name}</FieldError>
         </div>
         <div>
           <Label htmlFor={`${id}-description`}>Description</Label>
@@ -139,6 +145,7 @@ function EditorDialog({
           <select
             id={`${id}-schema`}
             name="schema"
+            data-field-names="payload_schema_name payload_schema_version"
             defaultValue={
               action
                 ? `${action.payload_schema_name}::${action.payload_schema_version}`
@@ -178,6 +185,10 @@ function EditorDialog({
             name="payload_schema_name"
             defaultValue={action?.payload_schema_name}
           />
+          <FieldError>
+            {state.fieldErrors?.payload_schema_name ??
+              state.fieldErrors?.payload_schema_version}
+          </FieldError>
           <input
             type="hidden"
             name="payload_schema_version"
@@ -217,6 +228,8 @@ function DeleteDialog({
     deleteActionFormAction,
     EMPTY_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   return (
     <Dialog
@@ -227,6 +240,7 @@ function DeleteDialog({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -245,6 +259,7 @@ function DeleteDialog({
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}
           />
+          <FieldError>{state.fieldErrors?.confirmation}</FieldError>
         </div>
         <ActionMessage state={state} />
         <div className="flex justify-end gap-2">

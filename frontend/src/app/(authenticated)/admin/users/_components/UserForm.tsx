@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -9,6 +9,7 @@ import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { RoleResponse } from "@/lib/api/roles";
 import type { UserResponse } from "@/lib/api/users";
@@ -112,6 +113,8 @@ function EditorDialog({
     }
   }, [state, onClose]);
   const id = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
 
   // Controlled, not defaultValue: React resets a <form action={...}> to its
   // defaults after every submission (success or rejected), which would wipe
@@ -134,6 +137,7 @@ function EditorDialog({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={action}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -174,6 +178,7 @@ function EditorDialog({
               </option>
             ))}
           </select>
+          <FieldError>{state.fieldErrors?.role_id}</FieldError>
         </div>
         <div>
           <Label htmlFor={`${id}-bio`}>Bio</Label>
@@ -234,6 +239,8 @@ function DeleteDialog({
   );
   useActionFeedback(state);
   const [confirmation, setConfirmation] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   return (
     <Dialog
       open={open}
@@ -243,6 +250,7 @@ function DeleteDialog({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={action}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -262,6 +270,7 @@ function DeleteDialog({
           value={confirmation}
           onChange={(event) => setConfirmation(event.target.value)}
         />
+        <FieldError>{state.fieldErrors?.confirmation}</FieldError>
         <ActionMessage state={state} />
         <div className="flex justify-end gap-2">
           <Button

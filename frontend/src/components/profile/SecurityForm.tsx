@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import {
+  useActionState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -23,6 +29,9 @@ export default function SecurityForm({
     changePasswordAction,
     INITIAL_STATE,
   );
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   useActionFeedback(state);
   useFirstInvalidField(state, formRef);
@@ -31,11 +40,17 @@ export default function SecurityForm({
     return () => onPendingChange?.(false);
   }, [isPending, onPendingChange]);
 
-  useEffect(() => {
-    if (state.status === "success") {
-      formRef.current?.reset();
-    }
-  }, [state]);
+  useLayoutEffect(() => {
+    if (!formRef.current || state.status === "idle") return;
+
+    const fields = formRef.current.elements;
+    (fields.namedItem("current_password") as HTMLInputElement).value =
+      state.status === "error" ? currentPassword : "";
+    (fields.namedItem("new_password") as HTMLInputElement).value =
+      state.status === "error" ? newPassword : "";
+    (fields.namedItem("confirm_password") as HTMLInputElement).value =
+      state.status === "error" ? confirmPassword : "";
+  }, [confirmPassword, currentPassword, newPassword, state]);
 
   return (
     <form ref={formRef} action={formAction} className="space-y-4">
@@ -47,6 +62,8 @@ export default function SecurityForm({
           type="password"
           autoComplete="current-password"
           required
+          defaultValue={currentPassword}
+          onChange={(event) => setCurrentPassword(event.target.value)}
         />
       </div>
 
@@ -58,6 +75,8 @@ export default function SecurityForm({
           type="password"
           autoComplete="new-password"
           required
+          defaultValue={newPassword}
+          onChange={(event) => setNewPassword(event.target.value)}
         />
       </div>
 
@@ -69,6 +88,8 @@ export default function SecurityForm({
           type="password"
           autoComplete="new-password"
           required
+          defaultValue={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
           aria-invalid={Boolean(state.fieldErrors?.confirm_password)}
           aria-describedby={
             state.fieldErrors?.confirm_password

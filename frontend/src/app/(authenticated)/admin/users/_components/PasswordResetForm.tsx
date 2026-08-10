@@ -1,13 +1,15 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
+import FieldError from "@/components/forms/FieldError";
 import Button from "@/components/ui/button";
 import Dialog from "@/components/ui/dialog";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import type { UserResponse } from "@/lib/api/users";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 
 import { resetUserPasswordAction } from "../_lib/actions";
 import { EMPTY_USER_STATE } from "../_lib/state";
@@ -50,6 +52,10 @@ function PasswordResetDialog({
     resetUserPasswordAction,
     EMPTY_USER_STATE,
   );
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   return (
     <Dialog
       open={open && state.status !== "success"}
@@ -59,6 +65,7 @@ function PasswordResetDialog({
       dismissible={!pending}
     >
       <form
+        ref={formRef}
         action={action}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -79,7 +86,18 @@ function PasswordResetDialog({
             type="password"
             autoComplete="new-password"
             required
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            aria-invalid={Boolean(state.fieldErrors?.password)}
+            aria-describedby={
+              state.fieldErrors?.password
+                ? "admin-new-password-error"
+                : undefined
+            }
           />
+          <FieldError id="admin-new-password-error">
+            {state.fieldErrors?.password}
+          </FieldError>
         </div>
         <div>
           <Label htmlFor="admin-confirm-password">Confirm password</Label>
@@ -89,7 +107,18 @@ function PasswordResetDialog({
             type="password"
             autoComplete="new-password"
             required
+            value={passwordConfirmation}
+            onChange={(event) => setPasswordConfirmation(event.target.value)}
+            aria-invalid={Boolean(state.fieldErrors?.password_confirmation)}
+            aria-describedby={
+              state.fieldErrors?.password_confirmation
+                ? "admin-confirm-password-error"
+                : undefined
+            }
           />
+          <FieldError id="admin-confirm-password-error">
+            {state.fieldErrors?.password_confirmation}
+          </FieldError>
         </div>
         <ActionMessage state={state} />
         <div className="flex justify-end gap-2">

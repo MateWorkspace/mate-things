@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -9,6 +9,7 @@ import CopyButton from "@/components/ui/copy-button";
 import Dialog from "@/components/ui/dialog";
 import Label from "@/components/ui/label";
 import type { ApiKeyResponse } from "@/lib/api/api-keys";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import { regenerateApiKeyAction } from "../_lib/actions";
@@ -63,7 +64,9 @@ function RegenerateApiKeyContent({
     regenerateApiKeyAction,
     EMPTY_API_KEY_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
 
   return (
     <Dialog
@@ -90,6 +93,7 @@ function RegenerateApiKeyContent({
         </div>
       ) : (
         <form
+          ref={formRef}
           action={action}
           onReset={(event) => event.preventDefault()}
           className="space-y-4"

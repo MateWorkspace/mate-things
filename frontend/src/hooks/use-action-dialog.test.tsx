@@ -1,25 +1,49 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { useActionState, useEffect, useState } from "react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 
 import Dialog from "@/components/ui/dialog";
-import type { ActionState } from "@/lib/forms/action-state";
+import {
+  INITIAL_ACTION_STATE,
+  type ActionState,
+} from "@/lib/forms/action-state";
 
 import { useActionDialog } from "./use-action-dialog";
 
-function StatefulForm() {
-  return <input aria-label="Draft" defaultValue="fresh" />;
+type SubmitAction = (
+  previous: ActionState,
+  formData: FormData,
+) => Promise<ActionState>;
+
+const submitAction = vi.fn<SubmitAction>(async () => ({
+  status: "success",
+}));
+
+function StatefulForm({
+  onStateChange,
+}: {
+  onStateChange: (state: ActionState) => void;
+}) {
+  const [state, action] = useActionState(submitAction, INITIAL_ACTION_STATE);
+  useEffect(() => onStateChange(state), [onStateChange, state]);
+
+  return (
+    <form action={action}>
+      <input aria-label="Draft" name="draft" defaultValue="fresh" />
+      <button type="submit">Submit</button>
+    </form>
+  );
 }
 
 function Harness({
   pending = false,
-  state = { status: "idle" },
   onSuccess,
 }: {
   pending?: boolean;
-  state?: ActionState;
   onSuccess?: () => void;
 }) {
+  const [state, setState] = useState<ActionState>(INITIAL_ACTION_STATE);
   const dialog = useActionDialog({ state, onSuccess });
 
   return (
@@ -33,7 +57,7 @@ function Harness({
         dismissible={!pending}
         title="Action"
       >
-        <StatefulForm key={dialog.formKey} />
+        <StatefulForm key={dialog.formKey} onStateChange={setState} />
       </Dialog>
     </>
   );
@@ -41,22 +65,29 @@ function Harness({
 
 afterEach(cleanup);
 
-it("can reopen with a fresh keyed child after success", async () => {
+it("submits successfully twice through a keyed useActionState owner", async () => {
   const user = userEvent.setup();
   const onSuccess = vi.fn();
-  const { rerender } = render(<Harness onSuccess={onSuccess} />);
+  submitAction.mockClear();
+  render(<Harness onSuccess={onSuccess} />);
 
   await user.click(screen.getByRole("button", { name: "Open" }));
   await user.clear(screen.getByLabelText("Draft"));
   await user.type(screen.getByLabelText("Draft"), "changed");
-
-  rerender(<Harness state={{ status: "success" }} onSuccess={onSuccess} />);
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Submit" }));
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
   expect(onSuccess).toHaveBeenCalledOnce();
 
   await user.click(screen.getByRole("button", { name: "Open" }));
   expect(screen.getByRole("dialog")).toBeVisible();
   expect(screen.getByLabelText("Draft")).toHaveValue("fresh");
+  await user.click(screen.getByRole("button", { name: "Submit" }));
+
+  await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(2));
+  expect(submitAction).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
 it("blocks close while pending", async () => {

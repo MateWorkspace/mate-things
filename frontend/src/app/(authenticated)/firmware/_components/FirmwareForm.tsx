@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useId, useState, type ChangeEvent } from "react";
+import {
+  useActionState,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
@@ -13,6 +19,7 @@ import type {
   FirmwareConfigSchemaItem,
   FirmwareResponse,
 } from "@/lib/api/firmwares";
+import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 
 import {
@@ -45,10 +52,12 @@ const INITIAL_STATE: FormActionState = { status: "idle" };
 
 function NodeClassField({
   defaultValue,
+  error,
   fieldId,
   nodeClasses,
 }: {
   defaultValue?: string;
+  error?: string;
   fieldId: string;
   nodeClasses: readonly FirmwareNodeClassOption[];
 }) {
@@ -62,6 +71,7 @@ function NodeClassField({
           defaultValue={defaultValue}
           required
         />
+        <FieldError>{error}</FieldError>
       </div>
     );
   }
@@ -91,13 +101,16 @@ function NodeClassField({
           </option>
         ))}
       </select>
+      <FieldError>{error}</FieldError>
     </div>
   );
 }
 
 function ConfigSchemaFields({
+  error,
   initialSchema,
 }: {
+  error?: string;
   initialSchema: readonly FirmwareConfigSchemaItem[];
 }) {
   const id = useId();
@@ -122,7 +135,11 @@ function ConfigSchemaFields({
   };
 
   return (
-    <fieldset className="border-border space-y-3 rounded-xl border p-4">
+    <fieldset
+      data-field-name="config_schema"
+      tabIndex={-1}
+      className="border-border space-y-3 rounded-xl border p-4"
+    >
       <legend className="px-1 text-sm font-semibold">
         Configuration schema
       </legend>
@@ -195,6 +212,7 @@ function ConfigSchemaFields({
         <Plus aria-hidden="true" className="size-4" />
         Add configuration parameter
       </Button>
+      <FieldError>{error}</FieldError>
     </fieldset>
   );
 }
@@ -212,7 +230,9 @@ function UploadDialog({
     createFirmwareAction,
     INITIAL_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -227,6 +247,7 @@ function UploadDialog({
       dismissible={!isPending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -234,8 +255,13 @@ function UploadDialog({
         <div>
           <Label htmlFor={`${id}-name`}>Firmware name</Label>
           <Input id={`${id}-name`} name="name" required />
+          <FieldError>{state.fieldErrors?.name}</FieldError>
         </div>
-        <NodeClassField fieldId={id} nodeClasses={nodeClasses} />
+        <NodeClassField
+          error={state.fieldErrors?.node_class_id}
+          fieldId={id}
+          nodeClasses={nodeClasses}
+        />
         <div>
           <Label htmlFor={`${id}-file`}>Firmware binary</Label>
           <Input
@@ -247,8 +273,10 @@ function UploadDialog({
           />
           <FieldError>{state.fieldErrors?.file}</FieldError>
         </div>
-        <ConfigSchemaFields initialSchema={[]} />
-        <FieldError>{state.fieldErrors?.config_schema}</FieldError>
+        <ConfigSchemaFields
+          error={state.fieldErrors?.config_schema}
+          initialSchema={[]}
+        />
         <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
@@ -283,7 +311,9 @@ function EditDialog({
     updateFirmwareAction,
     INITIAL_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -298,6 +328,7 @@ function EditDialog({
       dismissible={!isPending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -311,9 +342,11 @@ function EditDialog({
             defaultValue={firmware.name}
             required
           />
+          <FieldError>{state.fieldErrors?.name}</FieldError>
         </div>
         <NodeClassField
           defaultValue={firmware.node_class_id}
+          error={state.fieldErrors?.node_class_id}
           fieldId={id}
           nodeClasses={nodeClasses}
         />
@@ -351,7 +384,9 @@ function ReplaceDialog({
     replaceFirmwareBinaryAction,
     INITIAL_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   useRefreshAfterAction(state);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -366,6 +401,7 @@ function ReplaceDialog({
       dismissible={!isPending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
@@ -386,8 +422,10 @@ function ReplaceDialog({
           />
           <FieldError>{state.fieldErrors?.file}</FieldError>
         </div>
-        <ConfigSchemaFields initialSchema={configSchema} />
-        <FieldError>{state.fieldErrors?.config_schema}</FieldError>
+        <ConfigSchemaFields
+          error={state.fieldErrors?.config_schema}
+          initialSchema={configSchema}
+        />
         <ActionMessage state={state} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button
@@ -421,6 +459,8 @@ function DeleteDialog({
     deleteFirmwareAction,
     INITIAL_STATE,
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  useFirstInvalidField(state, formRef);
   const id = useId();
   const close = () => {
     if (!isPending) onClose();
@@ -435,6 +475,7 @@ function DeleteDialog({
       dismissible={!isPending}
     >
       <form
+        ref={formRef}
         action={formAction}
         onReset={(event) => event.preventDefault()}
         className="space-y-4"
