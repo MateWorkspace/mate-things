@@ -108,3 +108,23 @@ type InfraredRecordSessionEvent struct {
 	RecordingState      string
 	CurrentRecordCaseId *uuid.UUID
 }
+
+type InfraredStateCoderStatus string
+
+const (
+	InfraredStateCoderStatusUnverified InfraredStateCoderStatus = "UNVERIFIED"
+	InfraredStateCoderStatusActive     InfraredStateCoderStatus = "ACTIVE"
+	InfraredStateCoderStatusSuperseded InfraredStateCoderStatus = "SUPERSEDED"
+)
+
+type InfraredStateCoder struct {
+	Id                      uuid.UUID
+	InfraredDeviceId        uuid.UUID
+	InfraredRecordSessionId uuid.UUID
+	EncoderSource           string
+	DecoderSource           string
+	SummaryReadme           string
+	DetailReadme            string
+	Status                  InfraredStateCoderStatus
+	CreatedAt               time.Time
+}
