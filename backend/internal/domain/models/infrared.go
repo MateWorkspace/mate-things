@@ -128,3 +128,26 @@ type InfraredStateCoder struct {
 	Status                  InfraredStateCoderStatus
 	CreatedAt               time.Time
 }
+
+type InfraredTestCaseStatus string
+
+const (
+	InfraredTestCaseStatusPending InfraredTestCaseStatus = "PENDING"
+	InfraredTestCaseStatusPassed  InfraredTestCaseStatus = "PASSED"
+	InfraredTestCaseStatusFailed  InfraredTestCaseStatus = "FAILED"
+)
+
+type InfraredTestCase struct {
+	Id                   uuid.UUID
+	InfraredStateCoderId uuid.UUID
+	Step                 int32
+	Description          string
+	Status               InfraredTestCaseStatus
+}
+
+type InfraredTestCaseState struct {
+	Id                 uuid.UUID
+	InfraredTestCaseId uuid.UUID
+	InfraredStateId    uuid.UUID
+	StateValue         string
+}
