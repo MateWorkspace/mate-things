@@ -207,6 +207,25 @@ describe("entity selector actions", () => {
     },
   );
 
+  it("preserves the default-role annotation in the presentation-safe label", async () => {
+    vi.mocked(listRoles).mockResolvedValue({
+      data: [{ ...ROLE, is_default: true }],
+      ...PAGE,
+    });
+
+    await expect(searchRolesAction(REQUEST)).resolves.toEqual({
+      items: [
+        {
+          value: "role-1",
+          label: "Operator (default)",
+          description: "Fleet operator",
+        },
+      ],
+      page: 2,
+      totalPages: 3,
+    });
+  });
+
   it("does not swallow transport errors", async () => {
     vi.mocked(listNodes).mockRejectedValue(new Error("backend unavailable"));
 

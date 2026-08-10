@@ -82,7 +82,7 @@ export async function searchRolesAction(
   const response = await listRoles(toListQuery(request));
   return toSearchOptionsPage(response, (role) => ({
     value: role.id,
-    label: role.name,
+    label: role.is_default ? `${role.name} (default)` : role.name,
     description: role.description,
   }));
 }
