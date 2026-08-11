@@ -220,6 +220,10 @@ func (u *usecase) GetById(ctx context.Context, id uuid.UUID) (*domainmodels.Infr
 	return u.session.ReadById(ctx, id)
 }
 
+func (u *usecase) ListByFilter(ctx context.Context, request domainusecasesinfrared.ListRecordSessionsRequest) ([]domainmodels.InfraredRecordSessionListItem, int, error) {
+	return u.session.ReadByFilter(ctx, request.RecordingState, request.InfraredDeviceTypeId, request.CreatedAtStart, request.CreatedAtEnd, request.Page, request.Limit)
+}
+
 func (u *usecase) ListCases(ctx context.Context, sessionId uuid.UUID) ([]domainusecasesinfrared.CaseWithStatesAndRaw, error) {
 	cases, err := u.recordCase.ReadListBySessionId(ctx, sessionId)
 	if err != nil {

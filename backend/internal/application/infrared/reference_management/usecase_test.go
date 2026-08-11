@@ -38,14 +38,20 @@ func (f *fakeDeviceTypeRepository) DeleteById(_ context.Context, id uuid.UUID, d
 
 type fakeDeviceRepository struct {
 	domaincontractsrepository.InfraredDevice
-	deletedId uuid.UUID
-	deletedBy *uuid.UUID
-	deleteErr error
+	deletedId     uuid.UUID
+	deletedBy     *uuid.UUID
+	deleteErr     error
+	getByIdResult *domainmodels.InfraredDevice
+	getByIdErr    error
 }
 
 func (f *fakeDeviceRepository) DeleteById(_ context.Context, id uuid.UUID, deletedBy *uuid.UUID) error {
 	f.deletedId, f.deletedBy = id, deletedBy
 	return f.deleteErr
+}
+
+func (f *fakeDeviceRepository) ReadById(_ context.Context, _ uuid.UUID) (*domainmodels.InfraredDevice, error) {
+	return f.getByIdResult, f.getByIdErr
 }
 
 type fakeStateRepository struct {
@@ -183,6 +189,20 @@ func TestDeleteDeviceByIdForwardsToRepository(t *testing.T) {
 	}
 	if deviceRepo.deletedId != id {
 		t.Fatalf("DeleteById() called with id %v, want %v", deviceRepo.deletedId, id)
+	}
+}
+
+func TestGetDeviceByIdDelegatesToRepository(t *testing.T) {
+	deviceId := uuid.New()
+	deviceRepo := &fakeDeviceRepository{getByIdResult: &domainmodels.InfraredDevice{Id: deviceId, Brand: "Daikin", Model: "FTWX35AXV1"}}
+	impl := NewUsecaseImpl(&fakeDeviceTypeRepository{}, deviceRepo, &fakeStateRepository{}, &fakeDefinitionRepository{})
+
+	device, err := impl.GetDeviceById(context.Background(), deviceId)
+	if err != nil {
+		t.Fatalf("GetDeviceById() error = %v, want nil", err)
+	}
+	if device == nil || device.Brand != "Daikin" {
+		t.Fatalf("GetDeviceById() = %v, want Brand=Daikin", device)
 	}
 }
 

@@ -21,6 +21,7 @@ type ReferenceManagement interface {
 	ListStatesByDeviceTypeId(ctx context.Context, deviceTypeId uuid.UUID) ([]domainmodels.InfraredState, error)
 	DeleteStateById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 	DeleteDeviceById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
+	GetDeviceById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredDevice, error)
 	ListDefinitionsByDeviceId(ctx context.Context, deviceId uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error)
 	DeleteDefinitionById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 }

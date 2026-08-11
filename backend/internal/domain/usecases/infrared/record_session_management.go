@@ -2,6 +2,7 @@ package domainusecasesinfrared
 
 import (
 	"context"
+	"time"
 
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ import (
 type RecordSessionManagement interface {
 	Start(ctx context.Context, request StartRecordSessionRequest) (sessionId uuid.UUID, err error)
 	GetById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredRecordSession, error)
+	ListByFilter(ctx context.Context, request ListRecordSessionsRequest) (items []domainmodels.InfraredRecordSessionListItem, total int, err error)
 	ListCases(ctx context.Context, sessionId uuid.UUID) ([]CaseWithStatesAndRaw, error)
 	AcceptRaw(ctx context.Context, rawId uuid.UUID) error
 	DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string) error
@@ -27,6 +29,15 @@ type RecordSessionManagement interface {
 	DeleteStateCoderById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 	DeleteTestCaseById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 	DeleteTestCaseStateById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
+}
+
+type ListRecordSessionsRequest struct {
+	RecordingState       *string
+	InfraredDeviceTypeId *uuid.UUID
+	CreatedAtStart       *time.Time
+	CreatedAtEnd         *time.Time
+	Page                 int
+	Limit                int
 }
 
 type StartRecordSessionRequest struct {

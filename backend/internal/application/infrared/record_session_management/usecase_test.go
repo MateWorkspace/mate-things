@@ -37,6 +37,13 @@ type fakeSessionRepository struct {
 	deleteErr                  error
 	deletedId                  uuid.UUID
 	deletedBy                  *uuid.UUID
+	listByFilterResult         []domainmodels.InfraredRecordSessionListItem
+	listByFilterTotal          int
+	listByFilterErr            error
+}
+
+func (f *fakeSessionRepository) ReadByFilter(_ context.Context, _ *string, _ *uuid.UUID, _ *time.Time, _ *time.Time, page int, limit int) ([]domainmodels.InfraredRecordSessionListItem, int, error) {
+	return f.listByFilterResult, f.listByFilterTotal, f.listByFilterErr
 }
 
 func (f *fakeSessionRepository) Create(_ context.Context, nodeId uuid.UUID, deviceId uuid.UUID, _ *uuid.UUID) (uuid.UUID, error) {
@@ -2272,5 +2279,31 @@ func TestDeleteTestCaseStateByIdForwardsToRepository(t *testing.T) {
 	}
 	if testCaseRepo.deletedStateId != id {
 		t.Fatalf("test case repository DeleteStateById() called with id %v, want %v", testCaseRepo.deletedStateId, id)
+	}
+}
+
+func TestListByFilterDelegatesToRepository(t *testing.T) {
+	sessionRepo := &fakeSessionRepository{
+		listByFilterResult: []domainmodels.InfraredRecordSessionListItem{
+			{Id: uuid.New(), RecordingState: domainmodels.InfraredRecordingStateCompleted, Brand: "Daikin", Model: "FTWX35AXV1"},
+		},
+		listByFilterTotal: 1,
+	}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	items, total, err := impl.ListByFilter(context.Background(), domainusecasesinfrared.ListRecordSessionsRequest{Page: 1, Limit: 10})
+	if err != nil {
+		t.Fatalf("ListByFilter() error = %v, want nil", err)
+	}
+	if total != 1 || len(items) != 1 {
+		t.Fatalf("ListByFilter() = %v, %d, want 1 item, total 1", items, total)
+	}
+	if items[0].Brand != "Daikin" {
+		t.Fatalf("items[0].Brand = %q, want Daikin", items[0].Brand)
 	}
 }

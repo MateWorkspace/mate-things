@@ -42,6 +42,23 @@ const (
 	InfraredRecordingStateFailed              = "FAILED"
 )
 
+var validInfraredRecordingStates = map[string]struct{}{
+	InfraredRecordingStateDraft:               {},
+	InfraredRecordingStateCasesGenerating:     {},
+	InfraredRecordingStateRecording:           {},
+	InfraredRecordingStateAnalyzing:           {},
+	InfraredRecordingStateFunctionGenerating:  {},
+	InfraredRecordingStateTestCasesGenerating: {},
+	InfraredRecordingStateTesting:             {},
+	InfraredRecordingStateCompleted:           {},
+	InfraredRecordingStateFailed:              {},
+}
+
+func IsValidInfraredRecordingState(state string) bool {
+	_, ok := validInfraredRecordingStates[state]
+	return ok
+}
+
 type InfraredRecordSession struct {
 	Id                          uuid.UUID
 	NodeId                      uuid.UUID

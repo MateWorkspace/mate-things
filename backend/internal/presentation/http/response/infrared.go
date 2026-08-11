@@ -79,6 +79,32 @@ func InfraredRecordSessions(models []domainmodels.InfraredRecordSession) []Infra
 	return responses
 }
 
+type InfraredRecordSessionListItemResponse struct {
+	Id             string    `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+	RecordingState string    `json:"recording_state" example:"RECORDING"`
+	IsCompleted    bool      `json:"is_completed" example:"false"`
+	Brand          string    `json:"brand" example:"Daikin"`
+	Model          string    `json:"model" example:"FTWX35AXV1"`
+	DeviceTypeName string    `json:"device_type_name" example:"Air Conditioner"`
+	CreatedAt      time.Time `json:"created_at" example:"2026-06-15T09:30:00Z"`
+}
+
+func InfraredRecordSessionListItems(models []domainmodels.InfraredRecordSessionListItem) []InfraredRecordSessionListItemResponse {
+	responses := make([]InfraredRecordSessionListItemResponse, len(models))
+	for i, model := range models {
+		responses[i] = InfraredRecordSessionListItemResponse{
+			Id:             UUIDString(model.Id),
+			RecordingState: model.RecordingState,
+			IsCompleted:    model.IsCompleted,
+			Brand:          model.Brand,
+			Model:          model.Model,
+			DeviceTypeName: model.DeviceTypeName,
+			CreatedAt:      model.CreatedAt,
+		}
+	}
+	return responses
+}
+
 type InfraredStateDeviceRecordStateResponse struct {
 	Id              string `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 	InfraredStateId string `json:"infrared_state_id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
@@ -305,4 +331,22 @@ func InfraredStateDeviceDefinitions(models []domainmodels.InfraredStateDeviceDef
 		responses[i] = InfraredStateDeviceDefinition(model)
 	}
 	return responses
+}
+
+type InfraredDeviceResponse struct {
+	Id                   string `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+	InfraredDeviceTypeId string `json:"infrared_device_type_id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
+	Brand                string `json:"brand" example:"Daikin"`
+	Model                string `json:"model" example:"FTWX35AXV1"`
+	AuditResponse
+}
+
+func InfraredDevice(model domainmodels.InfraredDevice) InfraredDeviceResponse {
+	return InfraredDeviceResponse{
+		Id:                   UUIDString(model.Id),
+		InfraredDeviceTypeId: UUIDString(model.InfraredDeviceTypeId),
+		Brand:                model.Brand,
+		Model:                model.Model,
+		AuditResponse:        Audit(model.CreatedAt, model.UpdatedAt, model.DeletedAt, model.CreatedBy, model.UpdatedBy, model.DeletedBy),
+	}
 }

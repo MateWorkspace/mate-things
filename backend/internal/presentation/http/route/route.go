@@ -141,6 +141,7 @@ type TelemetryHandler interface {
 
 type InfraredHandler interface {
 	RecordSessionPost(c *echo.Context) error
+	RecordSessionGetList(c *echo.Context) error
 	RecordSessionGetById(c *echo.Context) error
 	RecordSessionCasesGetList(c *echo.Context) error
 	InfraredRecordSessionBroadcastRegister(c *echo.Context) error
@@ -166,6 +167,7 @@ type InfraredHandler interface {
 	StateGetList(c *echo.Context) error
 	StateDelete(c *echo.Context) error
 	DeviceDelete(c *echo.Context) error
+	DeviceGetById(c *echo.Context) error
 	DefinitionGetList(c *echo.Context) error
 	DefinitionDelete(c *echo.Context) error
 }
@@ -377,6 +379,7 @@ func routeInfraredBroadcastRegister(v1 *echo.Group, handler InfraredHandler) {
 
 func routeInfrared(v1 *echo.Group, handler InfraredHandler, permission PermissionMiddleware) {
 	v1.POST("/infrared/record-sessions", handler.RecordSessionPost, permission("infrared_record_session:add"))
+	v1.GET("/infrared/record-sessions", handler.RecordSessionGetList, permission("infrared_record_session:get"))
 	v1.GET("/infrared/record-sessions/:id", handler.RecordSessionGetById, permission("infrared_record_session:get"))
 	v1.GET("/infrared/record-sessions/:id/cases", handler.RecordSessionCasesGetList, permission("infrared_record_session:get"))
 	v1.GET("/infrared/record-sessions/:id/coder", handler.RecordSessionCoderGetById, permission("infrared_record_session:get"))
@@ -401,6 +404,7 @@ func routeInfrared(v1 *echo.Group, handler InfraredHandler, permission Permissio
 	v1.GET("/infrared/device-types/:deviceTypeId/states", handler.StateGetList, permission("infrared_reference:get"))
 	v1.DELETE("/infrared/states/:id", handler.StateDelete, permission("infrared_reference:delete"))
 	v1.DELETE("/infrared/devices/:id", handler.DeviceDelete, permission("infrared_reference:delete"))
+	v1.GET("/infrared/devices/:id", handler.DeviceGetById, permission("infrared_reference:get"))
 	v1.GET("/infrared/devices/:id/definitions", handler.DefinitionGetList, permission("infrared_reference:get"))
 	v1.DELETE("/infrared/state-device-definitions/:id", handler.DefinitionDelete, permission("infrared_reference:delete"))
 }

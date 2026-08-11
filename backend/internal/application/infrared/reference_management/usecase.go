@@ -53,6 +53,10 @@ func (u *usecase) DeleteDeviceById(ctx context.Context, id uuid.UUID, deletedBy 
 	return u.device.DeleteById(ctx, id, deletedBy)
 }
 
+func (u *usecase) GetDeviceById(ctx context.Context, id uuid.UUID) (*domainmodels.InfraredDevice, error) {
+	return u.device.ReadById(ctx, id)
+}
+
 func (u *usecase) ListDefinitionsByDeviceId(ctx context.Context, deviceId uuid.UUID) ([]domainmodels.InfraredStateDeviceDefinition, error) {
 	return u.definition.ReadListByDeviceId(ctx, deviceId)
 }

@@ -88,6 +88,65 @@ func (h *handler) RecordSessionPost(c *echo.Context) error {
 	return c.JSON(http.StatusCreated, presentationhttpresponse.IdResponse{Id: id.String()})
 }
 
+// RecordSessionGetList godoc
+//
+// @Summary Infrared Record Session List
+// @Tags Infrared
+// @Produce json
+// @Security BearerAuth
+// @Param recording_state query string false "recording state"
+// @Param infrared_device_type_id query string false "device type id"
+// @Param created_at_start query string false "created at start (RFC3339)"
+// @Param created_at_end query string false "created at end (RFC3339)"
+// @Param page query int false "page"
+// @Param limit query int false "limit"
+// @Success 200 {object} presentationhttpresponse.PageDataResponse[presentationhttpresponse.InfraredRecordSessionListItemResponse]
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/infrared/record-sessions [get]
+func (h *handler) RecordSessionGetList(c *echo.Context) error {
+	page, err := presentationhttputils.PageArgs(c)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	recordingState := presentationhttputils.QueryString(c, "recording_state")
+	if recordingState != nil && !domainmodels.IsValidInfraredRecordingState(*recordingState) {
+		return presentationhttputils.Error(c, domainmodels.NewError("recording_state must be a known recording state", domainmodels.ErrTypeValidation, nil))
+	}
+	infraredDeviceTypeId, err := presentationhttputils.QueryUUID(c, "infrared_device_type_id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	createdAtStart, err := presentationhttputils.QueryTime(c, "created_at_start")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	createdAtEnd, err := presentationhttputils.QueryTime(c, "created_at_end")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	items, total, err := h.recordSessionUseCase.ListByFilter(c.Request().Context(), domainusecasesinfrared.ListRecordSessionsRequest{
+		RecordingState:       recordingState,
+		InfraredDeviceTypeId: infraredDeviceTypeId,
+		CreatedAtStart:       createdAtStart,
+		CreatedAtEnd:         createdAtEnd,
+		Page:                 page.Page,
+		Limit:                page.Limit,
+	})
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.PageDataResponse[presentationhttpresponse.InfraredRecordSessionListItemResponse]{
+		Data: presentationhttpresponse.InfraredRecordSessionListItems(items),
+		Page: presentationhttputils.PageResponse(page, total),
+	})
+}
+
 // RecordSessionGetById godoc
 //
 // @Summary Infrared Record Session Get By ID
@@ -759,6 +818,37 @@ func (h *handler) DeviceDelete(c *echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// DeviceGetById godoc
+//
+// @Summary Infrared Device Get By ID
+// @Tags Infrared
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "id"
+// @Success 200 {object} presentationhttpresponse.InfraredDeviceResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 404 {object} presentationhttpresponse.ErrorResponse "Not Found"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/infrared/devices/{id} [get]
+func (h *handler) DeviceGetById(c *echo.Context) error {
+	id, err := presentationhttputils.RequiredUUID(c.Param("id"), "id")
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+
+	device, err := h.referenceUseCase.GetDeviceById(c.Request().Context(), id)
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	if device == nil {
+		return presentationhttputils.Error(c, presentationhttputils.MissingResponse("device"))
+	}
+
+	return c.JSON(http.StatusOK, presentationhttpresponse.InfraredDevice(*device))
 }
 
 // DefinitionGetList godoc
