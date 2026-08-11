@@ -13,24 +13,23 @@ export default function RecordSessionOverview({
   canDelete,
 }: {
   session: InfraredRecordSessionResponse;
-  brand: string;
-  model: string;
-  deviceTypeName: string;
+  brand: string | null;
+  model: string | null;
+  deviceTypeName: string | null;
   canDelete: boolean;
 }) {
   const status = RECORDING_STATE_LABELS[session.recording_state];
+  const deviceLabel = [brand, model].filter(Boolean).join(" ") || "—";
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
         <div>
           <dt className="text-muted-foreground">Device</dt>
-          <dd className="mt-1 font-medium">
-            {brand} {model}
-          </dd>
+          <dd className="mt-1 font-medium">{deviceLabel}</dd>
         </div>
         <div>
           <dt className="text-muted-foreground">Device type</dt>
-          <dd className="mt-1 font-medium">{deviceTypeName}</dd>
+          <dd className="mt-1 font-medium">{deviceTypeName ?? "—"}</dd>
         </div>
         <div>
           <dt className="text-muted-foreground">Status</dt>

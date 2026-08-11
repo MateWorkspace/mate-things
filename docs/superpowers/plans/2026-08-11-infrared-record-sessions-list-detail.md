@@ -1322,7 +1322,6 @@ Mirror `action-history/page.tsx`'s structure exactly:
 
 ```tsx
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Pagination from "@/components/collection/Pagination";
@@ -1356,9 +1355,9 @@ export default async function InfraredRecordPage({
   ]);
   const pageQuery = parsePageQuery(raw);
   const parsed = parseRecordSessionFilters(raw);
-  const canStart = permissions.has("infrared_record_session:add");
+  const canReadReferences = permissions.has("infrared_reference:get");
 
-  const deviceTypes = await listInfraredDeviceTypes();
+  const deviceTypes = canReadReferences ? await listInfraredDeviceTypes() : [];
 
   const result = parsed.error
     ? { data: [], page: { page: pageQuery.page, limit: pageQuery.limit, total_items: 0 } }
@@ -1389,16 +1388,6 @@ export default async function InfraredRecordPage({
       <PageHeader
         title="Record"
         description="Identify the device control by capturing its remote's infrared signals."
-        actions={
-          canStart ? (
-            <Link
-              href="/apps/infrared/record/new"
-              className="bg-primary text-surface inline-flex min-h-11 items-center rounded-xl px-6 text-sm font-semibold"
-            >
-              Record New Device
-            </Link>
-          ) : undefined
-        }
       />
       <RecordSessionFilters
         deviceTypes={deviceTypes}
@@ -1434,17 +1423,19 @@ export default async function InfraredRecordPage({
 }
 ```
 
-Note: the `Link` in `PageHeader`'s `actions` points at
-`/apps/infrared/record/new`, which does not exist until Spec B ships —
-per the design doc, this is intentional (Spec B's own plan is
-responsible for the route existing; committing this now with the link
-present is fine since Spec B is the very next planned unit of work, not
-speculative future work).
+Note: there is deliberately **no** "Record New Device" action on this
+page. The design doc states that `/apps/infrared/record/new` does not
+exist until Spec B ships, so the button is omitted entirely rather than
+linking to a 404 — it gets added back when Spec B lands, together with
+the `infrared_record_session:add` permission gate. An earlier revision
+of this plan shipped the link anyway; that was corrected during final
+review, and this plan now matches the design doc.
 
-Check `PageHeader`'s exact `actions` prop type before using a raw
-`<Link>` as its child — if it expects a specific button-shaped
-component, use that instead of a bare anchor-styled `Link` (read
-`frontend/src/components/ui/page-header.tsx` first to confirm).
+Note: `listInfraredDeviceTypes()` hits a route gated on
+`infrared_reference:get`, which is separate from the
+`infrared_record_session:get` this page requires — guard the call behind
+the permission and fall back to an empty list, the same way
+`action-history/page.tsx` guards `getActionById`/`getNodeById`.
 
 - [ ] **Step 6: Verify — build, lint, manual check**
 

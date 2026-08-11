@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Pagination from "@/components/collection/Pagination";
@@ -33,9 +32,9 @@ export default async function InfraredRecordPage({
   ]);
   const pageQuery = parsePageQuery(raw);
   const parsed = parseRecordSessionFilters(raw);
-  const canStart = permissions.has("infrared_record_session:add");
+  const canReadReferences = permissions.has("infrared_reference:get");
 
-  const deviceTypes = await listInfraredDeviceTypes();
+  const deviceTypes = canReadReferences ? await listInfraredDeviceTypes() : [];
 
   const result = parsed.error
     ? {
@@ -69,16 +68,6 @@ export default async function InfraredRecordPage({
       <PageHeader
         title="Record"
         description="Identify the device control by capturing its remote's infrared signals."
-        actions={
-          canStart ? (
-            <Link
-              href="/apps/infrared/record/new"
-              className="bg-primary text-surface inline-flex min-h-11 items-center rounded-xl px-6 text-sm font-semibold"
-            >
-              Record New Device
-            </Link>
-          ) : undefined
-        }
       />
       <RecordSessionFilters
         deviceTypes={deviceTypes}

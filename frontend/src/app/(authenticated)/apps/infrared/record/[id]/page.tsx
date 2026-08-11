@@ -35,19 +35,25 @@ export default async function RecordSessionDetailPage({
     notFound();
   }
 
+  const canReadReferences = permissions.has("infrared_reference:get");
   const [cases, coder, testCases, device, deviceTypes] = await Promise.all([
     listInfraredRecordSessionCases(id),
     getOptionalById(() => getInfraredRecordSessionCoder(id)),
     // 404s with "infrared_state_coder not found" until a coder exists.
     getOptionalById(() => listInfraredRecordSessionTestCases(id)),
-    getInfraredDevice(session.infrared_device_id),
-    listInfraredDeviceTypes(),
+    canReadReferences
+      ? getInfraredDevice(session.infrared_device_id)
+      : Promise.resolve(null),
+    canReadReferences ? listInfraredDeviceTypes() : Promise.resolve([]),
   ]);
 
-  const deviceTypeName =
-    deviceTypes.find((dt) => dt.id === device.infrared_device_type_id)?.name ??
-    "Unknown";
-  const canSet = permissions.has("infrared_record_session:set");
+  const deviceTypeName = device
+    ? (deviceTypes.find((dt) => dt.id === device.infrared_device_type_id)
+        ?.name ?? "Unknown")
+    : null;
+  // Terminal sessions (COMPLETED/FAILED) must not expose mutation controls.
+  const canMutate =
+    permissions.has("infrared_record_session:set") && !session.is_completed;
   const canDelete = permissions.has("infrared_record_session:delete");
 
   return (
@@ -58,8 +64,8 @@ export default async function RecordSessionDetailPage({
       />
       <RecordSessionOverview
         session={session}
-        brand={device.brand}
-        model={device.model}
+        brand={device?.brand ?? null}
+        model={device?.model ?? null}
         deviceTypeName={deviceTypeName}
         canDelete={canDelete}
       />
@@ -67,7 +73,7 @@ export default async function RecordSessionDetailPage({
         <h2 className="font-display text-primary text-xl tracking-wide">
           Cases
         </h2>
-        <RecordCaseList cases={cases} canMutate={canSet} />
+        <RecordCaseList cases={cases} canMutate={canMutate} />
       </section>
       {coder ? (
         <section className="space-y-3">
@@ -82,7 +88,7 @@ export default async function RecordSessionDetailPage({
           <h2 className="font-display text-primary text-xl tracking-wide">
             Test cases
           </h2>
-          <RecordTestCaseList testCases={testCases} canMutate={canSet} />
+          <RecordTestCaseList testCases={testCases} canMutate={canMutate} />
         </section>
       ) : null}
     </main>
