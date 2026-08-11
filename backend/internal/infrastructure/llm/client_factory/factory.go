@@ -18,6 +18,7 @@ type ClientFactory struct {
 
 	newClaudeClient newClientFunc
 	newOpenAIClient newClientFunc
+	newGeminiClient newClientFunc
 }
 
 func NewClientFactory(repository domaincontractsrepository.LlmConfig, encryptor domaincontractsutility.Encryptor) domaincontractsllm.ClientFactory {
@@ -26,6 +27,7 @@ func NewClientFactory(repository domaincontractsrepository.LlmConfig, encryptor 
 		encryptor:       encryptor,
 		newClaudeClient: infrastructurellmclient.NewClaudeClient,
 		newOpenAIClient: infrastructurellmclient.NewOpenAIClient,
+		newGeminiClient: infrastructurellmclient.NewGeminiClient,
 	}
 }
 
@@ -43,11 +45,17 @@ func (f *ClientFactory) Current(ctx context.Context) (domaincontractsllm.Client,
 		return nil, err
 	}
 
-	switch config.Provider {
+	return f.FromCredentials(config.Provider, apiKey, config.BaseURL, config.Model)
+}
+
+func (f *ClientFactory) FromCredentials(provider domainmodels.LlmProvider, apiKey string, baseURL *string, model string) (domaincontractsllm.Client, error) {
+	switch provider {
 	case domainmodels.LlmProviderClaude:
-		return f.newClaudeClient(apiKey, config.BaseURL, config.Model), nil
+		return f.newClaudeClient(apiKey, baseURL, model), nil
 	case domainmodels.LlmProviderOpenAI:
-		return f.newOpenAIClient(apiKey, config.BaseURL, config.Model), nil
+		return f.newOpenAIClient(apiKey, baseURL, model), nil
+	case domainmodels.LlmProviderGemini:
+		return f.newGeminiClient(apiKey, baseURL, model), nil
 	default:
 		return nil, domainmodels.NewError("llm_config has an unrecognized provider", domainmodels.ErrTypeFailure, nil)
 	}

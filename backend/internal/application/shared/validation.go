@@ -328,11 +328,12 @@ func RequiredURL(value string, field string) (string, error) {
 var validLlmProviders = map[domainmodels.LlmProvider]struct{}{
 	domainmodels.LlmProviderClaude: {},
 	domainmodels.LlmProviderOpenAI: {},
+	domainmodels.LlmProviderGemini: {},
 }
 
 func RequiredLlmProvider(value domainmodels.LlmProvider, field string) (domainmodels.LlmProvider, error) {
 	if _, ok := validLlmProviders[value]; !ok {
-		return "", domainmodels.NewError(fmt.Sprintf("%s must be one of CLAUDE, OPENAI", field), domainmodels.ErrTypeValidation, nil)
+		return "", domainmodels.NewError(fmt.Sprintf("%s must be one of CLAUDE, OPENAI, GEMINI", field), domainmodels.ErrTypeValidation, nil)
 	}
 	return value, nil
 }

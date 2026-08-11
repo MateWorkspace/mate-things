@@ -11,6 +11,7 @@ type LlmProvider string
 const (
 	LlmProviderClaude LlmProvider = "CLAUDE"
 	LlmProviderOpenAI LlmProvider = "OPENAI"
+	LlmProviderGemini LlmProvider = "GEMINI"
 )
 
 type LlmConfig struct {

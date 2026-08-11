@@ -8,12 +8,19 @@ import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import Select from "@/components/ui/select";
+import StatusBadge from "@/components/ui/status-badge";
 import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { LlmConfigResponse, LlmProvider } from "@/lib/api/llm-config";
 
-import { updateLlmConfigAction } from "../_lib/actions";
-import { EMPTY_LLM_CONFIG_STATE } from "../_lib/state";
+import {
+  testLlmConfigFormAction,
+  updateLlmConfigAction,
+} from "../_lib/actions";
+import {
+  EMPTY_LLM_CONFIG_STATE,
+  EMPTY_TEST_CONNECTION_STATE,
+} from "../_lib/state";
 
 const MODEL_OPTIONS: Record<LlmProvider, readonly string[]> = {
   CLAUDE: [
@@ -23,10 +30,16 @@ const MODEL_OPTIONS: Record<LlmProvider, readonly string[]> = {
     "claude-haiku-4-5-20251001",
   ],
   OPENAI: ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1", "gpt-4o"],
+  GEMINI: [
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
+  ],
 };
 
 function normalizeProvider(provider: LlmProvider): LlmProvider {
-  return provider === "OPENAI" ? "OPENAI" : "CLAUDE";
+  return provider === "OPENAI" || provider === "GEMINI" ? provider : "CLAUDE";
 }
 
 function modelOptionsFor(provider: LlmProvider, currentModel: string) {
@@ -44,6 +57,10 @@ export default function LlmConfigForm({
   const [state, action, pending] = useActionState(
     updateLlmConfigAction,
     EMPTY_LLM_CONFIG_STATE,
+  );
+  const [testState, testAction, testPending] = useActionState(
+    testLlmConfigFormAction,
+    EMPTY_TEST_CONNECTION_STATE,
   );
   const fieldId = useId();
   const formRef = useRef<HTMLFormElement>(null);
@@ -74,6 +91,7 @@ export default function LlmConfigForm({
         >
           <option value="CLAUDE">Claude</option>
           <option value="OPENAI">OpenAI</option>
+          <option value="GEMINI">Gemini</option>
         </Select>
         <FieldError>{state.fieldErrors?.provider}</FieldError>
       </div>
@@ -144,8 +162,31 @@ export default function LlmConfigForm({
 
       <ActionMessage state={state} />
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={pending}>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {testState.status === "result" ? (
+          <StatusBadge
+            variant={
+              testState.connectionStatus === "CONNECTED"
+                ? "success"
+                : "critical"
+            }
+          >
+            {testState.connectionStatus === "CONNECTED"
+              ? "Connected"
+              : "Disconnected"}
+          </StatusBadge>
+        ) : testState.status === "error" ? (
+          <span className="text-critical text-sm">{testState.message}</span>
+        ) : null}
+        <Button
+          type="submit"
+          formAction={testAction}
+          variant="secondary"
+          disabled={pending || testPending}
+        >
+          {testPending ? "Testing…" : "Test connection"}
+        </Button>
+        <Button type="submit" disabled={pending || testPending}>
           {pending ? "Saving…" : "Save configuration"}
         </Button>
       </div>

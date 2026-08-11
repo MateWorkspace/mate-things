@@ -8,14 +8,14 @@ import (
 )
 
 func TestRequiredLlmProviderRejectsUnknownValue(t *testing.T) {
-	_, err := RequiredLlmProvider(domainmodels.LlmProvider("GEMINI"), "provider")
+	_, err := RequiredLlmProvider(domainmodels.LlmProvider("GROK"), "provider")
 	if !errors.Is(err, domainmodels.ErrTypeValidation) {
 		t.Fatalf("RequiredLlmProvider() error = %v, want validation error", err)
 	}
 }
 
 func TestRequiredLlmProviderAcceptsKnownValues(t *testing.T) {
-	for _, provider := range []domainmodels.LlmProvider{domainmodels.LlmProviderClaude, domainmodels.LlmProviderOpenAI} {
+	for _, provider := range []domainmodels.LlmProvider{domainmodels.LlmProviderClaude, domainmodels.LlmProviderOpenAI, domainmodels.LlmProviderGemini} {
 		got, err := RequiredLlmProvider(provider, "provider")
 		if err != nil {
 			t.Fatalf("RequiredLlmProvider(%q) error = %v, want nil", provider, err)

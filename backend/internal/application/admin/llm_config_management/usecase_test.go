@@ -59,8 +59,10 @@ func (f *fakeClient) GenerateText(_ context.Context, _ domaincontractsllm.Genera
 }
 
 type fakeClientFactory struct {
-	client     *fakeClient
-	currentErr error
+	client              *fakeClient
+	currentErr          error
+	fromCredentialsErr  error
+	fromCredentialsCall int
 }
 
 func (f *fakeClientFactory) Current(_ context.Context) (domaincontractsllm.Client, error) {
@@ -73,12 +75,23 @@ func (f *fakeClientFactory) Current(_ context.Context) (domaincontractsllm.Clien
 	return &fakeClient{}, nil
 }
 
+func (f *fakeClientFactory) FromCredentials(_ domainmodels.LlmProvider, _ string, _ *string, _ string) (domaincontractsllm.Client, error) {
+	f.fromCredentialsCall++
+	if f.fromCredentialsErr != nil {
+		return nil, f.fromCredentialsErr
+	}
+	if f.client != nil {
+		return f.client, nil
+	}
+	return &fakeClient{}, nil
+}
+
 func TestUpdateRejectsUnknownProvider(t *testing.T) {
 	repository := &recordingLlmConfigRepository{}
 	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &fakeClientFactory{}, &noopLogger{})
 
 	err := usecase.Update(context.Background(), domainusecasesadmin.UpdateLlmConfigRequest{
-		Provider: domainmodels.LlmProvider("GEMINI"),
+		Provider: domainmodels.LlmProvider("GROK"),
 		Model:    "some-model",
 		ApiKey:   strPtr("some-key"),
 	})
@@ -221,5 +234,102 @@ func TestTestConnectionPropagatesGenerateTextError(t *testing.T) {
 	_, err := usecase.TestConnection(context.Background())
 	if err == nil {
 		t.Fatal("TestConnection() error = nil, want the client's GenerateText error propagated")
+	}
+}
+
+func TestTestConnectionWithConfigUsesGivenApiKey(t *testing.T) {
+	factory := &fakeClientFactory{client: &fakeClient{}}
+	repository := &recordingLlmConfigRepository{}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	status, err := usecase.TestConnectionWithConfig(context.Background(), domainusecasesadmin.TestLlmConnectionWithConfigRequest{
+		Provider: domainmodels.LlmProviderOpenAI,
+		Model:    "gpt-5",
+		ApiKey:   strPtr("sk-given-key"),
+	})
+
+	if err != nil {
+		t.Fatalf("TestConnectionWithConfig() error = %v, want nil", err)
+	}
+	if status != domainmodels.LlmClientStatusConnected {
+		t.Fatalf("TestConnectionWithConfig() status = %v, want CONNECTED", status)
+	}
+	if factory.fromCredentialsCall != 1 {
+		t.Fatalf("FromCredentials() calls = %d, want 1", factory.fromCredentialsCall)
+	}
+}
+
+func TestTestConnectionWithConfigFallsBackToStoredKeyWhenOmitted(t *testing.T) {
+	existing := &domainmodels.LlmConfig{
+		Provider:        domainmodels.LlmProviderClaude,
+		Model:           "claude-sonnet-5",
+		ApiKeyEncrypted: []byte("encrypted:stored-key"),
+	}
+	factory := &fakeClientFactory{client: &fakeClient{}}
+	repository := &recordingLlmConfigRepository{getConfig: existing}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	status, err := usecase.TestConnectionWithConfig(context.Background(), domainusecasesadmin.TestLlmConnectionWithConfigRequest{
+		Provider: domainmodels.LlmProviderClaude,
+		Model:    "claude-opus-5",
+		ApiKey:   nil,
+	})
+
+	if err != nil {
+		t.Fatalf("TestConnectionWithConfig() error = %v, want nil", err)
+	}
+	if status != domainmodels.LlmClientStatusConnected {
+		t.Fatalf("TestConnectionWithConfig() status = %v, want CONNECTED", status)
+	}
+}
+
+func TestTestConnectionWithConfigRejectsOmittedApiKeyWithNoExistingConfig(t *testing.T) {
+	factory := &fakeClientFactory{client: &fakeClient{}}
+	repository := &recordingLlmConfigRepository{getConfig: nil}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	_, err := usecase.TestConnectionWithConfig(context.Background(), domainusecasesadmin.TestLlmConnectionWithConfigRequest{
+		Provider: domainmodels.LlmProviderClaude,
+		Model:    "claude-opus-5",
+		ApiKey:   nil,
+	})
+
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("TestConnectionWithConfig() error = %v, want validation error", err)
+	}
+	if factory.fromCredentialsCall != 0 {
+		t.Fatalf("FromCredentials() calls = %d, want 0 (should fail before building a client)", factory.fromCredentialsCall)
+	}
+}
+
+func TestTestConnectionWithConfigRejectsUnknownProvider(t *testing.T) {
+	factory := &fakeClientFactory{client: &fakeClient{}}
+	repository := &recordingLlmConfigRepository{}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	_, err := usecase.TestConnectionWithConfig(context.Background(), domainusecasesadmin.TestLlmConnectionWithConfigRequest{
+		Provider: domainmodels.LlmProvider("GROK"),
+		Model:    "some-model",
+		ApiKey:   strPtr("some-key"),
+	})
+
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("TestConnectionWithConfig() error = %v, want validation error", err)
+	}
+}
+
+func TestTestConnectionWithConfigPropagatesGenerateTextError(t *testing.T) {
+	factory := &fakeClientFactory{client: &fakeClient{generateErr: errors.New("model not supported by this base URL")}}
+	repository := &recordingLlmConfigRepository{}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	_, err := usecase.TestConnectionWithConfig(context.Background(), domainusecasesadmin.TestLlmConnectionWithConfigRequest{
+		Provider: domainmodels.LlmProviderGemini,
+		Model:    "gemini-2.5-pro",
+		ApiKey:   strPtr("some-key"),
+	})
+
+	if err == nil {
+		t.Fatal("TestConnectionWithConfig() error = nil, want the client's GenerateText error propagated")
 	}
 }

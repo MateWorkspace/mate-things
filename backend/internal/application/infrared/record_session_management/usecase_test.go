@@ -394,6 +394,10 @@ func (f *fakeLlmClientFactory) Current(_ context.Context) (domaincontractsllm.Cl
 	return &fakeLlmClient{text: text}, nil
 }
 
+func (f *fakeLlmClientFactory) FromCredentials(_ domainmodels.LlmProvider, _ string, _ *string, _ string) (domaincontractsllm.Client, error) {
+	return f.Current(context.Background())
+}
+
 type fakeBroadcaster struct {
 	domaincontractsbroadcaster.InfraredRecordSession
 	sentEvents []domainmodels.InfraredRecordSessionEvent

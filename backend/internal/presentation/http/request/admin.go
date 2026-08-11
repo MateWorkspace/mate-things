@@ -24,6 +24,13 @@ type LlmConfigPutRequest struct {
 	BaseURL  *string                  `json:"base_url,omitempty" example:"https://api.anthropic.com"`
 }
 
+type LlmConfigTestConnectionWithConfigRequest struct {
+	Provider domainmodels.LlmProvider `json:"provider" example:"CLAUDE"`
+	Model    string                   `json:"model" example:"claude-opus-5"`
+	ApiKey   *string                  `json:"api_key,omitempty" example:"sk-ant-..."`
+	BaseURL  *string                  `json:"base_url,omitempty" example:"https://api.anthropic.com"`
+}
+
 type RolePostRequest struct {
 	Name        string  `json:"name" example:"barista"`
 	Description *string `json:"description" example:"Can dispatch brew actions on the shop floor, but can't manage the fleet."`

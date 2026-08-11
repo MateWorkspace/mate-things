@@ -280,6 +280,42 @@ func (h *handler) LlmConfigTestConnectionPost(c *echo.Context) error {
 	return c.JSON(http.StatusOK, presentationhttpresponse.LlmConnectionStatusResponse{Status: string(status)})
 }
 
+// LlmConfigTestConnectionWithConfigPost godoc
+//
+// @Summary LLM Config Test Connection With Given Credentials
+// @Description Tests connectivity using the provider/model/api_key/base_url
+// @Description passed in the request body, instead of the currently saved
+// @Description config. Useful for validating a change before saving it.
+// @Description Omitting api_key falls back to the currently saved key.
+// @Tags Admin - LLM Config
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body presentationhttprequest.LlmConfigTestConnectionWithConfigRequest true "request"
+// @Success 200 {object} presentationhttpresponse.LlmConnectionStatusResponse
+// @Failure 400 {object} presentationhttpresponse.ErrorResponse "Invalid Format"
+// @Failure 401 {object} presentationhttpresponse.ErrorResponse "Unauthorized"
+// @Failure 403 {object} presentationhttpresponse.ErrorResponse "Access Denied"
+// @Failure 500 {object} presentationhttpresponse.ErrorResponse "Internal Server Error"
+// @Router /v1/admin/llm-config/test-connection [post]
+func (h *handler) LlmConfigTestConnectionWithConfigPost(c *echo.Context) error {
+	var req presentationhttprequest.LlmConfigTestConnectionWithConfigRequest
+	if err := presentationhttputils.Bind(c, &req); err != nil {
+		return err
+	}
+
+	status, err := h.llmConfigUseCase.TestConnectionWithConfig(c.Request().Context(), domainusecasesadmin.TestLlmConnectionWithConfigRequest{
+		Provider: req.Provider,
+		Model:    req.Model,
+		ApiKey:   req.ApiKey,
+		BaseURL:  req.BaseURL,
+	})
+	if err != nil {
+		return presentationhttputils.Error(c, err)
+	}
+	return c.JSON(http.StatusOK, presentationhttpresponse.LlmConnectionStatusResponse{Status: string(status)})
+}
+
 // PermissionDelete godoc
 //
 // @Summary Permission Delete

@@ -4,13 +4,23 @@ import Card from "@/components/ui/card";
 import LocalDateTime from "@/components/ui/local-date-time";
 import PageHeader from "@/components/ui/page-header";
 import StatusBadge from "@/components/ui/status-badge";
-import { getLlmConfig } from "@/lib/api/llm-config";
+import { getLlmConfig, type LlmProvider } from "@/lib/api/llm-config";
 import { requirePermission } from "@/lib/session";
 
 import LlmConfigForm from "./_components/LlmConfigForm";
 import TestConnectionButton from "./_components/TestConnectionButton";
 
 export const metadata: Metadata = { title: "LLM Config — Mate Things" };
+
+const PROVIDER_LABELS: Record<LlmProvider, string> = {
+  CLAUDE: "Claude",
+  OPENAI: "OpenAI",
+  GEMINI: "Gemini",
+};
+
+function providerLabel(provider: string): string {
+  return PROVIDER_LABELS[provider as LlmProvider] ?? provider;
+}
 
 export default async function LlmConfigPage() {
   const { permissions } = await requirePermission("llm_config:get");
@@ -32,7 +42,7 @@ export default async function LlmConfigPage() {
           <div>
             <dt className="text-muted-foreground">Provider</dt>
             <dd className="mt-1 font-medium">
-              {config.provider === "CLAUDE" ? "Claude" : "OpenAI"}
+              {providerLabel(config.provider)}
             </dd>
           </div>
           <div>
