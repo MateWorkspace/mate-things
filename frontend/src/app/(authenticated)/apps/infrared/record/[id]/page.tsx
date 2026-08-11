@@ -9,6 +9,7 @@ import {
   listInfraredDeviceTypes,
   listInfraredRecordSessionCases,
   listInfraredRecordSessionTestCases,
+  listInfraredStates,
 } from "@/lib/api/infrared";
 import { getOptionalById } from "@/lib/api/optional";
 import { requirePermission } from "@/lib/session";
@@ -37,12 +38,21 @@ export default async function RecordSessionDetailPage({
   }
 
   const canReadReferences = permissions.has("infrared_reference:get");
-  const [cases, coder, testCases] = await Promise.all([
+  const [cases, coder, testCases, device] = await Promise.all([
     listInfraredRecordSessionCases(id),
     getOptionalById(() => getInfraredRecordSessionCoder(id)),
     // 404s with "infrared_state_coder not found" until a coder exists.
     getOptionalById(() => listInfraredRecordSessionTestCases(id)),
+    canReadReferences
+      ? getInfraredDevice(session.infrared_device_id)
+      : Promise.resolve(null),
   ]);
+  // Case state names come from the device type's state definitions, not
+  // the record-session API - only fetchable once the device (and so its
+  // device type id) is known.
+  const stateDefinitions = device
+    ? await listInfraredStates(device.infrared_device_type_id)
+    : [];
 
   // Terminal sessions (COMPLETED/FAILED) must not expose mutation controls.
   const canMutate =
@@ -61,17 +71,13 @@ export default async function RecordSessionDetailPage({
           cases={cases}
           testCases={testCases ?? []}
           canMutate={canMutate}
+          stateDefinitions={stateDefinitions}
         />
       </main>
     );
   }
 
-  const [device, deviceTypes] = await Promise.all([
-    canReadReferences
-      ? getInfraredDevice(session.infrared_device_id)
-      : Promise.resolve(null),
-    canReadReferences ? listInfraredDeviceTypes() : Promise.resolve([]),
-  ]);
+  const deviceTypes = canReadReferences ? await listInfraredDeviceTypes() : [];
 
   const deviceTypeName = device
     ? (deviceTypes.find((dt) => dt.id === device.infrared_device_type_id)
@@ -95,7 +101,11 @@ export default async function RecordSessionDetailPage({
         <h2 className="font-display text-primary text-xl tracking-wide">
           Cases
         </h2>
-        <RecordCaseList cases={cases} canMutate={canMutate} />
+        <RecordCaseList
+          cases={cases}
+          canMutate={canMutate}
+          stateDefinitions={stateDefinitions}
+        />
       </section>
       {coder ? (
         <section className="space-y-3">

@@ -7,6 +7,7 @@ import { useSmartRefresh } from "@/hooks/use-smart-refresh";
 import type {
   InfraredRecordSessionResponse,
   InfraredStateDeviceRecordCaseResponse,
+  InfraredStateResponse,
   InfraredTestCaseResponse,
 } from "@/lib/api/infrared";
 
@@ -54,11 +55,13 @@ export default function RecordSessionWizard({
   cases,
   testCases,
   canMutate,
+  stateDefinitions,
 }: {
   session: InfraredRecordSessionResponse;
   cases: readonly InfraredStateDeviceRecordCaseResponse[];
   testCases: readonly InfraredTestCaseResponse[];
   canMutate: boolean;
+  stateDefinitions: readonly InfraredStateResponse[];
 }) {
   const router = useRouter();
   const { exhausted } = useInfraredRecordSessionBroadcast(
@@ -105,12 +108,20 @@ export default function RecordSessionWizard({
               state so the first capture has a clean baseline.
             </p>
           </div>
-          <RecordCaseList cases={cases} canMutate={false} />
+          <RecordCaseList
+            cases={cases}
+            canMutate={false}
+            stateDefinitions={stateDefinitions}
+          />
         </div>
       ) : null}
 
       {session.recording_state === "RECORDING" && anyRawExists ? (
-        <WizardCaseRecorder cases={cases} canMutate={canMutate} />
+        <WizardCaseRecorder
+          cases={cases}
+          canMutate={canMutate}
+          stateDefinitions={stateDefinitions}
+        />
       ) : null}
 
       {session.recording_state === "ANALYZING" ||

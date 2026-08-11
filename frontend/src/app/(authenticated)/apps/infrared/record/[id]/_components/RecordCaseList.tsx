@@ -6,12 +6,15 @@ import ActionMessage from "@/components/forms/ActionMessage";
 import Button from "@/components/ui/button";
 import StatusBadge from "@/components/ui/status-badge";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
-import type { InfraredStateDeviceRecordCaseResponse } from "@/lib/api/infrared";
+import type {
+  InfraredStateDeviceRecordCaseResponse,
+  InfraredStateResponse,
+} from "@/lib/api/infrared";
 
 import { retryCaseAction } from "../_lib/actions";
 import { findPreviousCase } from "../_lib/case-state-diff";
 import { EMPTY_RECORD_SESSION_ACTION_STATE } from "../_lib/state";
-import CaseStateBulletList from "./CaseStateBulletList";
+import CaseStateTable from "./CaseStateTable";
 import RecordCaseRawControls from "./RecordCaseRawControls";
 
 const CASE_STATUS_VARIANT = {
@@ -27,10 +30,12 @@ function summarizeRaw(rawCount: number): string {
 export default function RecordCaseList({
   cases,
   canMutate,
+  stateDefinitions,
   allCases = cases,
 }: {
   cases: readonly InfraredStateDeviceRecordCaseResponse[];
   canMutate: boolean;
+  stateDefinitions: readonly InfraredStateResponse[];
   /** Full recording-order case list, for looking up "the previous case" -
    * only needed when `cases` is a filtered subset (e.g. the active case
    * excluded); defaults to `cases` itself otherwise. */
@@ -51,15 +56,14 @@ export default function RecordCaseList({
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="font-semibold">
-                {c.description || `Step ${c.step}`}
-              </p>
+              <p className="font-semibold">Step {c.step}</p>
               <p className="text-muted-foreground text-xs">
                 {summarizeRaw(c.raw.length)}
               </p>
-              <CaseStateBulletList
+              <CaseStateTable
                 states={c.states}
                 previousCase={findPreviousCase(allCases, c.step)}
+                stateDefinitions={stateDefinitions}
               />
             </div>
             <div className="flex items-center gap-2">

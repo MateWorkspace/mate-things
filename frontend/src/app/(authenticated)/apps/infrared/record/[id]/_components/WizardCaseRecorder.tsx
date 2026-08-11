@@ -1,9 +1,12 @@
 import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
-import type { InfraredStateDeviceRecordCaseResponse } from "@/lib/api/infrared";
+import type {
+  InfraredStateDeviceRecordCaseResponse,
+  InfraredStateResponse,
+} from "@/lib/api/infrared";
 
 import { findPreviousCase } from "../_lib/case-state-diff";
-import CaseStateBulletList from "./CaseStateBulletList";
+import CaseStateTable from "./CaseStateTable";
 import RecordCaseList from "./RecordCaseList";
 import RecordCaseRawControls from "./RecordCaseRawControls";
 
@@ -14,9 +17,11 @@ function formatDuration(durationUs: number): string {
 export default function WizardCaseRecorder({
   cases,
   canMutate,
+  stateDefinitions,
 }: {
   cases: readonly InfraredStateDeviceRecordCaseResponse[];
   canMutate: boolean;
+  stateDefinitions: readonly InfraredStateResponse[];
 }) {
   const activeCase = cases.find((c) => c.status === "ACTIVE");
   // The active case is rendered prominently above with its own controls -
@@ -33,12 +38,11 @@ export default function WizardCaseRecorder({
               <p className="text-foreground/70 text-xs font-semibold tracking-wide uppercase">
                 Press the remote now
               </p>
-              <p className="mt-1 font-semibold">
-                {activeCase.description || `Step ${activeCase.step}`}
-              </p>
-              <CaseStateBulletList
+              <p className="mt-1 font-semibold">Step {activeCase.step}</p>
+              <CaseStateTable
                 states={activeCase.states}
                 previousCase={findPreviousCase(cases, activeCase.step)}
+                stateDefinitions={stateDefinitions}
               />
             </div>
             <StatusBadge variant="info">Waiting for capture</StatusBadge>
@@ -78,6 +82,7 @@ export default function WizardCaseRecorder({
           cases={rosterCases}
           allCases={cases}
           canMutate={canMutate}
+          stateDefinitions={stateDefinitions}
         />
       </div>
     </div>
