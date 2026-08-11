@@ -722,6 +722,18 @@ func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID
 		return nil
 	}
 
+	coderForGuard, err := u.coderById(ctx, existing.InfraredStateCoderId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to look up coder before recording test case result", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
+		return err
+	}
+	if coderForGuard == nil {
+		return domainmodels.NewError("coder not found", domainmodels.ErrTypeNotFound, nil)
+	}
+	if _, err := u.requireMutableSession(ctx, coderForGuard.InfraredRecordSessionId); err != nil {
+		return err
+	}
+
 	status := domainmodels.InfraredTestCaseStatusFailed
 	if passed {
 		status = domainmodels.InfraredTestCaseStatusPassed
@@ -1163,9 +1175,32 @@ func (u *usecase) GetCoderBySessionId(ctx context.Context, sessionId uuid.UUID) 
 }
 
 func (u *usecase) DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string) error {
+	const tag = "infrared/record_session_management/DiscardRaw"
+
 	if reason == "" {
 		return domainmodels.NewError("reason is required", domainmodels.ErrTypeValidation, nil)
 	}
+
+	raw, err := u.recordCase.ReadRawById(ctx, rawId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to look up raw before discard", domainmodels.LoggerMeta{"err": err, "raw_id": rawId})
+		return err
+	}
+	if raw == nil {
+		return domainmodels.NewError("raw capture not found", domainmodels.ErrTypeNotFound, nil)
+	}
+	recordCase, err := u.recordCase.ReadById(ctx, raw.InfraredStateDeviceRecordCaseId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to look up case before discard", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
+		return err
+	}
+	if recordCase == nil {
+		return domainmodels.NewError("record case not found", domainmodels.ErrTypeNotFound, nil)
+	}
+	if _, err := u.requireMutableSession(ctx, recordCase.InfraredRecordSessionId); err != nil {
+		return err
+	}
+
 	return u.recordCase.UpdateRawStatusById(ctx, rawId, domainmodels.InfraredRecordRawStatusDiscarded, &reason)
 }
 

@@ -643,6 +643,30 @@ func TestDiscardRawRequiresNonEmptyReason(t *testing.T) {
 	}
 }
 
+func TestDiscardRawRejectsCompletedSession(t *testing.T) {
+	sessionId := uuid.New()
+	caseId := uuid.New()
+	rawId := uuid.New()
+	caseRepo := &fakeCaseRepository{
+		getResult: &domainmodels.InfraredStateDeviceRecordCase{Id: caseId, InfraredRecordSessionId: sessionId},
+		rawById: map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw{
+			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: caseId},
+		},
+	}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, IsCompleted: true}}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	err := usecase.DiscardRaw(context.Background(), rawId, "changed my mind")
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("DiscardRaw() error = %v, want validation error", err)
+	}
+}
+
 func TestCaptureIrRawPersistsRawAgainstCurrentCase(t *testing.T) {
 	caseId := uuid.New()
 	sessionId := uuid.New()
@@ -2036,6 +2060,7 @@ func TestTransmitTestCaseRejectsCompletedSession(t *testing.T) {
 func TestRecordTestCaseResultDoesNothingElseWhilePendingCasesRemain(t *testing.T) {
 	coderId := uuid.New()
 	firstCaseId, secondCaseId := uuid.New(), uuid.New()
+	sessionId := uuid.New()
 
 	testCaseRepo := &fakeTestCaseRepository{
 		getResult: &domainmodels.InfraredTestCase{Id: firstCaseId, InfraredStateCoderId: coderId},
@@ -2044,8 +2069,8 @@ func TestRecordTestCaseResultDoesNothingElseWhilePendingCasesRemain(t *testing.T
 			{Id: secondCaseId, InfraredStateCoderId: coderId, Status: domainmodels.InfraredTestCaseStatusPending},
 		},
 	}
-	coderRepo := &fakeCoderRepository{}
-	sessionRepo := &fakeSessionRepository{}
+	coderRepo := &fakeCoderRepository{getByIdResult: &domainmodels.InfraredStateCoder{Id: coderId, InfraredRecordSessionId: sessionId}}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId}}
 
 	impl := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
@@ -2078,7 +2103,7 @@ func TestRecordTestCaseResultCompletesSessionWhenAllPass(t *testing.T) {
 	}
 	fixtureCoder := &domainmodels.InfraredStateCoder{Id: coderId, InfraredDeviceId: deviceId, InfraredRecordSessionId: sessionId}
 	coderRepo := &fakeCoderRepository{getByIdResult: fixtureCoder, getResult: fixtureCoder}
-	sessionRepo := &fakeSessionRepository{}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId}}
 
 	impl := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
@@ -2217,7 +2242,7 @@ func TestRecordTestCaseResultIgnoresSupersededCoderRound(t *testing.T) {
 		getByIdResult: &domainmodels.InfraredStateCoder{Id: staleCoderId, InfraredDeviceId: deviceId, InfraredRecordSessionId: sessionId},
 		getResult:     &domainmodels.InfraredStateCoder{Id: latestCoderId, InfraredDeviceId: deviceId, InfraredRecordSessionId: sessionId},
 	}
-	sessionRepo := &fakeSessionRepository{}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId}}
 
 	impl := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
@@ -2233,6 +2258,35 @@ func TestRecordTestCaseResultIgnoresSupersededCoderRound(t *testing.T) {
 	}
 	if len(sessionRepo.StatusUpdates()) != 0 {
 		t.Fatalf("session status updates = %v, want none (superseded-round result should be ignored)", sessionRepo.StatusUpdates())
+	}
+}
+
+func TestRecordTestCaseResultRejectsCompletedSession(t *testing.T) {
+	coderId := uuid.New()
+	sessionId := uuid.New()
+	testCaseId := uuid.New()
+
+	testCaseRepo := &fakeTestCaseRepository{
+		getResult: &domainmodels.InfraredTestCase{Id: testCaseId, InfraredStateCoderId: coderId, Status: domainmodels.InfraredTestCaseStatusPending},
+	}
+	coderRepo := &fakeCoderRepository{getByIdResult: &domainmodels.InfraredStateCoder{Id: coderId, InfraredRecordSessionId: sessionId}}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, IsCompleted: true}}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
+	)
+
+	err := impl.RecordTestCaseResult(context.Background(), testCaseId, true)
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("RecordTestCaseResult() error = %v, want validation error", err)
+	}
+	if coderRepo.activateCalls != 0 {
+		t.Fatal("Activate() was called despite the session already being finished")
+	}
+	if len(sessionRepo.StatusUpdates()) != 0 {
+		t.Fatalf("session status updates = %v, want none (session already finished)", sessionRepo.StatusUpdates())
 	}
 }
 
