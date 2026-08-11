@@ -24,7 +24,7 @@ import (
 const caseGenerationTimeout = 2 * time.Minute
 const analysisTimeout = 10 * time.Minute
 const coderGenerationCallTimeout = 2 * time.Minute
-const encoderSmokeTestTimeout = 2 * time.Second
+const encoderRunTimeout = 2 * time.Second
 const testCaseGenerationTimeout = 2 * time.Minute
 const retryCaseGenerationTimeout = 2 * time.Minute
 const maxRepairRounds = 3
@@ -405,8 +405,29 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 	}
 
 	knownCases := buildKnownCases(states, baselineValues, baselineBits, recordedCases)
-	bestResult := applicationinfraredcodergeneration.Validate(u.encoderRunner, best.EncoderSource, payload.ChecksumBits, knownCases, encoderSmokeTestTimeout)
+	bestResult := applicationinfraredcodergeneration.Validate(u.encoderRunner, best.EncoderSource, payload.ChecksumBits, knownCases, encoderRunTimeout)
+	// Which round produced best: 0 = the initial attempt (no repair helped).
+	bestRound := 0
 
+	for round := 1; round <= maxRepairRounds && !bestResult.Passed(); round++ {
+		repairCtx, repairCancel := context.WithTimeout(ctx, coderGenerationCallTimeout)
+		repaired, err := applicationinfraredcodergeneration.RepairCoder(repairCtx, client, device.Brand, device.Model, best.EncoderSource, best.DecoderSource, bestResult)
+		repairCancel()
+		if err != nil {
+			u.logger.Warn(ctx, tag, "repair round failed to generate, keeping best attempt", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "round": round})
+			continue
+		}
+		result := applicationinfraredcodergeneration.Validate(u.encoderRunner, repaired.EncoderSource, payload.ChecksumBits, knownCases, encoderRunTimeout)
+		if result.OwnedCorrect > bestResult.OwnedCorrect {
+			best, bestResult, bestRound = repaired, result, round
+		}
+	}
+
+	// Checked AFTER the loop so a repair round that fixes the owned bits but
+	// leaves checksum bits wrong still routes here — that state is a clean
+	// Passed() today, so checking only before the loop would silently skip
+	// the chance to gather better checksum data.
+	//
 	// NOTE: ChecksumOnlyGap() can only be true when owned bits are already
 	// 100% correct — which means Passed() is ALSO already true at that
 	// point (Passed() deliberately ignores checksum bits). So this branch's
@@ -418,7 +439,9 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 	// clarification round wouldn't help a data problem this session already
 	// tried once to resolve.
 	if bestResult.ChecksumOnlyGap() && session.ChecksumClarificationUsedAt == nil {
-		plans, err := applicationinfraredcodergeneration.WriteChecksumClarificationCases(ctx, client, device.Brand, device.Model, best, states)
+		clarifyCtx, clarifyCancel := context.WithTimeout(ctx, coderGenerationCallTimeout)
+		plans, err := applicationinfraredcodergeneration.WriteChecksumClarificationCases(clarifyCtx, client, device.Brand, device.Model, best, states)
+		clarifyCancel()
 		if err != nil {
 			u.logger.Error(ctx, tag, "failed to write checksum clarification cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
@@ -435,28 +458,8 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 			return
 		}
 
-		nextStep := int32(1)
-		for _, c := range cases {
-			if c.Step >= nextStep {
-				nextStep = c.Step + 1
-			}
-		}
-		u.persistNewCasesAndReturnToRecording(ctx, tag, sessionId, nextStep, plans)
+		u.persistNewCasesAndReturnToRecording(ctx, tag, sessionId, cases, plans)
 		return
-	}
-
-	for round := 1; round <= maxRepairRounds && !bestResult.Passed(); round++ {
-		repairCtx, repairCancel := context.WithTimeout(ctx, coderGenerationCallTimeout)
-		repaired, err := applicationinfraredcodergeneration.RepairCoder(repairCtx, client, device.Brand, device.Model, best.EncoderSource, best.DecoderSource, bestResult)
-		repairCancel()
-		if err != nil {
-			u.logger.Warn(ctx, tag, "repair round failed to generate, keeping best attempt", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "round": round})
-			continue
-		}
-		result := applicationinfraredcodergeneration.Validate(u.encoderRunner, repaired.EncoderSource, payload.ChecksumBits, knownCases, encoderSmokeTestTimeout)
-		if result.OwnedCorrect > bestResult.OwnedCorrect {
-			best, bestResult = repaired, result
-		}
 	}
 
 	if !bestResult.Passed() {
@@ -469,7 +472,9 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 		}
 		u.logger.Warn(ctx, tag, "persisting best-effort coder below full validation", domainmodels.LoggerMeta{
 			"session_id": sessionId, "owned_accuracy": accuracy,
+			"owned_correct": bestResult.OwnedCorrect, "owned_total": bestResult.OwnedTotal,
 			"checksum_correct": bestResult.ChecksumOK, "checksum_total": bestResult.ChecksumTotal,
+			"best_round": bestRound,
 		})
 	}
 
@@ -679,7 +684,7 @@ func (u *usecase) TransmitTestCase(ctx context.Context, testCaseId uuid.UUID) er
 		stateByName[stateIdToNameLookup(states, s.InfraredStateId)] = s.StateValue
 	}
 
-	rawData, err := u.encoderRunner.RunEncoder(coder.EncoderSource, stateByName, encoderSmokeTestTimeout)
+	rawData, err := u.encoderRunner.RunEncoder(coder.EncoderSource, stateByName, encoderRunTimeout)
 	if err != nil {
 		u.logger.Error(ctx, tag, "encoder failed while transmitting test case", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
 		return err
@@ -849,6 +854,21 @@ func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID,
 		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
 		return
 	}
+	u.persistNewCasesAndReturnToRecording(ctx, tag, sessionId, existingCases, plans)
+}
+
+// persistNewCasesAndReturnToRecording persists a batch of newly-proposed
+// record cases after existingCases (Step is append-only and monotonic for
+// the lifetime of a session, so the first new case continues from the max
+// existing Step rather than restarting at 1), activates the first one, sets
+// it as the session's current case, and transitions the session back to
+// RECORDING. Shared by runRetryCaseGeneration (post-test-case-failure) and
+// the checksum-clarification path (pre-persistence) — both need identical
+// "append cases and go record them" mechanics, even though they trigger from
+// very different points in the session lifecycle. On an internal error it
+// transitions the session to FAILED itself; both callers return immediately
+// afterwards either way, so nothing is reported back.
+func (u *usecase) persistNewCasesAndReturnToRecording(ctx context.Context, tag string, sessionId uuid.UUID, existingCases []domainmodels.InfraredStateDeviceRecordCase, plans []applicationinfraredcodergeneration.RetryCasePlan) {
 	nextStep := int32(1)
 	for _, c := range existingCases {
 		if c.Step >= nextStep {
@@ -856,19 +876,6 @@ func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID,
 		}
 	}
 
-	u.persistNewCasesAndReturnToRecording(ctx, tag, sessionId, nextStep, plans)
-}
-
-// persistNewCasesAndReturnToRecording persists a batch of newly-proposed
-// record cases starting at nextStep, activates the first one, sets it as the
-// session's current case, and transitions the session back to RECORDING.
-// Shared by runRetryCaseGeneration (post-test-case-failure) and the
-// checksum-clarification path (pre-persistence) — both need identical
-// "append cases and go record them" mechanics, even though they trigger from
-// very different points in the session lifecycle. Returns false if it
-// already transitioned the session to FAILED on an internal error, so
-// callers know not to do anything further.
-func (u *usecase) persistNewCasesAndReturnToRecording(ctx context.Context, tag string, sessionId uuid.UUID, nextStep int32, plans []applicationinfraredcodergeneration.RetryCasePlan) bool {
 	var firstNewCaseId uuid.UUID
 	for i, plan := range plans {
 		caseStates := make([]domainmodels.InfraredStateDeviceRecordState, 0, len(plan.States))
@@ -879,7 +886,7 @@ func (u *usecase) persistNewCasesAndReturnToRecording(ctx context.Context, tag s
 		if err != nil {
 			u.logger.Error(ctx, tag, "failed to persist new record case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
-			return false
+			return
 		}
 		if i == 0 {
 			firstNewCaseId = caseId
@@ -889,15 +896,14 @@ func (u *usecase) persistNewCasesAndReturnToRecording(ctx context.Context, tag s
 	if err := u.recordCase.UpdateStatusById(ctx, firstNewCaseId, domainmodels.InfraredRecordCaseStatusActive); err != nil {
 		u.logger.Error(ctx, tag, "failed to activate first new case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
-		return false
+		return
 	}
 	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &firstNewCaseId); err != nil {
 		u.logger.Error(ctx, tag, "failed to set session cursor to first new case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
-		return false
+		return
 	}
 	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateRecording)
-	return true
 }
 
 // coderById is a small helper since InfraredStateCoder's repository only

@@ -163,12 +163,18 @@ type fakeEncoderRunner struct {
 	raw           []int32            // if set, always returned regardless of state (repair-loop tests)
 	byState       map[string][]int32 // if set, looked up by state["POWER"]+"|"+state["MODE"]
 	bySource      map[string][]int32 // if set, looked up by the encoder source itself — lets a test give a repaired encoder different behavior from the broken one it replaced
+	bySourceState map[string][]int32 // if set, looked up by source+"|"+state["POWER"]+"|"+state["MODE"] — for tests needing per-state behavior that also CHANGES across a repair round
 }
 
 func (f *fakeEncoderRunner) RunEncoder(source string, state map[string]string, _ time.Duration) ([]int32, error) {
 	f.receivedState = state
 	if f.err != nil {
 		return nil, f.err
+	}
+	if f.bySourceState != nil {
+		if raw, ok := f.bySourceState[source+"|"+state["POWER"]+"|"+state["MODE"]]; ok {
+			return raw, nil
+		}
 	}
 	if f.bySource != nil {
 		if raw, ok := f.bySource[source]; ok {
@@ -1393,6 +1399,127 @@ func TestRunAnalysisAndGenerationRequestsChecksumClarificationOnChecksumOnlyGap(
 	}
 	if !found {
 		t.Fatalf("status updates = %v, want to include RECORDING (checksum clarification sends the session back to record more)", sessionRepo.StatusUpdates())
+	}
+}
+
+// The checksum-only-gap check runs AFTER the repair loop, not only on the
+// initial attempt: here the initial attempt gets owned bits AND checksum
+// bits wrong (so it enters the repair loop), and round 1 fixes every owned
+// bit while leaving the checksum bit wrong. That post-repair state is a
+// clean Passed(), so checking only before the loop would persist a coder
+// with a known-broken checksum instead of gathering more data.
+func TestRunAnalysisAndGenerationRequestsChecksumClarificationAfterRepairRound(t *testing.T) {
+	sessionId := uuid.New()
+	powerId, modeId := uuid.New(), uuid.New()
+	baselineCaseId, case1Id, case2Id := uuid.New(), uuid.New(), uuid.New()
+
+	marshalRaw := func(durations []int32) []byte {
+		b, err := json.Marshal(durations)
+		if err != nil {
+			t.Fatalf("failed to marshal fixture raw data: %v", err)
+		}
+		return b
+	}
+	// Same 4-bit fixture as the sibling test: bit 3 flips for both cases, so
+	// Attribute() flags it as the checksum bit; bits 0-2 are owned.
+	baselineRaw := marshalRaw([]int32{9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560})
+	case1Raw := marshalRaw([]int32{9000, 4500, 560, 1690, 560, 560, 560, 560, 560, 1690}) // [1,0,0,1]
+	case2Raw := marshalRaw([]int32{9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 1690}) // [0,1,0,1]
+
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{
+		{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum},
+		{Id: modeId, Name: "MODE", Type: domainmodels.InfraredStateTypeEnum},
+	}}
+	definitionRepo := &fakeDefinitionRepository{listByDeviceIdResult: []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"OFF", "ON"}},
+		{InfraredStateId: modeId, Options: []string{"COOL", "HEAT"}},
+	}}
+	caseRepo := &fakeCaseRepository{
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+			{Id: case1Id, InfraredRecordSessionId: sessionId, Step: 2, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+			{Id: case2Id, InfraredRecordSessionId: sessionId, Step: 3, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		},
+		listRawByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordRaw{
+			baselineCaseId: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: baselineRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: baselineRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+			case1Id: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case1Id, RawData: case1Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case1Id, RawData: case1Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+			case2Id: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case2Id, RawData: case2Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case2Id, RawData: case2Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+		},
+		listStatesByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordState{
+			baselineCaseId: {
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "OFF"},
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: modeId, StateValue: "COOL"},
+			},
+			case1Id: {
+				{InfraredStateDeviceRecordCaseId: case1Id, InfraredStateId: powerId, StateValue: "ON"},
+				{InfraredStateDeviceRecordCaseId: case1Id, InfraredStateId: modeId, StateValue: "COOL"},
+			},
+			case2Id: {
+				{InfraredStateDeviceRecordCaseId: case2Id, InfraredStateId: powerId, StateValue: "OFF"},
+				{InfraredStateDeviceRecordCaseId: case2Id, InfraredStateId: modeId, StateValue: "HEAT"},
+			},
+		},
+	}
+	coderRepo := &fakeCoderRepository{}
+
+	brokenSource := "function encode(state) { return []; }"
+	repairedSource := "function encode(state) { return [1]; }"
+	// Broken: always emits all-zero bits, so owned bit 0 (case1) and owned
+	// bit 1 (case2) are wrong on top of the checksum bit -> NOT a
+	// checksum-only gap, the repair loop runs. Repaired: every owned bit
+	// correct, checksum bit 3 still always 0 -> a checksum-only gap that only
+	// exists after round 1.
+	allZero := []int32{9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560}
+	encoderRunner := &fakeEncoderRunner{bySourceState: map[string][]int32{
+		brokenSource + "|OFF|COOL": allZero,
+		brokenSource + "|ON|COOL":  allZero,
+		brokenSource + "|OFF|HEAT": allZero,
+
+		repairedSource + "|OFF|COOL": allZero,
+		repairedSource + "|ON|COOL":  {9000, 4500, 560, 1690, 560, 560, 560, 560, 560, 560}, // [1,0,0,0], real [1,0,0,1]
+		repairedSource + "|OFF|HEAT": {9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 560}, // [0,1,0,0], real [0,1,0,1]
+	}}
+	llmFactory := &fakeLlmClientFactory{clientSequence: []string{
+		`{"encoder_source": "` + brokenSource + `", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
+		`{"encoder_source": "` + repairedSource + `", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s2", "detail_readme": "d2"}`,
+		`[{"description": "repeat baseline twice more", "states": {"POWER": "OFF", "MODE": "COOL"}}]`,
+	}}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
+		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	).(*usecase)
+
+	impl.runAnalysisAndGeneration(sessionId)
+
+	if coderRepo.createCalled {
+		t.Fatal("coder repository Create() was called, want the post-repair checksum-only gap routed to clarification instead")
+	}
+	if len(caseRepo.CreatedCaseIds()) == 0 {
+		t.Fatal("no new case was persisted, want the clarification plan recorded after the repair round")
+	}
+	if got := sessionRepo.ChecksumClarificationMarks(); got != 1 {
+		t.Fatalf("MarkChecksumClarificationUsedById called %d times, want exactly 1", got)
+	}
+	found := false
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateRecording {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("status updates = %v, want to include RECORDING", sessionRepo.StatusUpdates())
 	}
 }
 
