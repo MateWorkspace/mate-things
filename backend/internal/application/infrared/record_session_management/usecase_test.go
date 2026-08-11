@@ -1706,6 +1706,99 @@ func TestRunAnalysisAndGenerationSkipsNonOfatCaseInsteadOfFailing(t *testing.T) 
 	}
 }
 
+func TestBuildAnalysisPayloadAttributesCasesRecordedBeforeTheBaselineCase(t *testing.T) {
+	sessionId := uuid.New()
+	powerId, modeId := uuid.New(), uuid.New()
+	powerCaseId, modeCaseId, baselineCaseId := uuid.New(), uuid.New(), uuid.New()
+
+	marshalRaw := func(durations []int32) []byte {
+		b, err := json.Marshal(durations)
+		if err != nil {
+			t.Fatalf("failed to marshal fixture raw data: %v", err)
+		}
+		return b
+	}
+	// 9000/4500 header, then four 560-pair bits: 560,560 = 0 and 560,1690 = 1.
+	baselineRaw := marshalRaw([]int32{9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560})
+	powerRaw := marshalRaw([]int32{9000, 4500, 560, 1690, 560, 560, 560, 560, 560, 560})
+	modeRaw := marshalRaw([]int32{9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 560})
+
+	states := []domainmodels.InfraredState{
+		{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum},
+		{Id: modeId, Name: "MODE", Type: domainmodels.InfraredStateTypeEnum},
+	}
+	definitions := []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"OFF", "ON"}},
+		{InfraredStateId: modeId, Options: []string{"COOL", "HEAT"}},
+	}
+	twoAcceptedRaws := func(caseId uuid.UUID, raw []byte) []domainmodels.InfraredStateDeviceRecordRaw {
+		return []domainmodels.InfraredStateDeviceRecordRaw{
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: caseId, RawData: raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: caseId, RawData: raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+		}
+	}
+
+	// The LLM's press order put the baseline case LAST: every non-baseline
+	// case is visited before the baseline is known.
+	cases := []domainmodels.InfraredStateDeviceRecordCase{
+		{Id: powerCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		{Id: modeCaseId, InfraredRecordSessionId: sessionId, Step: 2, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 3, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+	}
+	caseRepo := &fakeCaseRepository{
+		listBySessionIdResult: cases,
+		listRawByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordRaw{
+			powerCaseId:    twoAcceptedRaws(powerCaseId, powerRaw),
+			modeCaseId:     twoAcceptedRaws(modeCaseId, modeRaw),
+			baselineCaseId: twoAcceptedRaws(baselineCaseId, baselineRaw),
+		},
+		listStatesByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordState{
+			powerCaseId: {
+				{InfraredStateDeviceRecordCaseId: powerCaseId, InfraredStateId: powerId, StateValue: "ON"},
+				{InfraredStateDeviceRecordCaseId: powerCaseId, InfraredStateId: modeId, StateValue: "COOL"},
+			},
+			modeCaseId: {
+				{InfraredStateDeviceRecordCaseId: modeCaseId, InfraredStateId: powerId, StateValue: "OFF"},
+				{InfraredStateDeviceRecordCaseId: modeCaseId, InfraredStateId: modeId, StateValue: "HEAT"},
+			},
+			baselineCaseId: {
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "OFF"},
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: modeId, StateValue: "COOL"},
+			},
+		},
+	}
+
+	impl := NewUsecaseImpl(
+		&fakeSessionRepository{}, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	).(*usecase)
+
+	payload, baselineState, baselineBits, recordedCases, err := impl.buildAnalysisPayload(context.Background(), "test", cases, states, definitions)
+	if err != nil {
+		t.Fatalf("buildAnalysisPayload() error = %v, want nil", err)
+	}
+	if len(baselineBits) == 0 {
+		t.Fatal("baselineBits is empty, want the baseline case resolved even though it is last in case order")
+	}
+	if baselineState[powerId.String()] != "OFF" || baselineState[modeId.String()] != "COOL" {
+		t.Fatalf("baselineState = %v, want POWER=OFF and MODE=COOL", baselineState)
+	}
+	if len(recordedCases) != 2 {
+		t.Fatalf("len(recordedCases) = %d, want 2 (both pre-baseline cases attributed, none silently skipped)", len(recordedCases))
+	}
+	if len(payload.States) != 2 {
+		t.Fatalf("len(payload.States) = %d, want 2 attributed states, got payload %+v", len(payload.States), payload)
+	}
+	attributedBits := make(map[uuid.UUID][]int, len(payload.States))
+	for _, s := range payload.States {
+		attributedBits[s.StateId] = s.BitOffsets
+	}
+	if len(attributedBits[powerId]) == 0 || len(attributedBits[modeId]) == 0 {
+		t.Fatalf("payload.States = %+v, want owned bits for both POWER and MODE", payload.States)
+	}
+}
+
 func TestGetCoderBySessionIdDelegatesToRepository(t *testing.T) {
 	sessionId := uuid.New()
 	want := &domainmodels.InfraredStateCoder{Id: uuid.New(), InfraredRecordSessionId: sessionId}

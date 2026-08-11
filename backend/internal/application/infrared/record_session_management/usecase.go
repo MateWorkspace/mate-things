@@ -986,6 +986,28 @@ func (u *usecase) buildAnalysisPayload(
 	caseTargetValue := make(map[uuid.UUID]string)
 	var volatileSets []map[int]struct{}
 
+	// First pass: resolve the baseline case's state values before any
+	// attribution runs. Case order is not baseline-first (Step is reassigned
+	// by the LLM's press order), so a single pass would leave baselineState
+	// empty for every case visited before the baseline and silently skip them
+	// as "not differing in exactly one state".
+	caseStatesById := make(map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordState, len(cases))
+	baselineFound := false
+	for _, c := range cases {
+		caseStates, err := u.recordCase.ReadListStatesByCaseId(ctx, c.Id)
+		if err != nil {
+			return applicationinfraredanalysis.AnalysisPayload{}, nil, nil, nil, err
+		}
+		caseStatesById[c.Id] = caseStates
+		if baselineFound || !isBaselineCase(expectedBaseline, caseStates) {
+			continue
+		}
+		baselineFound = true
+		for _, s := range caseStates {
+			baselineState[s.InfraredStateId.String()] = s.StateValue
+		}
+	}
+
 	for _, c := range cases {
 		raws, err := u.recordCase.ReadListRawByCaseId(ctx, c.Id)
 		if err != nil {
@@ -1023,16 +1045,10 @@ func (u *usecase) buildAnalysisPayload(
 		}
 		volatileSets = append(volatileSets, volatile)
 
-		caseStates, err := u.recordCase.ReadListStatesByCaseId(ctx, c.Id)
-		if err != nil {
-			return applicationinfraredanalysis.AnalysisPayload{}, nil, nil, nil, err
-		}
+		caseStates := caseStatesById[c.Id]
 
 		if isBaselineCase(expectedBaseline, caseStates) {
 			baselineBits = frameBitsPerRaw[0]
-			for _, s := range caseStates {
-				baselineState[s.InfraredStateId.String()] = s.StateValue
-			}
 			continue
 		}
 
