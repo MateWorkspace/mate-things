@@ -30,7 +30,11 @@ type fakeSessionRepository struct {
 	getResult            *domainmodels.InfraredRecordSession
 	currentCaseSessionId uuid.UUID
 	currentCaseId        *uuid.UUID
-	deleteErr            error
+	// checksumClarificationMarks counts MarkChecksumClarificationUsedById
+	// calls, so tests can assert the once-per-session cap is actually
+	// written (and, on the already-used fixture, never written again).
+	checksumClarificationMarks int
+	deleteErr                  error
 	deletedId            uuid.UUID
 	deletedBy            *uuid.UUID
 }
@@ -54,7 +58,20 @@ func (f *fakeSessionRepository) DeleteById(_ context.Context, id uuid.UUID, dele
 	return f.deleteErr
 }
 func (f *fakeSessionRepository) MarkChecksumClarificationUsedById(_ context.Context, _ uuid.UUID) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.checksumClarificationMarks++
 	return nil
+}
+
+// ChecksumClarificationMarks returns a snapshot of how many times the
+// once-per-session clarification marker was written — mirrors this file's
+// existing StatusUpdates() convention for state a background goroutine
+// might mutate concurrently with a test.
+func (f *fakeSessionRepository) ChecksumClarificationMarks() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.checksumClarificationMarks
 }
 
 // StatusUpdates returns a snapshot, safe to read while the background
@@ -1204,6 +1221,15 @@ func TestRunAnalysisAndGenerationPersistsDegradedBestAttemptAboveFatalFloor(t *t
 	if !coderRepo.createCalled {
 		t.Fatal("coder repository Create() was never called, want the best (66.7%, above the 60% floor) attempt persisted")
 	}
+	// Every repair round scores an identical 2/3, so none of them IMPROVES
+	// on the initial attempt — the loop's "strictly greater OwnedCorrect"
+	// rule must therefore discard all three and keep the very first coder
+	// ("return [1]"). Asserting the persisted source (not merely that
+	// something was persisted) is what proves non-improving rounds are
+	// discarded rather than blindly overwriting best.
+	if !strings.Contains(coderRepo.created.EncoderSource, "[1]") {
+		t.Fatalf("persisted EncoderSource = %q, want the INITIAL attempt kept (no repair round beat its 2/3 score)", coderRepo.created.EncoderSource)
+	}
 }
 
 func TestRunAnalysisAndGenerationFailsBelowFatalFloorAfterRepairExhausted(t *testing.T) {
@@ -1353,6 +1379,12 @@ func TestRunAnalysisAndGenerationRequestsChecksumClarificationOnChecksumOnlyGap(
 	if len(caseRepo.CreatedCaseIds()) == 0 {
 		t.Fatal("no new case was persisted, want WriteChecksumClarificationCases' plan to have been recorded via persistNewCasesAndReturnToRecording")
 	}
+	// The once-per-session cap is only real if the marker is actually
+	// written — without this the sibling "already used" test below could
+	// never be reached in production.
+	if got := sessionRepo.ChecksumClarificationMarks(); got != 1 {
+		t.Fatalf("MarkChecksumClarificationUsedById called %d times, want exactly 1 (the session just spent its one clarification attempt)", got)
+	}
 	found := false
 	for _, s := range sessionRepo.StatusUpdates() {
 		if s == domainmodels.InfraredRecordingStateRecording {
@@ -1361,6 +1393,109 @@ func TestRunAnalysisAndGenerationRequestsChecksumClarificationOnChecksumOnlyGap(
 	}
 	if !found {
 		t.Fatalf("status updates = %v, want to include RECORDING (checksum clarification sends the session back to record more)", sessionRepo.StatusUpdates())
+	}
+}
+
+// Same checksum-only-gap fixture as the test above, but the session has
+// ALREADY spent its one clarification attempt. The cap must hold: no second
+// trip back to RECORDING, no second marker write, and the coder is persisted
+// anyway — owned bits are 100% correct, so Passed() is true and an imperfect
+// checksum is informational only, never a reason to block persistence.
+func TestRunAnalysisAndGenerationSkipsChecksumClarificationWhenAlreadyUsed(t *testing.T) {
+	sessionId := uuid.New()
+	powerId, modeId := uuid.New(), uuid.New()
+	baselineCaseId, case1Id, case2Id := uuid.New(), uuid.New(), uuid.New()
+
+	marshalRaw := func(durations []int32) []byte {
+		b, err := json.Marshal(durations)
+		if err != nil {
+			t.Fatalf("failed to marshal fixture raw data: %v", err)
+		}
+		return b
+	}
+	baselineRaw := marshalRaw([]int32{9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560})
+	case1Raw := marshalRaw([]int32{9000, 4500, 560, 1690, 560, 560, 560, 560, 560, 1690}) // decodes [1,0,0,1]
+	case2Raw := marshalRaw([]int32{9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 1690}) // decodes [0,1,0,1]
+
+	alreadyUsed := time.Now().Add(-time.Hour)
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{
+		Id: sessionId, InfraredDeviceId: uuid.New(), ChecksumClarificationUsedAt: &alreadyUsed,
+	}}
+	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{
+		{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum},
+		{Id: modeId, Name: "MODE", Type: domainmodels.InfraredStateTypeEnum},
+	}}
+	definitionRepo := &fakeDefinitionRepository{listByDeviceIdResult: []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"OFF", "ON"}},
+		{InfraredStateId: modeId, Options: []string{"COOL", "HEAT"}},
+	}}
+	caseRepo := &fakeCaseRepository{
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+			{Id: case1Id, InfraredRecordSessionId: sessionId, Step: 2, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+			{Id: case2Id, InfraredRecordSessionId: sessionId, Step: 3, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		},
+		listRawByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordRaw{
+			baselineCaseId: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: baselineRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: baselineRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+			case1Id: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case1Id, RawData: case1Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case1Id, RawData: case1Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+			case2Id: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case2Id, RawData: case2Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case2Id, RawData: case2Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+		},
+		listStatesByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordState{
+			baselineCaseId: {
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "OFF"},
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: modeId, StateValue: "COOL"},
+			},
+			case1Id: {
+				{InfraredStateDeviceRecordCaseId: case1Id, InfraredStateId: powerId, StateValue: "ON"},
+				{InfraredStateDeviceRecordCaseId: case1Id, InfraredStateId: modeId, StateValue: "COOL"},
+			},
+			case2Id: {
+				{InfraredStateDeviceRecordCaseId: case2Id, InfraredStateId: powerId, StateValue: "OFF"},
+				{InfraredStateDeviceRecordCaseId: case2Id, InfraredStateId: modeId, StateValue: "HEAT"},
+			},
+		},
+	}
+	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: uuid.New(), SummaryReadme: "summary", DetailReadme: "detail"}}
+	encoderRunner := &fakeEncoderRunner{byState: map[string][]int32{
+		"OFF|COOL": {9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560},  // [0,0,0,0] vs real [0,0,0,0] -> all correct
+		"ON|COOL":  {9000, 4500, 560, 1690, 560, 560, 560, 560, 560, 560}, // [1,0,0,0] vs real [1,0,0,1] -> bit3 wrong only
+		"OFF|HEAT": {9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 560}, // [0,1,0,0] vs real [0,1,0,1] -> bit3 wrong only
+	}}
+	llmFactory := &fakeLlmClientFactory{responseTexts: []string{
+		`{"encoder_source": "function encode(state) { return []; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
+		`[{"description": "d1", "states": {"POWER": "OFF"}}]`,
+	}}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
+		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	).(*usecase)
+
+	impl.runAnalysisAndGeneration(sessionId)
+
+	if !coderRepo.createCalled {
+		t.Fatal("coder repository Create() was never called, want the coder persisted anyway (owned bits 100% correct -> Passed(), checksum gap is informational only)")
+	}
+	if got := sessionRepo.ChecksumClarificationMarks(); got != 0 {
+		t.Fatalf("MarkChecksumClarificationUsedById called %d times, want 0 (this session already spent its one attempt)", got)
+	}
+	if len(caseRepo.CreatedCaseIds()) != 0 {
+		t.Fatalf("created %d new record cases, want 0 (the clarification path must not run a second time)", len(caseRepo.CreatedCaseIds()))
+	}
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateRecording {
+			t.Fatalf("status updates = %v, want NO second trip back to RECORDING once the clarification attempt is spent", sessionRepo.StatusUpdates())
+		}
 	}
 }
 
