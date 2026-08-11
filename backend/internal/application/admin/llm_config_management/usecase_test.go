@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
@@ -237,7 +238,7 @@ func TestTestConnectionUsesAGenerousOutputTokenBudget(t *testing.T) {
 		t.Fatalf("TestConnection() error = %v, want nil", err)
 	}
 
-	const minBudget = 256 // well below the 512 actually used, generous floor against accidental shrinkage
+	const minBudget = 256 // well below the 4096 actually used, generous floor against accidental shrinkage
 	if client.lastRequest.MaxOutputTokens < minBudget {
 		t.Fatalf("GenerateText() request had MaxOutputTokens = %d, want >= %d (a reasoning model can exhaust a small budget on hidden reasoning before writing any visible content)", client.lastRequest.MaxOutputTokens, minBudget)
 	}
@@ -274,7 +275,12 @@ func TestTestConnectionRequestsAnObjectRootedSchema(t *testing.T) {
 
 // A provider that accepts the schema but doesn't actually honor it (garbled
 // or missing output) should still fail the check, not just "the call didn't
-// error" — ping() parses the response and confirms it round-tripped.
+// error" — ping() parses the response and confirms it round-tripped. This
+// is a config problem (a bad model choice, not a server crash), so it must
+// map to a validation error, not the generic 500 - confirmed live against
+// OpenRouter: gpt-5/gpt-5-mini can silently return "" when a reasoning
+// budget runs out, which used to surface as "Something went wrong on our
+// end" instead of something actionable.
 func TestTestConnectionFailsWhenStructuredResponseIsMalformed(t *testing.T) {
 	client := &fakeClient{responseText: "not json"}
 	factory := &fakeClientFactory{client: client}
@@ -284,6 +290,9 @@ func TestTestConnectionFailsWhenStructuredResponseIsMalformed(t *testing.T) {
 	_, err := usecase.TestConnection(context.Background())
 	if err == nil {
 		t.Fatal("TestConnection() error = nil, want an error when the structured response doesn't parse")
+	}
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("TestConnection() error type = %v, want ErrTypeValidation (a bad config, not a server failure)", err)
 	}
 }
 
@@ -298,6 +307,11 @@ func TestTestConnectionPropagatesResolveError(t *testing.T) {
 	}
 }
 
+// A rejection from the provider itself (bad key, unknown model, network
+// error) is just as much a config problem as a malformed response - it
+// must map to a validation error, not the generic 500, and the underlying
+// provider message must survive into the surfaced error (this is an
+// admin-only diagnostic surface, so that detail is exactly the point).
 func TestTestConnectionPropagatesGenerateTextError(t *testing.T) {
 	client := &fakeClient{generateErr: errors.New("invalid api key")}
 	factory := &fakeClientFactory{client: client}
@@ -307,6 +321,12 @@ func TestTestConnectionPropagatesGenerateTextError(t *testing.T) {
 	_, err := usecase.TestConnection(context.Background())
 	if err == nil {
 		t.Fatal("TestConnection() error = nil, want the client's GenerateText error propagated")
+	}
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("TestConnection() error type = %v, want ErrTypeValidation (a bad config, not a server failure)", err)
+	}
+	if !strings.Contains(err.Error(), "invalid api key") {
+		t.Fatalf("TestConnection() error = %q, want it to contain the underlying provider error", err.Error())
 	}
 }
 
@@ -404,5 +424,11 @@ func TestTestConnectionWithConfigPropagatesGenerateTextError(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("TestConnectionWithConfig() error = nil, want the client's GenerateText error propagated")
+	}
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("TestConnectionWithConfig() error type = %v, want ErrTypeValidation (a bad config, not a server failure)", err)
+	}
+	if !strings.Contains(err.Error(), "model not supported by this base URL") {
+		t.Fatalf("TestConnectionWithConfig() error = %q, want it to contain the underlying provider error", err.Error())
 	}
 }

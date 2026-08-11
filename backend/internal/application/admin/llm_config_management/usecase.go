@@ -3,6 +3,7 @@ package applicationadminllmconfigmanagement
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
@@ -165,14 +166,13 @@ type pingResponse struct {
 }
 
 // pingMaxOutputTokens has to clear a reasoning model's hidden "thinking"
-// budget, not just the visible answer: confirmed live against OpenRouter's
-// gpt-5-mini, a 32-token cap left finish_reason="length" with empty
-// content (spent entirely on invisible reasoning tokens before any visible
-// output), while 512 succeeded with room to spare (147 completion tokens,
-// 128 of them reasoning). This mirrors the real generation calls
-// elsewhere in this codebase, which already use several thousand for the
-// same reason.
-const pingMaxOutputTokens = 512
+// budget, not just the visible answer. Confirmed live against OpenRouter:
+// gpt-5-mini exhausted a 512-token cap entirely on reasoning tokens
+// (finish_reason="length", empty content) for the smaller "mini" variant,
+// and the full gpt-5 exhausted 512 just as completely (reasoning_tokens
+// == the whole cap). Matches the token budget the real generation calls
+// elsewhere in this codebase already use, for the same reason.
+const pingMaxOutputTokens = 4096
 
 func (u *usecase) ping(ctx context.Context, tag string, client domaincontractsllm.Client) (domainmodels.LlmClientStatus, error) {
 	result, err := client.GenerateText(ctx, domaincontractsllm.GenerateTextRequest{
@@ -183,13 +183,31 @@ func (u *usecase) ping(ctx context.Context, tag string, client domaincontractsll
 	})
 	if err != nil {
 		u.logger.Error(ctx, tag, "llm connectivity test failed", domainmodels.LoggerMeta{"err": err})
-		return "", err
+		// ping()'s whole purpose is checking whether this provider/model/
+		// key/base_url combination works - every failure here IS a config
+		// problem from the caller's point of view (wrong model, bad key,
+		// unreachable base_url, ...), never a crash in this server. The
+		// underlying provider error (err) is included verbatim: this is an
+		// admin-only diagnostic surface, and that detail is exactly what
+		// makes the difference between "it's broken" and "here's why."
+		return "", domainmodels.NewError(
+			fmt.Sprintf("Invalid config: the provider rejected this request (%s).", err),
+			domainmodels.ErrTypeValidation, err,
+		)
 	}
 
 	var parsed pingResponse
 	if err := json.Unmarshal([]byte(result.Text), &parsed); err != nil {
 		u.logger.Error(ctx, tag, "llm connectivity test returned malformed structured output", domainmodels.LoggerMeta{"err": err})
-		return "", domainmodels.NewError("llm connectivity test returned malformed structured output", domainmodels.ErrTypeFailure, err)
+		// Same reasoning as the GenerateText error above: an LLM called
+		// successfully but returning unusable output (empty, truncated,
+		// not valid JSON) is still the config not working end-to-end -
+		// this provider/model combination can't be relied on for real
+		// generation, which always requires structured output too.
+		return "", domainmodels.NewError(
+			"Invalid config: the model didn't return usable structured output. It may not support structured/JSON responses, or ran out of budget on internal reasoning before writing a reply — try a different model.",
+			domainmodels.ErrTypeValidation, err,
+		)
 	}
 
 	return domainmodels.LlmClientStatusConnected, nil
