@@ -247,28 +247,8 @@ func (u *usecase) ListCases(ctx context.Context, sessionId uuid.UUID) ([]domainu
 func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
 	const tag = "infrared/record_session_management/AcceptRaw"
 
-	raw, err := u.recordCase.ReadRawById(ctx, rawId)
+	raw, recordCase, err := u.requireMutableSessionForRaw(ctx, tag, rawId)
 	if err != nil {
-		u.logger.Error(ctx, tag, "failed to look up raw before accept", domainmodels.LoggerMeta{"err": err, "raw_id": rawId})
-		return err
-	}
-	if raw == nil {
-		return domainmodels.NewError("raw capture not found", domainmodels.ErrTypeNotFound, nil)
-	}
-
-	// InfraredStateDeviceRecordRaw has no session id of its own (only a case
-	// id) — look the case up to get the session id from a field that's
-	// genuinely backed by a column, rather than adding a synthetic
-	// join-only field to the raw model.
-	recordCase, err := u.recordCase.ReadById(ctx, raw.InfraredStateDeviceRecordCaseId)
-	if err != nil {
-		u.logger.Error(ctx, tag, "failed to look up case before accept", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
-		return err
-	}
-	if recordCase == nil {
-		return domainmodels.NewError("record case not found", domainmodels.ErrTypeNotFound, nil)
-	}
-	if _, err := u.requireMutableSession(ctx, recordCase.InfraredRecordSessionId); err != nil {
 		return err
 	}
 	sessionId := recordCase.InfraredRecordSessionId
@@ -666,11 +646,17 @@ func (u *usecase) TransmitTestCase(ctx context.Context, testCaseId uuid.UUID) er
 	if err != nil {
 		return err
 	}
+	if coder == nil {
+		return domainmodels.NewError("coder not found", domainmodels.ErrTypeNotFound, nil)
+	}
 
 	session, err := u.session.ReadById(ctx, coder.InfraredRecordSessionId)
-	if err != nil || session == nil {
+	if err != nil {
 		u.logger.Error(ctx, tag, "failed to look up session for test case", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
 		return err
+	}
+	if session == nil {
+		return domainmodels.NewError("record session not found", domainmodels.ErrTypeNotFound, nil)
 	}
 	if session.IsCompleted {
 		return sessionAlreadyFinishedError()
@@ -730,7 +716,7 @@ func (u *usecase) RecordTestCaseResult(ctx context.Context, testCaseId uuid.UUID
 	if coderForGuard == nil {
 		return domainmodels.NewError("coder not found", domainmodels.ErrTypeNotFound, nil)
 	}
-	if _, err := u.requireMutableSession(ctx, coderForGuard.InfraredRecordSessionId); err != nil {
+	if err := u.requireMutableSession(ctx, coderForGuard.InfraredRecordSessionId); err != nil {
 		return err
 	}
 
@@ -956,18 +942,50 @@ func sessionAlreadyFinishedError() error {
 // already hides the controls that would trigger these calls once a
 // session is done; this is the guard that holds regardless of which
 // client is calling.
-func (u *usecase) requireMutableSession(ctx context.Context, sessionId uuid.UUID) (*domainmodels.InfraredRecordSession, error) {
+func (u *usecase) requireMutableSession(ctx context.Context, sessionId uuid.UUID) error {
 	session, err := u.session.ReadById(ctx, sessionId)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if session == nil {
-		return nil, domainmodels.NewError("record session not found", domainmodels.ErrTypeNotFound, nil)
+		return domainmodels.NewError("record session not found", domainmodels.ErrTypeNotFound, nil)
 	}
 	if session.IsCompleted {
-		return nil, sessionAlreadyFinishedError()
+		return sessionAlreadyFinishedError()
 	}
-	return session, nil
+	return nil
+}
+
+// requireMutableSessionForRaw resolves a raw capture to its case and then
+// to its session, and rejects the caller if that session has already
+// reached a terminal state — the shared raw→case→session resolution
+// AcceptRaw and DiscardRaw both need before mutating a raw's status.
+func (u *usecase) requireMutableSessionForRaw(ctx context.Context, tag string, rawId uuid.UUID) (*domainmodels.InfraredStateDeviceRecordRaw, *domainmodels.InfraredStateDeviceRecordCase, error) {
+	raw, err := u.recordCase.ReadRawById(ctx, rawId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to look up raw", domainmodels.LoggerMeta{"err": err, "raw_id": rawId})
+		return nil, nil, err
+	}
+	if raw == nil {
+		return nil, nil, domainmodels.NewError("raw capture not found", domainmodels.ErrTypeNotFound, nil)
+	}
+
+	// InfraredStateDeviceRecordRaw has no session id of its own (only a case
+	// id) — look the case up to get the session id from a field that's
+	// genuinely backed by a column, rather than adding a synthetic
+	// join-only field to the raw model.
+	recordCase, err := u.recordCase.ReadById(ctx, raw.InfraredStateDeviceRecordCaseId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to look up case", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
+		return nil, nil, err
+	}
+	if recordCase == nil {
+		return nil, nil, domainmodels.NewError("record case not found", domainmodels.ErrTypeNotFound, nil)
+	}
+	if err := u.requireMutableSession(ctx, recordCase.InfraredRecordSessionId); err != nil {
+		return nil, nil, err
+	}
+	return raw, recordCase, nil
 }
 
 // stateIdToNameLookup scans states for a matching Id and returns its Name —
@@ -1181,23 +1199,7 @@ func (u *usecase) DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string
 		return domainmodels.NewError("reason is required", domainmodels.ErrTypeValidation, nil)
 	}
 
-	raw, err := u.recordCase.ReadRawById(ctx, rawId)
-	if err != nil {
-		u.logger.Error(ctx, tag, "failed to look up raw before discard", domainmodels.LoggerMeta{"err": err, "raw_id": rawId})
-		return err
-	}
-	if raw == nil {
-		return domainmodels.NewError("raw capture not found", domainmodels.ErrTypeNotFound, nil)
-	}
-	recordCase, err := u.recordCase.ReadById(ctx, raw.InfraredStateDeviceRecordCaseId)
-	if err != nil {
-		u.logger.Error(ctx, tag, "failed to look up case before discard", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
-		return err
-	}
-	if recordCase == nil {
-		return domainmodels.NewError("record case not found", domainmodels.ErrTypeNotFound, nil)
-	}
-	if _, err := u.requireMutableSession(ctx, recordCase.InfraredRecordSessionId); err != nil {
+	if _, _, err := u.requireMutableSessionForRaw(ctx, tag, rawId); err != nil {
 		return err
 	}
 
@@ -1215,7 +1217,7 @@ func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
 	if recordCase == nil {
 		return domainmodels.NewError("record case not found", domainmodels.ErrTypeNotFound, nil)
 	}
-	if _, err := u.requireMutableSession(ctx, recordCase.InfraredRecordSessionId); err != nil {
+	if err := u.requireMutableSession(ctx, recordCase.InfraredRecordSessionId); err != nil {
 		return err
 	}
 
@@ -1246,7 +1248,7 @@ func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
 func (u *usecase) SetCurrentCase(ctx context.Context, sessionId uuid.UUID, caseId uuid.UUID) error {
 	const tag = "infrared/record_session_management/SetCurrentCase"
 
-	if _, err := u.requireMutableSession(ctx, sessionId); err != nil {
+	if err := u.requireMutableSession(ctx, sessionId); err != nil {
 		return err
 	}
 
