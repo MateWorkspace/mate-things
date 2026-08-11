@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 
 import IconButton from "./icon-button";
 
-type DialogVariant = "default" | "drawer" | "sheet";
+type DialogVariant = "default" | "sheet";
 
 interface DialogProps {
   open: boolean;
@@ -116,22 +116,12 @@ export default function Dialog({
         onClose();
       }}
       className={
-        variant === "drawer"
-          ? "border-border bg-background text-foreground backdrop:bg-ink/50 fixed inset-y-0 left-0 m-0 h-dvh max-h-dvh w-[min(88vw,20rem)] max-w-none overflow-y-auto rounded-none border-0 border-r p-0 shadow-xl"
-          : variant === "sheet"
-            ? "border-border bg-background text-foreground backdrop:bg-ink/50 fixed inset-x-0 top-auto bottom-0 m-0 max-h-[calc(100dvh-1rem)] w-full max-w-none overflow-y-auto rounded-t-2xl border p-0 shadow-xl sm:inset-0 sm:m-auto sm:h-fit sm:max-h-[calc(100dvh-2rem)] sm:w-[min(100%-2rem,36rem)] sm:rounded-2xl"
-            : "border-border bg-background text-foreground backdrop:bg-ink/50 m-auto w-[min(100%-2rem,36rem)] rounded-2xl border p-0 shadow-xl"
+        variant === "sheet"
+          ? "border-border bg-background text-foreground backdrop:bg-ink/50 fixed inset-x-0 top-auto bottom-0 m-0 max-h-[calc(100dvh-1rem)] w-full max-w-none overflow-y-auto rounded-t-2xl border p-0 shadow-xl sm:inset-0 sm:m-auto sm:h-fit sm:max-h-[calc(100dvh-2rem)] sm:w-[min(100%-2rem,36rem)] sm:rounded-2xl"
+          : "border-border bg-background text-foreground backdrop:bg-ink/50 m-auto w-[min(100%-2rem,36rem)] rounded-2xl border p-0 shadow-xl"
       }
     >
-      <div
-        className={
-          variant === "drawer"
-            ? "p-3"
-            : variant === "sheet"
-              ? "p-4 sm:p-6"
-              : "p-6"
-        }
-      >
+      <div className={variant === "sheet" ? "p-4 sm:p-6" : "p-6"}>
         <div className="flex items-center justify-between gap-3">
           <h2 id={titleId} className="font-display text-xl tracking-wide">
             {title}
@@ -139,9 +129,7 @@ export default function Dialog({
           <IconButton
             data-dialog-close
             disabled={!dismissible}
-            aria-label={
-              variant === "drawer" ? "Close navigation" : `Close ${title}`
-            }
+            aria-label={`Close ${title}`}
             onClick={() => {
               if (dismissible) {
                 onClose();

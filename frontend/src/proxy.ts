@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { API_BASE_URL, COOKIE_SECURE } from "@/config/env";
-import { isProtectedRoute as routeIsProtected } from "@/config/route-policies";
+import { isProtectedRoute as routeIsProtected } from "@/lib/navigation";
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,

@@ -1,101 +1,133 @@
-import {
-  canVisitRoute,
-  ROUTE_POLICIES,
-  type RoutePolicy,
-} from "@/config/route-policies";
 import type { PermissionName } from "@/lib/permissions";
 
-export interface NavigationItem {
-  label: string;
+export interface NavPage {
   href: string;
-  requiredPermissions: readonly PermissionName[];
+  label: string;
+  /** Omitted = any logged-in user may visit; otherwise any one permission suffices. */
+  requiredAny?: readonly PermissionName[];
 }
 
-export interface NavigationApp {
+export interface NavApp {
   key: string;
   label: string;
-  items: readonly NavigationItem[];
+  pages: readonly NavPage[];
 }
 
-export interface NavigationGroup {
+export interface NavGroup {
   label: string;
-  items: readonly NavigationItem[];
-  apps: readonly NavigationApp[];
+  pages?: readonly NavPage[];
+  apps?: readonly NavApp[];
 }
 
-const NAVIGATION_GROUP_PRESENTATION: readonly {
-  group: NonNullable<RoutePolicy["navigation"]>["group"];
-  label: string;
-}[] = [
-  { group: "overview", label: "Overview" },
-  { group: "fleet", label: "Fleet" },
-  { group: "operations", label: "Operations" },
-  { group: "observability", label: "Observability" },
-  { group: "applications", label: "Applications" },
-  { group: "administration", label: "Administration" },
+/**
+ * Exact-match (prefix-match, see lib/navigation.ts) routes that don't
+ * require a session. Everything else defaults to protected, fail-closed.
+ */
+export const PUBLIC_ROUTES: readonly string[] = [
+  "/",
+  "/login",
+  "/auth/invalid-session",
 ];
 
-function toItem(policy: RoutePolicy): NavigationItem {
-  return {
-    label: policy.navigation!.label,
-    href: policy.href,
-    requiredPermissions: policy.requiredAny ?? [],
-  };
-}
-
-export const NAVIGATION_GROUPS: readonly NavigationGroup[] =
-  NAVIGATION_GROUP_PRESENTATION.flatMap(({ group, label }) => {
-    const policies = ROUTE_POLICIES.filter(
-      (policy) => policy.navigation?.group === group,
-    );
-    if (policies.length === 0) {
-      return [];
-    }
-
-    const items = policies
-      .filter((policy) => !policy.navigation!.app)
-      .map(toItem);
-
-    const apps: NavigationApp[] = [];
-    const appIndexByKey = new Map<string, number>();
-    for (const policy of policies) {
-      const app = policy.navigation!.app;
-      if (!app) continue;
-
-      const item = toItem(policy);
-      const existingIndex = appIndexByKey.get(app.key);
-      if (existingIndex === undefined) {
-        appIndexByKey.set(app.key, apps.length);
-        apps.push({ key: app.key, label: app.label, items: [item] });
-      } else {
-        apps[existingIndex] = {
-          ...apps[existingIndex],
-          items: [...apps[existingIndex].items, item],
-        };
-      }
-    }
-
-    return [{ label, items, apps }];
-  });
-
-export function visibleNavigation(
-  permissions: ReadonlySet<PermissionName>,
-): NavigationGroup[] {
-  return NAVIGATION_GROUPS.flatMap((group) => {
-    const items = group.items.filter((item) =>
-      canVisitRoute(item.href, permissions),
-    );
-    const apps = group.apps
-      .map((app) => ({
-        ...app,
-        items: app.items.filter((item) =>
-          canVisitRoute(item.href, permissions),
-        ),
-      }))
-      .filter((app) => app.items.length > 0);
-
-    return items.length === 0 && apps.length === 0
-      ? []
-      : [{ ...group, items, apps }];
-  });
-}
+export const NAVIGATION: readonly NavGroup[] = [
+  {
+    label: "Overview",
+    pages: [{ href: "/dashboard", label: "Fleet Overview" }],
+  },
+  {
+    label: "Fleet",
+    pages: [
+      { href: "/nodes", label: "Nodes", requiredAny: ["node:get"] },
+      {
+        href: "/node-classes",
+        label: "Node Classes",
+        requiredAny: ["node_class:get"],
+      },
+      { href: "/firmware", label: "Firmware", requiredAny: ["firmware:get"] },
+    ],
+  },
+  {
+    label: "Operations",
+    pages: [
+      { href: "/actions", label: "Actions", requiredAny: ["action:get"] },
+      {
+        href: "/action-history",
+        label: "Action History",
+        requiredAny: ["action_log:get"],
+      },
+      { href: "/ble-direct", label: "BLE Direct" },
+    ],
+  },
+  {
+    label: "Observability",
+    pages: [
+      {
+        href: "/telemetry",
+        label: "Telemetry",
+        requiredAny: ["telemetry_record:get"],
+      },
+      {
+        href: "/node-logs",
+        label: "Node Logs",
+        requiredAny: ["node_log:get"],
+      },
+      {
+        href: "/broadcast-sessions",
+        label: "Broadcast Sessions",
+        requiredAny: ["broadcast_session:get"],
+      },
+    ],
+  },
+  {
+    label: "Applications",
+    apps: [
+      {
+        key: "infrared",
+        label: "Infrared",
+        pages: [
+          {
+            href: "/apps/infrared/settings",
+            label: "Settings",
+            requiredAny: ["infrared_reference:get"],
+          },
+          {
+            href: "/apps/infrared/record",
+            label: "Record",
+            requiredAny: ["infrared_record_session:get"],
+          },
+          {
+            href: "/apps/infrared/command",
+            label: "Command",
+            requiredAny: ["infrared_record_session:get"],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Administration",
+    pages: [
+      { href: "/admin/users", label: "Users", requiredAny: ["user:get"] },
+      {
+        href: "/admin/api-keys",
+        label: "API Keys",
+        requiredAny: ["api_key:get"],
+      },
+      {
+        href: "/admin/access-control",
+        label: "Access Control",
+        requiredAny: ["role:get", "permission:get", "role_permission:get"],
+      },
+      {
+        href: "/admin/payload-schemas",
+        label: "Payload Schemas",
+        requiredAny: ["payload_schema:get"],
+      },
+      {
+        href: "/admin/llm-config",
+        label: "LLM Config",
+        requiredAny: ["llm_config:get"],
+      },
+    ],
+  },
+];

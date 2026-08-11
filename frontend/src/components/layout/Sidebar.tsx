@@ -1,11 +1,10 @@
-import type { NavigationGroup } from "@/config/navigation";
+import type { NavGroup } from "@/config/navigation";
 
 import SidebarGroup from "./SidebarGroup";
 
 interface SidebarProps {
-  navigation: readonly NavigationGroup[];
+  navigation: readonly NavGroup[];
   pathname: string;
-  collapsed: boolean;
   idPrefix: string;
   onNavigate?: () => void;
 }
@@ -13,7 +12,6 @@ interface SidebarProps {
 export default function Sidebar({
   navigation,
   pathname,
-  collapsed,
   idPrefix,
   onNavigate,
 }: SidebarProps) {
@@ -24,7 +22,6 @@ export default function Sidebar({
           key={group.label}
           group={group}
           pathname={pathname}
-          collapsed={collapsed}
           idPrefix={idPrefix}
           onNavigate={onNavigate}
         />

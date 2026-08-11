@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Menu, PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
+import { Menu, UserRound } from "lucide-react";
 
 import hat from "@/assets/hat.svg";
 import ProfileDialog from "@/components/profile/ProfileDialog";
@@ -13,18 +13,16 @@ interface AppBarProps {
   user: UserResponse;
   permissions: readonly string[];
   roleName?: string;
-  sidebarCollapsed?: boolean;
-  onDesktopSidebarToggle?: () => void;
-  onMobileNavigationOpen?: () => void;
+  navigationOpen?: boolean;
+  onNavigationToggle?: () => void;
 }
 
 export default function AppBar({
   user,
   permissions,
   roleName,
-  sidebarCollapsed = false,
-  onDesktopSidebarToggle = () => undefined,
-  onMobileNavigationOpen = () => undefined,
+  navigationOpen = false,
+  onNavigationToggle = () => undefined,
 }: AppBarProps) {
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -33,24 +31,11 @@ export default function AppBar({
       <header className="border-border bg-background/95 sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b px-4 backdrop-blur sm:px-6">
         <div className="flex min-w-0 items-center gap-2">
           <IconButton
-            aria-label="Open navigation"
-            className="lg:hidden"
-            onClick={onMobileNavigationOpen}
+            aria-label={navigationOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={navigationOpen}
+            onClick={onNavigationToggle}
           >
             <Menu aria-hidden="true" className="size-5" />
-          </IconButton>
-          <IconButton
-            aria-label={
-              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
-            className="!hidden lg:!inline-flex"
-            onClick={onDesktopSidebarToggle}
-          >
-            {sidebarCollapsed ? (
-              <PanelLeftOpen aria-hidden="true" className="size-5" />
-            ) : (
-              <PanelLeftClose aria-hidden="true" className="size-5" />
-            )}
           </IconButton>
           <div className="flex min-w-0 items-center gap-2">
             <Image

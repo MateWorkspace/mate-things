@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
-import { visibleNavigation } from "@/config/navigation";
-import Dialog from "@/components/ui/dialog";
-import { setSidebarCollapsedAction } from "@/lib/actions/session-actions";
+import { visibleNavigation } from "@/lib/navigation";
 import type { UserResponse } from "@/lib/api/users";
 
 import AppBar from "./AppBar";
@@ -16,7 +14,6 @@ interface AppShellProps {
   permissions: readonly string[];
   roleName?: string;
   children: ReactNode;
-  initialSidebarCollapsed?: boolean;
 }
 
 export default function AppShell({
@@ -24,32 +21,15 @@ export default function AppShell({
   permissions,
   roleName,
   children,
-  initialSidebarCollapsed = false,
 }: AppShellProps) {
   const pathname = usePathname();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    initialSidebarCollapsed,
-  );
-  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
-  const sidebarPreferenceWrite = useRef(Promise.resolve());
+  const [navigationOpen, setNavigationOpen] = useState(true);
   const mainContentRef = useRef<HTMLDivElement>(null);
   const navigation = visibleNavigation(new Set(permissions));
 
   useEffect(() => {
-    setMobileNavigationOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
     mainContentRef.current?.scrollTo(0, 0);
   }, [pathname]);
-
-  const toggleDesktopSidebar = () => {
-    const nextCollapsed = !sidebarCollapsed;
-    setSidebarCollapsed(nextCollapsed);
-    sidebarPreferenceWrite.current = sidebarPreferenceWrite.current
-      .catch(() => undefined)
-      .then(() => setSidebarCollapsedAction(nextCollapsed));
-  };
 
   return (
     <div className="bg-background flex h-screen flex-col overflow-x-clip">
@@ -63,22 +43,22 @@ export default function AppShell({
         user={user}
         permissions={permissions}
         roleName={roleName}
-        sidebarCollapsed={sidebarCollapsed}
-        onDesktopSidebarToggle={toggleDesktopSidebar}
-        onMobileNavigationOpen={() => setMobileNavigationOpen(true)}
+        navigationOpen={navigationOpen}
+        onNavigationToggle={() => setNavigationOpen((open) => !open)}
       />
       <div className="flex min-h-0 flex-1">
         <aside
-          className={`border-border bg-surface/30 hidden shrink-0 overflow-y-auto border-r transition-[width] lg:block ${
-            sidebarCollapsed ? "w-20" : "w-64"
+          className={`border-border bg-surface/30 shrink-0 overflow-hidden border-r transition-[width] duration-200 ${
+            navigationOpen ? "w-64" : "w-0 border-r-0"
           }`}
         >
-          <Sidebar
-            navigation={navigation}
-            pathname={pathname}
-            collapsed={sidebarCollapsed}
-            idPrefix="desktop"
-          />
+          <div className="h-full w-64 overflow-y-auto">
+            <Sidebar
+              navigation={navigation}
+              pathname={pathname}
+              idPrefix="nav"
+            />
+          </div>
         </aside>
         <div
           ref={mainContentRef}
@@ -89,20 +69,6 @@ export default function AppShell({
           {children}
         </div>
       </div>
-      <Dialog
-        open={mobileNavigationOpen}
-        onClose={() => setMobileNavigationOpen(false)}
-        title="Navigation"
-        variant="drawer"
-      >
-        <Sidebar
-          navigation={navigation}
-          pathname={pathname}
-          collapsed={false}
-          idPrefix="mobile"
-          onNavigate={() => setMobileNavigationOpen(false)}
-        />
-      </Dialog>
     </div>
   );
 }

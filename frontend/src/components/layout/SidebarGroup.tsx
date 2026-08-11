@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { NavigationGroup } from "@/config/navigation";
+import type { NavGroup } from "@/config/navigation";
 
 import { isCurrentPath } from "./is-current-path";
 import SidebarApp from "./SidebarApp";
@@ -41,9 +41,8 @@ const NAVIGATION_ICONS: Readonly<Record<string, LucideIcon>> = {
 };
 
 interface SidebarGroupProps {
-  group: NavigationGroup;
+  group: NavGroup;
   pathname: string;
-  collapsed: boolean;
   idPrefix: string;
   onNavigate?: () => void;
 }
@@ -51,7 +50,6 @@ interface SidebarGroupProps {
 export default function SidebarGroup({
   group,
   pathname,
-  collapsed,
   idPrefix,
   onNavigate,
 }: SidebarGroupProps) {
@@ -63,15 +61,13 @@ export default function SidebarGroup({
     <section aria-labelledby={headingId}>
       <h2
         id={headingId}
-        className={`text-muted-foreground px-3 text-xs font-semibold tracking-wider uppercase ${
-          collapsed ? "sr-only" : ""
-        }`}
+        className="text-muted-foreground px-3 text-xs font-semibold tracking-wider uppercase"
       >
         {group.label}
       </h2>
-      {group.items.length > 0 ? (
+      {group.pages && group.pages.length > 0 ? (
         <ul className="mt-2 space-y-1">
-          {group.items.map((item) => {
+          {group.pages.map((item) => {
             const Icon = NAVIGATION_ICONS[item.href] ?? Radio;
             const current = isCurrentPath(pathname, item.href);
 
@@ -80,32 +76,28 @@ export default function SidebarGroup({
                 <Link
                   href={item.href}
                   aria-current={current ? "page" : undefined}
-                  title={collapsed ? item.label : undefined}
                   onClick={onNavigate}
-                  className={`focus-visible:ring-focus flex min-h-11 items-center rounded-xl px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none ${
+                  className={`focus-visible:ring-focus flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none ${
                     current
                       ? "bg-highlight/55 text-primary"
                       : "text-foreground/75 hover:bg-muted hover:text-foreground"
-                  } ${collapsed ? "justify-center" : "gap-3"}`}
+                  }`}
                 >
                   <Icon aria-hidden="true" className="size-5 shrink-0" />
-                  <span className={collapsed ? "sr-only" : ""}>
-                    {item.label}
-                  </span>
+                  <span>{item.label}</span>
                 </Link>
               </li>
             );
           })}
         </ul>
       ) : null}
-      {group.apps.length > 0 ? (
+      {group.apps && group.apps.length > 0 ? (
         <ul className="mt-1 space-y-1">
           {group.apps.map((app) => (
             <li key={app.key}>
               <SidebarApp
                 app={app}
                 pathname={pathname}
-                collapsed={collapsed}
                 idPrefix={idPrefix}
                 onNavigate={onNavigate}
               />

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronRight, Radio, Rss, type LucideIcon } from "lucide-react";
 
-import type { NavigationApp } from "@/config/navigation";
+import type { NavApp } from "@/config/navigation";
 
 import { isCurrentPath } from "./is-current-path";
 
@@ -13,9 +13,8 @@ const APP_ICONS: Readonly<Record<string, LucideIcon>> = {
 };
 
 interface SidebarAppProps {
-  app: NavigationApp;
+  app: NavApp;
   pathname: string;
-  collapsed: boolean;
   idPrefix: string;
   onNavigate?: () => void;
 }
@@ -23,35 +22,15 @@ interface SidebarAppProps {
 export default function SidebarApp({
   app,
   pathname,
-  collapsed,
   idPrefix,
   onNavigate,
 }: SidebarAppProps) {
-  const hasActiveChild = app.items.some((item) =>
+  const hasActiveChild = app.pages.some((item) =>
     isCurrentPath(pathname, item.href),
   );
   const [expanded, setExpanded] = useState(hasActiveChild);
   const Icon = APP_ICONS[app.key] ?? Radio;
-  const firstItem = app.items[0];
   const panelId = `${idPrefix}-app-${app.key}`;
-
-  if (collapsed) {
-    return firstItem ? (
-      <Link
-        href={firstItem.href}
-        title={app.label}
-        onClick={onNavigate}
-        className={`focus-visible:ring-focus flex min-h-11 items-center justify-center rounded-xl px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none ${
-          hasActiveChild
-            ? "bg-highlight/55 text-primary"
-            : "text-foreground/75 hover:bg-muted hover:text-foreground"
-        }`}
-      >
-        <Icon aria-hidden="true" className="size-5 shrink-0" />
-        <span className="sr-only">{app.label}</span>
-      </Link>
-    ) : null;
-  }
 
   return (
     <div>
@@ -74,8 +53,11 @@ export default function SidebarApp({
         />
       </button>
       {expanded ? (
-        <ul id={panelId} className="mt-1 space-y-1 pl-8">
-          {app.items.map((item) => {
+        <ul
+          id={panelId}
+          className="border-border mt-1 ml-[22px] space-y-1 border-l pl-4"
+        >
+          {app.pages.map((item) => {
             const current = isCurrentPath(pathname, item.href);
 
             return (
