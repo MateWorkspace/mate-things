@@ -21,7 +21,7 @@ export default async function LlmConfigPage() {
     <main className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader
         title="LLM Config"
-        description="The active provider, model, and credential used for AI-generated content across the app (e.g. the Infrared app's device-teaching pipeline)."
+        description="The active provider, model, and credential used for AI-generated content across the app."
       />
 
       <Card className="p-5">
