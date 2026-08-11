@@ -8,9 +8,6 @@ import (
 )
 
 type FirmwareConfigParameter interface {
-	// ReplaceForFirmwareId soft-deletes every existing row for firmwareId
-	// not present in params, then upserts each entry in params
-	// (ON CONFLICT (firmware_id, key) DO UPDATE), all in one transaction.
 	ReplaceForFirmwareId(
 		ctx context.Context,
 		firmwareId uuid.UUID,
