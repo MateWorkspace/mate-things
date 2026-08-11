@@ -1499,6 +1499,86 @@ func TestRunAnalysisAndGenerationSkipsChecksumClarificationWhenAlreadyUsed(t *te
 	}
 }
 
+// A recorded case that can't be attributed to exactly one changed state
+// (here: it carries fewer states than the baseline, so no single differing
+// state is identifiable) must be skipped, not fail the whole session — one
+// unusable case is not a reason to throw away every other case's analysis.
+func TestRunAnalysisAndGenerationSkipsNonOfatCaseInsteadOfFailing(t *testing.T) {
+	sessionId := uuid.New()
+	powerId, modeId := uuid.New(), uuid.New()
+	baselineCaseId, oddCaseId := uuid.New(), uuid.New()
+
+	marshalRaw := func(durations []int32) []byte {
+		b, err := json.Marshal(durations)
+		if err != nil {
+			t.Fatalf("failed to marshal fixture raw data: %v", err)
+		}
+		return b
+	}
+	baselineRaw := marshalRaw([]int32{9000, 4500, 560, 560, 560, 560})
+	oddRaw := marshalRaw([]int32{9000, 4500, 560, 1690, 560, 560})
+
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{
+		{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum},
+		{Id: modeId, Name: "MODE", Type: domainmodels.InfraredStateTypeEnum},
+	}}
+	definitionRepo := &fakeDefinitionRepository{listByDeviceIdResult: []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"OFF", "ON"}},
+		{InfraredStateId: modeId, Options: []string{"COOL", "HEAT"}},
+	}}
+	caseRepo := &fakeCaseRepository{
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+			{Id: oddCaseId, InfraredRecordSessionId: sessionId, Step: 2, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		},
+		listRawByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordRaw{
+			baselineCaseId: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: baselineRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: baselineRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+			oddCaseId: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: oddCaseId, RawData: oddRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: oddCaseId, RawData: oddRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+		},
+		listStatesByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordState{
+			baselineCaseId: {
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "OFF"},
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: modeId, StateValue: "COOL"},
+			},
+			// Only one state recorded, and it matches baseline: neither the
+			// baseline case nor an attributable OFAT delta.
+			oddCaseId: {
+				{InfraredStateDeviceRecordCaseId: oddCaseId, InfraredStateId: powerId, StateValue: "OFF"},
+			},
+		},
+	}
+	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: uuid.New(), SummaryReadme: "s", DetailReadme: "d"}}
+	encoderRunner := &fakeEncoderRunner{raw: []int32{9000, 4500, 560, 560, 560, 560}}
+	llmFactory := &fakeLlmClientFactory{responseTexts: []string{
+		`{"encoder_source": "function encode(state) { return []; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
+		`[{"description": "d1", "states": {"POWER": "OFF"}}]`,
+	}}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
+		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	).(*usecase)
+
+	impl.runAnalysisAndGeneration(sessionId)
+
+	if !coderRepo.createCalled {
+		t.Fatal("coder repository Create() was never called, want the unattributable case skipped and the rest of the pipeline to proceed")
+	}
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateFailed {
+			t.Fatalf("status updates = %v, want NO FAILED (one unattributable case must not kill the session)", sessionRepo.StatusUpdates())
+		}
+	}
+}
+
 func TestGetCoderBySessionIdDelegatesToRepository(t *testing.T) {
 	sessionId := uuid.New()
 	want := &domainmodels.InfraredStateCoder{Id: uuid.New(), InfraredRecordSessionId: sessionId}

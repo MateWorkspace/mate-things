@@ -1030,17 +1030,30 @@ func (u *usecase) buildAnalysisPayload(
 			continue
 		}
 
-		caseBits[c.Id] = frameBitsPerRaw[0]
 		// OFAT construction (Plan B1, Task 8): a non-baseline case differs
 		// from baseline in exactly one state — find it by comparing against
-		// the baseline's own recorded state values.
+		// the baseline's own recorded state values. A case that differs in
+		// zero or several states can't be attributed to one state, so it is
+		// skipped (not fatal — the rest of the session's cases still carry
+		// usable attribution data).
+		var targetState uuid.UUID
+		var targetValue string
+		differing := 0
 		for _, s := range caseStates {
 			if baselineValue, ok := baselineState[s.InfraredStateId.String()]; ok && baselineValue != s.StateValue {
-				caseTargetState[c.Id] = s.InfraredStateId
-				caseTargetValue[c.Id] = s.StateValue
-				break
+				differing++
+				targetState = s.InfraredStateId
+				targetValue = s.StateValue
 			}
 		}
+		if differing != 1 {
+			u.logger.Warn(ctx, tag, "skipping case that does not differ from baseline in exactly one state", domainmodels.LoggerMeta{"case_id": c.Id, "differing_states": differing})
+			continue
+		}
+
+		caseBits[c.Id] = frameBitsPerRaw[0]
+		caseTargetState[c.Id] = targetState
+		caseTargetValue[c.Id] = targetValue
 	}
 
 	if baselineBits == nil {
