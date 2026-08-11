@@ -23,7 +23,7 @@ export default async function InfraredSettingsPage() {
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader
         title="Infrared Settings"
-        description="Device types are the appliance categories the Infrared app can learn. Each type exposes the states (power, mode, temperature...) that its devices are taught to control."
+        description="Device types are the appliance categories."
         actions={canAdd ? <DeviceTypeForm /> : undefined}
       />
       <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">

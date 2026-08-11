@@ -13,7 +13,7 @@ export default async function InfraredRecordPage() {
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader
         title="Record"
-        description="Teach a node to control a physical device by capturing its remote's infrared signals."
+        description="Identify the device control by capturing its remote's infrared signals."
       />
       <EmptyState
         title="Coming soon"

@@ -54,7 +54,7 @@ export default async function DeviceTypeDetailPage({
     <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader
         title={deviceType.name}
-        description="States are the controllable dimensions devices of this type expose, e.g. POWER, MODE, TEMPERATURE, etc. Each device is taught concrete option/range values per state when it's recorded."
+        description="States are the controllable dimensions devices of this type expose, e.g. POWER, MODE, TEMPERATURE, etc."
         actions={
           canAdd ? <StateForm deviceTypeId={deviceType.id} /> : undefined
         }
