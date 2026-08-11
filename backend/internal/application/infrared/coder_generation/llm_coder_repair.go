@@ -58,10 +58,9 @@ func RepairCoder(
 }
 
 // buildRepairFeedback turns a ValidationResult into the concrete,
-// per-case feedback text the repair prompt sends back to the LLM — the
-// same shape (RunError verbatim, or up to 8 example
-// "bit N: expected X got Y" mismatches per case) validated empirically
-// against real models earlier in this project's development.
+// per-case feedback text the repair prompt sends back to the LLM. For each
+// case, it reports: RunError verbatim if the encoder threw, "correct" if
+// all owned bits matched, or an aggregate count of mismatched owned bits.
 func buildRepairFeedback(validation ValidationResult) string {
 	var b strings.Builder
 	b.WriteString("Your previous encoder was tested against the real recorded signal for several states of this device and had problems. Details per test case:\n\n")
