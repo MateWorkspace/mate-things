@@ -98,6 +98,29 @@ checksum — it contributes to the denominator as a full miss).
 real recorded bits, not estimates, so any mismatch is a genuine defect, not
 a threshold call.
 
+## 2a. Timeout budget
+
+`runAnalysisAndGeneration` currently runs its whole body — including the
+single `WriteCoder` call — under `analysisTimeout = 3 * time.Minute`. This
+session's testing saw individual generation calls take anywhere from ~20s
+to over 70s. With up to 4 sequential generation calls in the repair loop
+(1 initial + 3 repair) plus a possible checksum-clarification call, the old
+3-minute ceiling is no longer enough — hitting it mid-loop today surfaces
+as a raw `context deadline exceeded`, not a clean escalation.
+
+Two changes:
+
+- Bump `analysisTimeout` from `3 * time.Minute` to `10 * time.Minute` — a
+  generous ceiling for the whole sequence (bit analysis is fast; the
+  budget is almost entirely LLM call time).
+- Add a new `coderGenerationCallTimeout = 2 * time.Minute`, applied via
+  `context.WithTimeout(ctx, coderGenerationCallTimeout)` around each
+  individual `WriteCoder`/`RepairCoder` call. This bounds any single call
+  so one hung request can't consume the entire 10-minute budget by itself
+  — a timed-out call is treated the same as any other error from that
+  round (contributes nothing, `best`/`bestResult` unchanged, loop
+  continues to the next round or exhausts normally).
+
 ## 3. Repair loop
 
 In `runAnalysisAndGeneration`, after the (now baseline-aware) `WriteCoder`
@@ -225,6 +248,23 @@ not derived from data — flagged as a tunable starting point.
   `MarkChecksumClarificationUsedById(ctx, id) error` method.
 - New migration: `infrared_record_session` gains nullable
   `checksum_clarification_used_at timestamptz`.
+
+## Safety properties
+
+- **Bounded iteration**: repair is capped at 3 rounds per pass; the
+  checksum-clarification detour is capped at once per session via
+  `ChecksumClarificationUsedAt`. No infinite loop is possible.
+- **Bounded cost**: at most ~4 generation calls per pass (1 initial + 3
+  repair), each individually bounded by `coderGenerationCallTimeout`.
+- **No new concurrency risk**: the loop is sequential within the existing
+  single background goroutine — same execution model as today, no shared
+  mutable state introduced.
+- **The existing hardware-verification gate is unchanged**: a coder
+  persisted via section 5's degraded path stays `UNVERIFIED`, exactly like
+  any newly generated coder today. It only ever reaches `ACTIVE` (eligible
+  for real transmission) after the existing test-case stage — real
+  hardware transmission, human-confirmed pass/fail — succeeds. Nothing in
+  this design lets a coder skip that gate.
 
 ## Out of scope
 
