@@ -38,14 +38,14 @@ export default function RecordTestCaseControls({
       <form action={resultAction}>
         <input type="hidden" name="test_case_id" value={testCaseId} />
         <input type="hidden" name="passed" value="true" />
-        <Button type="submit" disabled={resultPending}>
+        <Button type="submit" variant="success" disabled={resultPending}>
           Passed
         </Button>
       </form>
       <form action={resultAction}>
         <input type="hidden" name="test_case_id" value={testCaseId} />
         <input type="hidden" name="passed" value="false" />
-        <Button type="submit" variant="secondary" disabled={resultPending}>
+        <Button type="submit" variant="critical" disabled={resultPending}>
           Failed
         </Button>
       </form>
