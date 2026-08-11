@@ -34,8 +34,8 @@ func NewPostgresImpl(
 func scanInfraredRecordSession(row pgx.Row, item *domainmodels.InfraredRecordSession) error {
 	return row.Scan(
 		&item.Id, &item.NodeId, &item.InfraredDeviceId, &item.RecordingState,
-		&item.CurrentRecordCaseId, &item.IsCompleted, &item.CreatedAt,
-		&item.CreatedBy, &item.DeletedAt, &item.DeletedBy,
+		&item.CurrentRecordCaseId, &item.IsCompleted, &item.ChecksumClarificationUsedAt,
+		&item.CreatedAt, &item.CreatedBy, &item.DeletedAt, &item.DeletedBy,
 	)
 }
 
@@ -109,6 +109,23 @@ func (p *postgresImpl) UpdateCurrentRecordCaseIdById(ctx context.Context, id uui
 	commandTag, err := p.Dt.Exec(ctx, query, args...)
 	if err != nil {
 		return infrastructurerepositoryshared.MapPgxError("failed to update infrared_record_session current record case id", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return infrastructurerepositoryshared.NotFound("infrared_record_session not found", nil)
+	}
+
+	return nil
+}
+
+func (p *postgresImpl) MarkChecksumClarificationUsedById(ctx context.Context, id uuid.UUID) error {
+	query, args, err := p.queryMarkChecksumClarificationUsedById(id)
+	if err != nil {
+		return infrastructurerepositoryshared.QueryBuildError("failed to build mark checksum clarification used query", err)
+	}
+
+	commandTag, err := p.Dt.Exec(ctx, query, args...)
+	if err != nil {
+		return infrastructurerepositoryshared.MapPgxError("failed to mark checksum clarification used", err)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return infrastructurerepositoryshared.NotFound("infrared_record_session not found", nil)

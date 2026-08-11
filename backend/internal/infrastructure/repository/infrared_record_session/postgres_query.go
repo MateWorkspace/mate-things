@@ -13,6 +13,7 @@ var infraredRecordSessionColumns = []string{
 	"recording_state",
 	"current_record_case_id",
 	"is_completed",
+	"checksum_clarification_used_at",
 	"created_at",
 	"created_by",
 	"deleted_at",
@@ -53,6 +54,14 @@ func (p *postgresImpl) queryUpdateRecordingStateById(id uuid.UUID, recordingStat
 		Where("deleted_at IS NULL").
 		Set("recording_state", recordingState).
 		Set("is_completed", isCompleted).
+		ToSql()
+}
+
+func (p *postgresImpl) queryMarkChecksumClarificationUsedById(id uuid.UUID) (query string, args []any, err error) {
+	return p.SqrD.Update("infrared_record_session").
+		Where(squirrel.Eq{"id": id}).
+		Where("deleted_at IS NULL").
+		Set("checksum_clarification_used_at", squirrel.Expr("CURRENT_TIMESTAMP")).
 		ToSql()
 }
 

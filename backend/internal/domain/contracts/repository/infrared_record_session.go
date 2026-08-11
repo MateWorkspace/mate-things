@@ -16,5 +16,6 @@ type InfraredRecordSession interface {
 	ReadActiveByNodeId(ctx context.Context, nodeId uuid.UUID) (*domainmodels.InfraredRecordSession, error)
 	UpdateRecordingStateById(ctx context.Context, id uuid.UUID, recordingState string, isCompleted bool) error
 	UpdateCurrentRecordCaseIdById(ctx context.Context, id uuid.UUID, currentRecordCaseId *uuid.UUID) error
+	MarkChecksumClarificationUsedById(ctx context.Context, id uuid.UUID) error
 	DeleteById(ctx context.Context, id uuid.UUID, deletedBy *uuid.UUID) error
 }

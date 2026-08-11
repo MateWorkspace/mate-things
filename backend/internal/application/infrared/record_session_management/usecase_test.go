@@ -52,6 +52,9 @@ func (f *fakeSessionRepository) DeleteById(_ context.Context, id uuid.UUID, dele
 	f.deletedId, f.deletedBy = id, deletedBy
 	return f.deleteErr
 }
+func (f *fakeSessionRepository) MarkChecksumClarificationUsedById(_ context.Context, _ uuid.UUID) error {
+	return nil
+}
 
 // StatusUpdates returns a snapshot, safe to read while the background
 // goroutine may still be appending to statusUpdates concurrently.

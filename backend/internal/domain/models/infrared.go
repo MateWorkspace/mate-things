@@ -43,16 +43,17 @@ const (
 )
 
 type InfraredRecordSession struct {
-	Id                  uuid.UUID
-	NodeId              uuid.UUID
-	InfraredDeviceId    uuid.UUID
-	RecordingState      string
-	CurrentRecordCaseId *uuid.UUID
-	IsCompleted         bool
-	CreatedAt           time.Time
-	DeletedAt           *time.Time
-	CreatedBy           *uuid.UUID
-	DeletedBy           *uuid.UUID
+	Id                          uuid.UUID
+	NodeId                      uuid.UUID
+	InfraredDeviceId            uuid.UUID
+	RecordingState              string
+	CurrentRecordCaseId         *uuid.UUID
+	IsCompleted                 bool
+	ChecksumClarificationUsedAt *time.Time
+	CreatedAt                   time.Time
+	DeletedAt                   *time.Time
+	CreatedBy                   *uuid.UUID
+	DeletedBy                   *uuid.UUID
 }
 
 type InfraredStateType string
