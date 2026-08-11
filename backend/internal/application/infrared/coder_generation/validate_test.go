@@ -37,6 +37,26 @@ func TestValidatePassesWhenEncoderMatchesEveryKnownCase(t *testing.T) {
 	}
 }
 
+func TestValidateSegmentsEncoderOutputBeforeDemodulating(t *testing.T) {
+	// A correct encoder whose raw output is a frame + a >5000us inter-frame
+	// gap + a repeat frame. Decoding the whole raw array would drag the gap
+	// (20000) into DemodulateBits' own-array min/max midpoint and misclassify
+	// the real 1690 space as a 0; only frames[0] must be scored.
+	engine := &fakeJSEngine{raw: []int32{9000, 4500, 560, 560, 560, 1690, 560, 20000, 9000, 4500, 560, 560, 560, 1690}}
+	knownCases := []KnownCase{
+		{Label: "baseline", State: map[string]string{}, Bits: []int{0, 1}},
+	}
+
+	result := Validate(engine, "function encode(state){}", nil, knownCases, time.Second)
+
+	if !result.Passed() {
+		t.Fatalf("Validate() Passed() = false, want true (only frames[0] must be scored); result = %+v", result)
+	}
+	if result.OwnedCorrect != 2 || result.OwnedTotal != 2 {
+		t.Fatalf("owned = %d/%d, want 2/2", result.OwnedCorrect, result.OwnedTotal)
+	}
+}
+
 func TestValidateFailsOnBitMismatch(t *testing.T) {
 	// Two bits: real is [0,1] (spaces 560 then 1690 -> midpoint 1125 ->
 	// bit0=560<1125=>0, bit1=1690>1125=>1); encoder always returns a raw

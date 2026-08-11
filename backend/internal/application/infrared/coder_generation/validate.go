@@ -76,8 +76,9 @@ func (r ValidationResult) OwnedAccuracy() float64 {
 }
 
 // Validate runs encoderSource against every knownCases entry via the real
-// JSEngine, decodes its output with the same DemodulateBits production
-// uses on real captures, and compares it bit-for-bit against that case's
+// JSEngine, decodes its output through the same SegmentFrames -> frames[0]
+// -> DemodulateBits pipeline the recorded bits went through, and compares
+// it bit-for-bit against that case's
 // real recorded bits — owned-bit positions scored separately from
 // checksumBits positions.
 func Validate(
@@ -103,7 +104,18 @@ func Validate(
 			continue
 		}
 
-		decoded := applicationinfraredanalysis.DemodulateBits(raw)
+		// Same segmentation the recorded bits went through
+		// (buildAnalysisPayload): decoding the whole raw output would let a
+		// trailing inter-frame gap or a repeat frame poison DemodulateBits'
+		// own-array midpoint classification.
+		frames := applicationinfraredanalysis.SegmentFrames(raw)
+		if len(frames) == 0 {
+			cv.RunError = "encoder produced no frame"
+			result.Cases = append(result.Cases, cv)
+			continue
+		}
+
+		decoded := applicationinfraredanalysis.DemodulateBits(frames[0])
 		for i, want := range kc.Bits {
 			got := -1
 			if i < len(decoded) {
