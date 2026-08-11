@@ -56,7 +56,7 @@ export default function RecordCaseList({
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="font-semibold">Step {c.step}</p>
+              <p className="text-xl font-semibold">Step {c.step}</p>
               <p className="text-muted-foreground text-xs">
                 {summarizeRaw(c.raw.length)}
               </p>

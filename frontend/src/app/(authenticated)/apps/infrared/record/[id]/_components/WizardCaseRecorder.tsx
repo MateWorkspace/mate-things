@@ -38,7 +38,9 @@ export default function WizardCaseRecorder({
               <p className="text-foreground/70 text-xs font-semibold tracking-wide uppercase">
                 Press the remote now
               </p>
-              <p className="mt-1 font-semibold">Step {activeCase.step}</p>
+              <p className="mt-1 text-xl font-semibold">
+                Step {activeCase.step}
+              </p>
               <CaseStateTable
                 states={activeCase.states}
                 previousCase={findPreviousCase(cases, activeCase.step)}
