@@ -54,6 +54,6 @@ func (z *zerologImpl) Debug(ctx context.Context, tag string, message string, met
 func (z *zerologImpl) buildEvent(ctx context.Context, event *zerolog.Event, tag string, meta domainmodels.LoggerMeta) *zerolog.Event {
 	event = event.Ctx(ctx).
 		Str("tag", tag).
-		Any("meta", meta)
+		Any("meta", normalizeMeta(meta))
 	return event
 }

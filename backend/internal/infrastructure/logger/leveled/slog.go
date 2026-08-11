@@ -58,7 +58,7 @@ func (s *slogImpl) Debug(ctx context.Context, tag string, message string, meta d
 func (s *slogImpl) buildAttrs(tag string, meta domainmodels.LoggerMeta) []slog.Attr {
 	attrs := []slog.Attr{
 		slog.String("tag", tag),
-		slog.Any("meta", meta),
+		slog.Any("meta", normalizeMeta(meta)),
 	}
 	return attrs
 }
