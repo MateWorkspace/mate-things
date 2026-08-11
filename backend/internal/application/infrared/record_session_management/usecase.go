@@ -247,13 +247,33 @@ func (u *usecase) ListCases(ctx context.Context, sessionId uuid.UUID) ([]domainu
 func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
 	const tag = "infrared/record_session_management/AcceptRaw"
 
-	if err := u.recordCase.UpdateRawStatusById(ctx, rawId, domainmodels.InfraredRecordRawStatusAccepted, nil); err != nil {
-		return err
-	}
-
 	raw, err := u.recordCase.ReadRawById(ctx, rawId)
 	if err != nil {
-		u.logger.Error(ctx, tag, "failed to look up accepted raw", domainmodels.LoggerMeta{"err": err, "raw_id": rawId})
+		u.logger.Error(ctx, tag, "failed to look up raw before accept", domainmodels.LoggerMeta{"err": err, "raw_id": rawId})
+		return err
+	}
+	if raw == nil {
+		return domainmodels.NewError("raw capture not found", domainmodels.ErrTypeNotFound, nil)
+	}
+
+	// InfraredStateDeviceRecordRaw has no session id of its own (only a case
+	// id) — look the case up to get the session id from a field that's
+	// genuinely backed by a column, rather than adding a synthetic
+	// join-only field to the raw model.
+	recordCase, err := u.recordCase.ReadById(ctx, raw.InfraredStateDeviceRecordCaseId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to look up case before accept", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
+		return err
+	}
+	if recordCase == nil {
+		return domainmodels.NewError("record case not found", domainmodels.ErrTypeNotFound, nil)
+	}
+	if _, err := u.requireMutableSession(ctx, recordCase.InfraredRecordSessionId); err != nil {
+		return err
+	}
+	sessionId := recordCase.InfraredRecordSessionId
+
+	if err := u.recordCase.UpdateRawStatusById(ctx, rawId, domainmodels.InfraredRecordRawStatusAccepted, nil); err != nil {
 		return err
 	}
 
@@ -270,22 +290,6 @@ func (u *usecase) AcceptRaw(ctx context.Context, rawId uuid.UUID) error {
 		u.logger.Error(ctx, tag, "failed to mark case accepted", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
 		return err
 	}
-
-	// InfraredStateDeviceRecordRaw has no session id of its own (only a case
-	// id) — look the case up to get the session id from a field that's
-	// genuinely backed by a column, rather than adding a synthetic
-	// join-only field to the raw model.
-	acceptedCase, err := u.recordCase.ReadById(ctx, raw.InfraredStateDeviceRecordCaseId)
-	if err != nil {
-		u.logger.Error(ctx, tag, "failed to look up accepted case", domainmodels.LoggerMeta{"err": err, "case_id": raw.InfraredStateDeviceRecordCaseId})
-		return err
-	}
-	if acceptedCase == nil {
-		err := domainmodels.NewError("accepted case not found", domainmodels.ErrTypeNotFound, nil)
-		u.logger.Error(ctx, tag, "accepted case not found", domainmodels.LoggerMeta{"case_id": raw.InfraredStateDeviceRecordCaseId})
-		return err
-	}
-	sessionId := acceptedCase.InfraredRecordSessionId
 
 	cases, err := u.recordCase.ReadListBySessionId(ctx, sessionId)
 	if err != nil {
@@ -1168,6 +1172,18 @@ func (u *usecase) DiscardRaw(ctx context.Context, rawId uuid.UUID, reason string
 func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
 	const tag = "infrared/record_session_management/RetryCase"
 
+	recordCase, err := u.recordCase.ReadById(ctx, caseId)
+	if err != nil {
+		u.logger.Error(ctx, tag, "failed to look up case for retry", domainmodels.LoggerMeta{"err": err, "case_id": caseId})
+		return err
+	}
+	if recordCase == nil {
+		return domainmodels.NewError("record case not found", domainmodels.ErrTypeNotFound, nil)
+	}
+	if _, err := u.requireMutableSession(ctx, recordCase.InfraredRecordSessionId); err != nil {
+		return err
+	}
+
 	raw, err := u.recordCase.ReadListRawByCaseId(ctx, caseId)
 	if err != nil {
 		return err
@@ -1183,12 +1199,6 @@ func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
 	}
 	if err := u.recordCase.UpdateStatusById(ctx, caseId, domainmodels.InfraredRecordCaseStatusActive); err != nil {
 		u.logger.Error(ctx, tag, "failed to activate case for retry", domainmodels.LoggerMeta{"err": err, "case_id": caseId})
-		return err
-	}
-
-	recordCase, err := u.recordCase.ReadById(ctx, caseId)
-	if err != nil {
-		u.logger.Error(ctx, tag, "failed to look up case for retry", domainmodels.LoggerMeta{"err": err, "case_id": caseId})
 		return err
 	}
 	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, recordCase.InfraredRecordSessionId, &caseId); err != nil {

@@ -820,7 +820,7 @@ func TestRetryCaseSetsCurrentCase(t *testing.T) {
 	caseRepo := &fakeCaseRepository{getResult: &domainmodels.InfraredStateDeviceRecordCase{
 		Id: caseId, InfraredRecordSessionId: sessionId,
 	}}
-	sessionRepo := &fakeSessionRepository{}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId}}
 
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
@@ -841,12 +841,38 @@ func TestRetryCaseSetsCurrentCase(t *testing.T) {
 	}
 }
 
+func TestRetryCaseRejectsCompletedSession(t *testing.T) {
+	sessionId := uuid.New()
+	caseId := uuid.New()
+	caseRepo := &fakeCaseRepository{
+		getResult: &domainmodels.InfraredStateDeviceRecordCase{Id: caseId, InfraredRecordSessionId: sessionId},
+	}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, IsCompleted: true}}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	err := usecase.RetryCase(context.Background(), caseId)
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("RetryCase() error = %v, want validation error", err)
+	}
+	if len(caseRepo.statusUpdateIds) != 0 {
+		t.Fatalf("case status updates = %v, want none (session already finished)", caseRepo.statusUpdateIds)
+	}
+	if sessionRepo.CurrentCaseId() != nil {
+		t.Fatalf("session current case id = %v, want nil (session already finished)", sessionRepo.CurrentCaseId())
+	}
+}
+
 func TestAcceptRawAdvancesCursorToNextPendingCase(t *testing.T) {
 	sessionId := uuid.New()
 	firstCaseId, secondCaseId := uuid.New(), uuid.New()
 	rawId := uuid.New()
 
-	sessionRepo := &fakeSessionRepository{}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId}}
 	caseRepo := &fakeCaseRepository{
 		getResult:         &domainmodels.InfraredStateDeviceRecordCase{Id: firstCaseId, InfraredRecordSessionId: sessionId},
 		acceptedRawCounts: map[uuid.UUID]int{firstCaseId: 2},
@@ -886,7 +912,7 @@ func TestAcceptRawTriggersAnalyzingWhenNoPendingCaseRemains(t *testing.T) {
 	onlyCaseId := uuid.New()
 	rawId := uuid.New()
 
-	sessionRepo := &fakeSessionRepository{}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId}}
 	caseRepo := &fakeCaseRepository{
 		getResult:         &domainmodels.InfraredStateDeviceRecordCase{Id: onlyCaseId, InfraredRecordSessionId: sessionId},
 		acceptedRawCounts: map[uuid.UUID]int{onlyCaseId: 2},
@@ -927,7 +953,7 @@ func TestAcceptRawDoesNotAdvanceCursorBeforeSecondRawAccepted(t *testing.T) {
 	caseId := uuid.New()
 	rawId := uuid.New()
 
-	sessionRepo := &fakeSessionRepository{}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId}}
 	caseRepo := &fakeCaseRepository{
 		getResult:         &domainmodels.InfraredStateDeviceRecordCase{Id: caseId, InfraredRecordSessionId: sessionId},
 		acceptedRawCounts: map[uuid.UUID]int{caseId: 1},
@@ -952,6 +978,36 @@ func TestAcceptRawDoesNotAdvanceCursorBeforeSecondRawAccepted(t *testing.T) {
 	}
 	if got := sessionRepo.CurrentCaseId(); got != nil {
 		t.Fatalf("session current case = %v, want nil (no change before the case's second raw is accepted)", got)
+	}
+}
+
+func TestAcceptRawRejectsCompletedSession(t *testing.T) {
+	sessionId := uuid.New()
+	caseId := uuid.New()
+	rawId := uuid.New()
+	caseRepo := &fakeCaseRepository{
+		getResult: &domainmodels.InfraredStateDeviceRecordCase{Id: caseId, InfraredRecordSessionId: sessionId},
+		rawById: map[uuid.UUID]*domainmodels.InfraredStateDeviceRecordRaw{
+			rawId: {Id: rawId, InfraredStateDeviceRecordCaseId: caseId},
+		},
+	}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, IsCompleted: true}}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	err := usecase.AcceptRaw(context.Background(), rawId)
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("AcceptRaw() error = %v, want validation error", err)
+	}
+	if len(caseRepo.statusUpdateIds) != 0 {
+		t.Fatalf("case status updates = %v, want none (session already finished)", caseRepo.statusUpdateIds)
+	}
+	if sessionRepo.CurrentCaseId() != nil {
+		t.Fatalf("session current case id = %v, want nil (session already finished)", sessionRepo.CurrentCaseId())
 	}
 }
 
