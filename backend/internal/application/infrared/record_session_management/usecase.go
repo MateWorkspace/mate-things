@@ -986,11 +986,9 @@ func (u *usecase) buildAnalysisPayload(
 	caseTargetValue := make(map[uuid.UUID]string)
 	var volatileSets []map[int]struct{}
 
-	// First pass: resolve the baseline case's state values before any
-	// attribution runs. Case order is not baseline-first (Step is reassigned
-	// by the LLM's press order), so a single pass would leave baselineState
-	// empty for every case visited before the baseline and silently skip them
-	// as "not differing in exactly one state".
+	// Resolve the baseline before any attribution: case order is not
+	// baseline-first, so a case visited earlier would see an empty
+	// baselineState and be skipped as "not differing in exactly one state".
 	caseStatesById := make(map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordState, len(cases))
 	baselineFound := false
 	for _, c := range cases {
