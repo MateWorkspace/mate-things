@@ -16,6 +16,7 @@ import { requirePermission } from "@/lib/session";
 import RecordCaseList from "./_components/RecordCaseList";
 import RecordCoderPanel from "./_components/RecordCoderPanel";
 import RecordSessionOverview from "./_components/RecordSessionOverview";
+import RecordSessionWizard from "./_components/RecordSessionWizard";
 import RecordTestCaseList from "./_components/RecordTestCaseList";
 
 export const metadata: Metadata = { title: "Record Session — Mate Things" };
@@ -36,11 +37,36 @@ export default async function RecordSessionDetailPage({
   }
 
   const canReadReferences = permissions.has("infrared_reference:get");
-  const [cases, coder, testCases, device, deviceTypes] = await Promise.all([
+  const [cases, coder, testCases] = await Promise.all([
     listInfraredRecordSessionCases(id),
     getOptionalById(() => getInfraredRecordSessionCoder(id)),
     // 404s with "infrared_state_coder not found" until a coder exists.
     getOptionalById(() => listInfraredRecordSessionTestCases(id)),
+  ]);
+
+  // Terminal sessions (COMPLETED/FAILED) must not expose mutation controls.
+  const canMutate =
+    permissions.has("infrared_record_session:set") && !session.is_completed;
+  const canDelete = permissions.has("infrared_record_session:delete");
+
+  if (!session.is_completed) {
+    return (
+      <main className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+        <PageHeader
+          title="Record Session"
+          description={`Session ${session.id}`}
+        />
+        <RecordSessionWizard
+          session={session}
+          cases={cases}
+          testCases={testCases ?? []}
+          canMutate={canMutate}
+        />
+      </main>
+    );
+  }
+
+  const [device, deviceTypes] = await Promise.all([
     canReadReferences
       ? getInfraredDevice(session.infrared_device_id)
       : Promise.resolve(null),
@@ -51,10 +77,6 @@ export default async function RecordSessionDetailPage({
     ? (deviceTypes.find((dt) => dt.id === device.infrared_device_type_id)
         ?.name ?? "Unknown")
     : null;
-  // Terminal sessions (COMPLETED/FAILED) must not expose mutation controls.
-  const canMutate =
-    permissions.has("infrared_record_session:set") && !session.is_completed;
-  const canDelete = permissions.has("infrared_record_session:delete");
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">

@@ -1,6 +1,7 @@
 package presentationhttpresponse
 
 import (
+	"encoding/json"
 	"time"
 
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
@@ -133,14 +134,31 @@ type InfraredStateDeviceRecordRawResponse struct {
 	Id              string  `json:"id" example:"e1f4b7c0-2d5e-4f8a-9b3c-6e0f2a5d8c01"`
 	Status          string  `json:"status" example:"CAPTURED"`
 	DiscardedReason *string `json:"discarded_reason,omitempty" example:"pressed the wrong button"`
+	PulseCount      int     `json:"pulse_count" example:"48"`
+	DurationUs      int     `json:"duration_us" example:"862000"`
 	PipelineAuditResponse
 }
 
+// InfraredStateDeviceRecordRaw unmarshals RawData (mark/space microsecond
+// durations, JSON-encoded []int32) to summarize a capture without exposing
+// the raw timing array to the client. A malformed payload degrades to 0/0
+// rather than failing the whole response - raw_data is NOT NULL and always
+// written by CaptureIrRaw, so this only matters for hand-corrupted rows.
 func InfraredStateDeviceRecordRaw(model domainmodels.InfraredStateDeviceRecordRaw) InfraredStateDeviceRecordRawResponse {
+	var durations []int32
+	_ = json.Unmarshal(model.RawData, &durations)
+
+	durationUs := 0
+	for _, d := range durations {
+		durationUs += int(d)
+	}
+
 	return InfraredStateDeviceRecordRawResponse{
 		Id:                    UUIDString(model.Id),
 		Status:                string(model.Status),
 		DiscardedReason:       model.DiscardedReason,
+		PulseCount:            len(durations),
+		DurationUs:            durationUs,
 		PipelineAuditResponse: PipelineAudit(model.CreatedAt, model.DeletedAt, model.DeletedBy),
 	}
 }

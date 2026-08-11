@@ -166,6 +166,8 @@ export interface InfraredStateDeviceRecordRawResponse {
   id: string;
   status: "CAPTURED" | "ACCEPTED" | "DISCARDED";
   discarded_reason?: string;
+  pulse_count: number;
+  duration_us: number;
   created_at: string;
   deleted_at?: string;
   deleted_by?: string;

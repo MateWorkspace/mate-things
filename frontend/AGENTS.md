@@ -28,6 +28,16 @@ that's an XSS-exfiltration risk against an admin panel. Set tokens as
 `httpOnly` cookies from a Server Action or Route Handler, and read them
 server-side (`cookies()`) when calling the backend from Server Components.
 
+**One narrow, deliberate exception**: WebSocket handshakes can't carry an
+`Authorization` header, so the backend's broadcast endpoints authenticate
+via a `?token=` query param instead. `getBroadcastToken()`
+(`src/app/(authenticated)/apps/infrared/record/[id]/_lib/broadcast-token.ts`)
+is a Server Action that hands the short-lived access token to client JS
+for exactly this purpose — the one sanctioned case where a token crosses
+into the client bundle. Don't generalize this pattern; any other client
+code that needs to call the backend should keep doing so through a Server
+Action or Route Handler that reads the cookie server-side.
+
 Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript (`strict`),
 Tailwind CSS v4.
 

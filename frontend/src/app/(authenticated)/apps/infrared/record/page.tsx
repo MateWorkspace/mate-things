@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Pagination from "@/components/collection/Pagination";
@@ -68,6 +69,16 @@ export default async function InfraredRecordPage({
       <PageHeader
         title="Record"
         description="Identify the device control by capturing its remote's infrared signals."
+        actions={
+          permissions.has("infrared_record_session:add") ? (
+            <Link
+              href="/apps/infrared/record/new"
+              className="bg-primary text-surface focus-visible:ring-focus focus-visible:ring-offset-background inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto"
+            >
+              Record New Device
+            </Link>
+          ) : null
+        }
       />
       <RecordSessionFilters
         deviceTypes={deviceTypes}
