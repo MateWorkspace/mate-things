@@ -369,7 +369,9 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 		return
 	}
 
-	payload, baselineState, err := u.buildAnalysisPayload(ctx, tag, cases, states, definitions)
+	payload, baselineState, baselineBits, recordedCases, err := u.buildAnalysisPayload(ctx, tag, cases, states, definitions)
+	_ = baselineBits
+	_ = recordedCases
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to analyze recorded cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
@@ -826,13 +828,24 @@ func stateIdToName(states []domainmodels.InfraredState, byId map[string]string) 
 // case that was originally cases[0] can end up at any Step value. Comparing
 // against the deterministically-known baseline values is the only reliable
 // way to find it from persisted rows alone.
+// recordedCase is one already-recorded non-baseline OFAT case's target
+// state/value plus its own demodulated bits — buildAnalysisPayload always
+// computed this internally to feed Attribute(), but previously discarded
+// it once the AnalysisPayload was built. Task 7 uses it to build
+// coder_generation.KnownCase entries for Validate().
+type recordedCase struct {
+	TargetStateId uuid.UUID
+	TargetValue   string
+	Bits          []int
+}
+
 func (u *usecase) buildAnalysisPayload(
 	ctx context.Context,
 	tag string,
 	cases []domainmodels.InfraredStateDeviceRecordCase,
 	states []domainmodels.InfraredState,
 	definitions []domainmodels.InfraredStateDeviceDefinition,
-) (applicationinfraredanalysis.AnalysisPayload, map[string]string, error) {
+) (applicationinfraredanalysis.AnalysisPayload, map[string]string, []int, []recordedCase, error) {
 	expectedBaseline := applicationinfraredcasegeneration.Baseline(states, definitions)
 
 	var baselineBits []int
@@ -845,14 +858,14 @@ func (u *usecase) buildAnalysisPayload(
 	for _, c := range cases {
 		raws, err := u.recordCase.ReadListRawByCaseId(ctx, c.Id)
 		if err != nil {
-			return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+			return applicationinfraredanalysis.AnalysisPayload{}, nil, nil, nil, err
 		}
 		var accepted [][]int32
 		for _, r := range raws {
 			if r.Status == domainmodels.InfraredRecordRawStatusAccepted {
 				var durations []int32
 				if err := json.Unmarshal(r.RawData, &durations); err != nil {
-					return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+					return applicationinfraredanalysis.AnalysisPayload{}, nil, nil, nil, err
 				}
 				accepted = append(accepted, durations)
 			}
@@ -875,13 +888,13 @@ func (u *usecase) buildAnalysisPayload(
 
 		volatile, err := applicationinfraredanalysis.DetectVolatileBits(frameBitsPerRaw[0], frameBitsPerRaw[1])
 		if err != nil {
-			return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+			return applicationinfraredanalysis.AnalysisPayload{}, nil, nil, nil, err
 		}
 		volatileSets = append(volatileSets, volatile)
 
 		caseStates, err := u.recordCase.ReadListStatesByCaseId(ctx, c.Id)
 		if err != nil {
-			return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+			return applicationinfraredanalysis.AnalysisPayload{}, nil, nil, nil, err
 		}
 
 		if isBaselineCase(expectedBaseline, caseStates) {
@@ -906,7 +919,7 @@ func (u *usecase) buildAnalysisPayload(
 	}
 
 	if baselineBits == nil {
-		return applicationinfraredanalysis.AnalysisPayload{}, nil, domainmodels.NewError(
+		return applicationinfraredanalysis.AnalysisPayload{}, nil, nil, nil, domainmodels.NewError(
 			"no baseline case with two accepted raws was found for analysis", domainmodels.ErrTypeFailure, nil,
 		)
 	}
@@ -914,9 +927,19 @@ func (u *usecase) buildAnalysisPayload(
 	volatile := applicationinfraredanalysis.UnionVolatileBits(volatileSets...)
 	payload, err := applicationinfraredanalysis.Attribute(baselineBits, caseBits, caseTargetState, caseTargetValue, volatile)
 	if err != nil {
-		return applicationinfraredanalysis.AnalysisPayload{}, nil, err
+		return applicationinfraredanalysis.AnalysisPayload{}, nil, nil, nil, err
 	}
-	return payload, baselineState, nil
+
+	recordedCases := make([]recordedCase, 0, len(caseBits))
+	for caseId, bits := range caseBits {
+		recordedCases = append(recordedCases, recordedCase{
+			TargetStateId: caseTargetState[caseId],
+			TargetValue:   caseTargetValue[caseId],
+			Bits:          bits,
+		})
+	}
+
+	return payload, baselineState, baselineBits, recordedCases, nil
 }
 
 // isBaselineCase reports whether a case's recorded state values match the
