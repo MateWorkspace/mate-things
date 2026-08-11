@@ -43,6 +43,14 @@ describe("route policies", () => {
       "Payload Schemas",
       ["payload_schema:get"],
     ],
+    ["/admin/llm-config", "LLM Config", ["llm_config:get"]],
+    [
+      "/apps/infrared/settings/type-123",
+      "Settings",
+      ["infrared_reference:get"],
+    ],
+    ["/apps/infrared/record", "Record", ["infrared_record_session:get"]],
+    ["/apps/infrared/command", "Command", ["infrared_record_session:get"]],
   ])(
     "resolves %s to its navigation permission rule",
     (pathname, label, requiredAny) => {
@@ -81,5 +89,21 @@ describe("route policies", () => {
     expect(canVisitRoute("/admin/access-control", new Set(["user:get"]))).toBe(
       false,
     );
+  });
+
+  it("resolves infrared app items under the same app key", () => {
+    expect(findRoutePolicy("/apps/infrared/settings")).toMatchObject({
+      navigation: { group: "application", app: { key: "infrared" } },
+    });
+    expect(findRoutePolicy("/apps/infrared/record")).toMatchObject({
+      navigation: { group: "application", app: { key: "infrared" } },
+    });
+  });
+
+  it("treats the bare app root as protected with no navigation entry", () => {
+    expect(isProtectedRoute("/apps/infrared")).toBe(true);
+    expect(findRoutePolicy("/apps/infrared")).toMatchObject({
+      navigation: undefined,
+    });
   });
 });

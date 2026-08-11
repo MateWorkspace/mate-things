@@ -12,12 +12,16 @@ import {
   ScrollText,
   Server,
   Shield,
+  Sparkles,
   Users,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
 
 import type { NavigationGroup } from "@/config/navigation";
+
+import { isCurrentPath } from "./is-current-path";
+import SidebarApp from "./SidebarApp";
 
 const NAVIGATION_ICONS: Readonly<Record<string, LucideIcon>> = {
   "/dashboard": LayoutDashboard,
@@ -33,6 +37,7 @@ const NAVIGATION_ICONS: Readonly<Record<string, LucideIcon>> = {
   "/admin/api-keys": KeyRound,
   "/admin/access-control": Shield,
   "/admin/payload-schemas": FileJson,
+  "/admin/llm-config": Sparkles,
 };
 
 interface SidebarGroupProps {
@@ -41,10 +46,6 @@ interface SidebarGroupProps {
   collapsed: boolean;
   idPrefix: string;
   onNavigate?: () => void;
-}
-
-function isCurrentPath(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function SidebarGroup({
@@ -68,31 +69,50 @@ export default function SidebarGroup({
       >
         {group.label}
       </h2>
-      <ul className="mt-2 space-y-1">
-        {group.items.map((item) => {
-          const Icon = NAVIGATION_ICONS[item.href] ?? Radio;
-          const current = isCurrentPath(pathname, item.href);
+      {group.items.length > 0 ? (
+        <ul className="mt-2 space-y-1">
+          {group.items.map((item) => {
+            const Icon = NAVIGATION_ICONS[item.href] ?? Radio;
+            const current = isCurrentPath(pathname, item.href);
 
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={current ? "page" : undefined}
-                title={collapsed ? item.label : undefined}
-                onClick={onNavigate}
-                className={`focus-visible:ring-focus flex min-h-11 items-center rounded-xl px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none ${
-                  current
-                    ? "bg-highlight/55 text-primary"
-                    : "text-foreground/75 hover:bg-muted hover:text-foreground"
-                } ${collapsed ? "justify-center" : "gap-3"}`}
-              >
-                <Icon aria-hidden="true" className="size-5 shrink-0" />
-                <span className={collapsed ? "sr-only" : ""}>{item.label}</span>
-              </Link>
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={current ? "page" : undefined}
+                  title={collapsed ? item.label : undefined}
+                  onClick={onNavigate}
+                  className={`focus-visible:ring-focus flex min-h-11 items-center rounded-xl px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none ${
+                    current
+                      ? "bg-highlight/55 text-primary"
+                      : "text-foreground/75 hover:bg-muted hover:text-foreground"
+                  } ${collapsed ? "justify-center" : "gap-3"}`}
+                >
+                  <Icon aria-hidden="true" className="size-5 shrink-0" />
+                  <span className={collapsed ? "sr-only" : ""}>
+                    {item.label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+      {group.apps.length > 0 ? (
+        <ul className="mt-1 space-y-1">
+          {group.apps.map((app) => (
+            <li key={app.key}>
+              <SidebarApp
+                app={app}
+                pathname={pathname}
+                collapsed={collapsed}
+                idPrefix={idPrefix}
+                onNavigate={onNavigate}
+              />
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }

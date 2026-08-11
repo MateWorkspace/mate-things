@@ -11,9 +11,16 @@ export interface NavigationItem {
   requiredPermissions: readonly PermissionName[];
 }
 
+export interface NavigationApp {
+  key: string;
+  label: string;
+  items: readonly NavigationItem[];
+}
+
 export interface NavigationGroup {
   label: string;
   items: readonly NavigationItem[];
+  apps: readonly NavigationApp[];
 }
 
 const NAVIGATION_GROUP_PRESENTATION: readonly {
@@ -24,26 +31,51 @@ const NAVIGATION_GROUP_PRESENTATION: readonly {
   { group: "fleet", label: "Fleet" },
   { group: "operations", label: "Operations" },
   { group: "observability", label: "Observability" },
+  { group: "applications", label: "Applications" },
   { group: "administration", label: "Administration" },
 ];
 
+function toItem(policy: RoutePolicy): NavigationItem {
+  return {
+    label: policy.navigation!.label,
+    href: policy.href,
+    requiredPermissions: policy.requiredAny ?? [],
+  };
+}
+
 export const NAVIGATION_GROUPS: readonly NavigationGroup[] =
   NAVIGATION_GROUP_PRESENTATION.flatMap(({ group, label }) => {
-    const items = ROUTE_POLICIES.flatMap((policy) => {
-      if (policy.navigation?.group !== group) {
-        return [];
+    const policies = ROUTE_POLICIES.filter(
+      (policy) => policy.navigation?.group === group,
+    );
+    if (policies.length === 0) {
+      return [];
+    }
+
+    const items = policies
+      .filter((policy) => !policy.navigation!.app)
+      .map(toItem);
+
+    const apps: NavigationApp[] = [];
+    const appIndexByKey = new Map<string, number>();
+    for (const policy of policies) {
+      const app = policy.navigation!.app;
+      if (!app) continue;
+
+      const item = toItem(policy);
+      const existingIndex = appIndexByKey.get(app.key);
+      if (existingIndex === undefined) {
+        appIndexByKey.set(app.key, apps.length);
+        apps.push({ key: app.key, label: app.label, items: [item] });
+      } else {
+        apps[existingIndex] = {
+          ...apps[existingIndex],
+          items: [...apps[existingIndex].items, item],
+        };
       }
+    }
 
-      return [
-        {
-          label: policy.navigation.label,
-          href: policy.href,
-          requiredPermissions: policy.requiredAny ?? [],
-        },
-      ];
-    });
-
-    return items.length === 0 ? [] : [{ label, items }];
+    return [{ label, items, apps }];
   });
 
 export function visibleNavigation(
@@ -53,7 +85,17 @@ export function visibleNavigation(
     const items = group.items.filter((item) =>
       canVisitRoute(item.href, permissions),
     );
+    const apps = group.apps
+      .map((app) => ({
+        ...app,
+        items: app.items.filter((item) =>
+          canVisitRoute(item.href, permissions),
+        ),
+      }))
+      .filter((app) => app.items.length > 0);
 
-    return items.length === 0 ? [] : [{ ...group, items }];
+    return items.length === 0 && apps.length === 0
+      ? []
+      : [{ ...group, items, apps }];
   });
 }

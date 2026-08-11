@@ -6,7 +6,13 @@ export type RoutePolicy = {
   requiredAny?: readonly PermissionName[];
   navigation?: {
     group:
-      "overview" | "fleet" | "operations" | "observability" | "administration";
+      | "overview"
+      | "fleet"
+      | "operations"
+      | "observability"
+      | "applications"
+      | "administration";
+    app?: { key: string; label: string };
     label: string;
   };
 };
@@ -87,6 +93,37 @@ export const ROUTE_POLICIES: readonly RoutePolicy[] = [
       label: "Broadcast Sessions",
     },
   },
+  { href: "/apps/infrared", protected: true },
+  {
+    href: "/apps/infrared/settings",
+    protected: true,
+    requiredAny: ["infrared_reference:get"],
+    navigation: {
+      group: "applications",
+      app: { key: "infrared", label: "Infrared" },
+      label: "Settings",
+    },
+  },
+  {
+    href: "/apps/infrared/record",
+    protected: true,
+    requiredAny: ["infrared_record_session:get"],
+    navigation: {
+      group: "applications",
+      app: { key: "infrared", label: "Infrared" },
+      label: "Record",
+    },
+  },
+  {
+    href: "/apps/infrared/command",
+    protected: true,
+    requiredAny: ["infrared_record_session:get"],
+    navigation: {
+      group: "applications",
+      app: { key: "infrared", label: "Infrared" },
+      label: "Command",
+    },
+  },
   { href: "/admin", protected: true },
   {
     href: "/admin/users",
@@ -112,6 +149,12 @@ export const ROUTE_POLICIES: readonly RoutePolicy[] = [
     requiredAny: ["payload_schema:get"],
     navigation: { group: "administration", label: "Payload Schemas" },
   },
+  {
+    href: "/admin/llm-config",
+    protected: true,
+    requiredAny: ["llm_config:get"],
+    navigation: { group: "administration", label: "LLM Config" },
+  },
 ];
 
 const matchesPrefix = (pathname: string, href: string) =>
@@ -122,11 +165,6 @@ export function findRoutePolicy(pathname: string): RoutePolicy | undefined {
     .sort((left, right) => right.href.length - left.href.length)
     .find((policy) => matchesPrefix(pathname, policy.href));
 }
-
-// A pathname with no matching policy fails closed: it is treated as
-// protected (isProtectedRoute) and not visitable (canVisitRoute), rather
-// than silently granting unauthenticated/unpermissioned access because a
-// new route was never added to ROUTE_POLICIES.
 
 export function isProtectedRoute(pathname: string): boolean {
   const policy = findRoutePolicy(pathname);
