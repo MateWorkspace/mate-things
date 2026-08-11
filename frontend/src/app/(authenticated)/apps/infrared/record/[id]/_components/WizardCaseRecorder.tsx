@@ -2,6 +2,8 @@ import LocalDateTime from "@/components/ui/local-date-time";
 import StatusBadge from "@/components/ui/status-badge";
 import type { InfraredStateDeviceRecordCaseResponse } from "@/lib/api/infrared";
 
+import { findPreviousCase } from "../_lib/case-state-diff";
+import CaseStateBulletList from "./CaseStateBulletList";
 import RecordCaseList from "./RecordCaseList";
 import RecordCaseRawControls from "./RecordCaseRawControls";
 
@@ -34,9 +36,10 @@ export default function WizardCaseRecorder({
               <p className="mt-1 font-semibold">
                 {activeCase.description || `Step ${activeCase.step}`}
               </p>
-              <p className="text-foreground/70 text-sm">
-                {activeCase.states.map((s) => s.state_value).join(", ")}
-              </p>
+              <CaseStateBulletList
+                states={activeCase.states}
+                previousCase={findPreviousCase(cases, activeCase.step)}
+              />
             </div>
             <StatusBadge variant="info">Waiting for capture</StatusBadge>
           </div>
@@ -71,7 +74,11 @@ export default function WizardCaseRecorder({
         <h2 className="font-display text-primary text-xl tracking-wide">
           All cases
         </h2>
-        <RecordCaseList cases={rosterCases} canMutate={canMutate} />
+        <RecordCaseList
+          cases={rosterCases}
+          allCases={cases}
+          canMutate={canMutate}
+        />
       </div>
     </div>
   );

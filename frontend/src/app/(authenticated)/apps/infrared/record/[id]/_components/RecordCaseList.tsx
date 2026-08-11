@@ -9,7 +9,9 @@ import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
 import type { InfraredStateDeviceRecordCaseResponse } from "@/lib/api/infrared";
 
 import { retryCaseAction } from "../_lib/actions";
+import { findPreviousCase } from "../_lib/case-state-diff";
 import { EMPTY_RECORD_SESSION_ACTION_STATE } from "../_lib/state";
+import CaseStateBulletList from "./CaseStateBulletList";
 import RecordCaseRawControls from "./RecordCaseRawControls";
 
 const CASE_STATUS_VARIANT = {
@@ -25,9 +27,14 @@ function summarizeRaw(rawCount: number): string {
 export default function RecordCaseList({
   cases,
   canMutate,
+  allCases = cases,
 }: {
   cases: readonly InfraredStateDeviceRecordCaseResponse[];
   canMutate: boolean;
+  /** Full recording-order case list, for looking up "the previous case" -
+   * only needed when `cases` is a filtered subset (e.g. the active case
+   * excluded); defaults to `cases` itself otherwise. */
+  allCases?: readonly InfraredStateDeviceRecordCaseResponse[];
 }) {
   const [retryState, retryAction, retryPending] = useActionState(
     retryCaseAction,
@@ -48,9 +55,12 @@ export default function RecordCaseList({
                 {c.description || `Step ${c.step}`}
               </p>
               <p className="text-muted-foreground text-xs">
-                {c.states.map((s) => s.state_value).join(", ")} ·{" "}
                 {summarizeRaw(c.raw.length)}
               </p>
+              <CaseStateBulletList
+                states={c.states}
+                previousCase={findPreviousCase(allCases, c.step)}
+              />
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge variant={CASE_STATUS_VARIANT[c.status]}>
