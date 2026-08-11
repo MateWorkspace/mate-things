@@ -84,6 +84,11 @@ export default function NewRecordSessionForm({
           setDrafts(states.map(draftFromState));
         }
       })
+      .catch(() => {
+        if (!cancelled) {
+          setStepError("Could not load this device type's states. Try again.");
+        }
+      })
       .finally(() => {
         if (!cancelled) {
           setStatesLoading(false);
@@ -227,65 +232,7 @@ export default function NewRecordSessionForm({
           </div>
         </div>
       ) : (
-        <form action={handleSubmit} className="space-y-4">
-          {statesLoading ? (
-            <p className="text-foreground/70 text-sm">Loading states…</p>
-          ) : (
-            drafts.map((draft, index) => (
-              <div
-                key={draft.stateId}
-                className="border-border rounded-2xl border p-4"
-              >
-                <p className="font-semibold">{draft.name}</p>
-                {draft.type === "ENUM" ? (
-                  <div className="mt-2">
-                    <StringListEditor
-                      values={draft.options}
-                      placeholder="Option value"
-                      onChange={(options) => {
-                        const next = [...drafts];
-                        next[index] = { ...draft, options };
-                        setDrafts(next);
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="mt-2 grid grid-cols-3 gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Minimum"
-                      value={draft.minimum}
-                      onChange={(event) => {
-                        const next = [...drafts];
-                        next[index] = { ...draft, minimum: event.target.value };
-                        setDrafts(next);
-                      }}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Maximum"
-                      value={draft.maximum}
-                      onChange={(event) => {
-                        const next = [...drafts];
-                        next[index] = { ...draft, maximum: event.target.value };
-                        setDrafts(next);
-                      }}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Step"
-                      value={draft.step}
-                      onChange={(event) => {
-                        const next = [...drafts];
-                        next[index] = { ...draft, step: event.target.value };
-                        setDrafts(next);
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            ))
-          )}
+        <div className="space-y-4">
           <StateCreateDialog
             deviceTypeId={deviceTypeId}
             onCreated={(item, type) => {
@@ -303,23 +250,89 @@ export default function NewRecordSessionForm({
               ]);
             }}
           />
-          <ActionMessage state={state} />
-          {stepError ? (
-            <p className="text-critical text-sm">{stepError}</p>
-          ) : null}
-          <div className="flex justify-between">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setWizardStep(1)}
-            >
-              Back
-            </Button>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Starting…" : "Start recording"}
-            </Button>
-          </div>
-        </form>
+          <form action={handleSubmit} className="space-y-4">
+            {statesLoading ? (
+              <p className="text-foreground/70 text-sm">Loading states…</p>
+            ) : (
+              drafts.map((draft, index) => (
+                <div
+                  key={draft.stateId}
+                  className="border-border rounded-2xl border p-4"
+                >
+                  <p className="font-semibold">{draft.name}</p>
+                  {draft.type === "ENUM" ? (
+                    <div className="mt-2">
+                      <StringListEditor
+                        values={draft.options}
+                        placeholder="Option value"
+                        onChange={(options) => {
+                          const next = [...drafts];
+                          next[index] = { ...draft, options };
+                          setDrafts(next);
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Minimum"
+                        value={draft.minimum}
+                        onChange={(event) => {
+                          const next = [...drafts];
+                          next[index] = {
+                            ...draft,
+                            minimum: event.target.value,
+                          };
+                          setDrafts(next);
+                        }}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Maximum"
+                        value={draft.maximum}
+                        onChange={(event) => {
+                          const next = [...drafts];
+                          next[index] = {
+                            ...draft,
+                            maximum: event.target.value,
+                          };
+                          setDrafts(next);
+                        }}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Step"
+                        value={draft.step}
+                        onChange={(event) => {
+                          const next = [...drafts];
+                          next[index] = { ...draft, step: event.target.value };
+                          setDrafts(next);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+            <ActionMessage state={state} />
+            {stepError ? (
+              <p className="text-critical text-sm">{stepError}</p>
+            ) : null}
+            <div className="flex justify-between">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setWizardStep(1)}
+              >
+                Back
+              </Button>
+              <Button type="submit" disabled={pending}>
+                {pending ? "Starting…" : "Start recording"}
+              </Button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

@@ -27,12 +27,11 @@ export default function StateCreateDialog({
   onCreated: (item: WizardCreatedItem, type: InfraredStateType) => void;
 }) {
   const [state, setState] = useState(EMPTY_WIZARD_CREATE_STATE);
-  const [type, setType] = useState<InfraredStateType>("ENUM");
   const dialog = useActionDialog({
     state,
     onSuccess: () => {
-      if (state.created) {
-        onCreated(state.created, type);
+      if (state.created?.type) {
+        onCreated(state.created, state.created.type);
       }
     },
   });
@@ -53,7 +52,6 @@ export default function StateCreateDialog({
         open={dialog.open}
         onClose={dialog.reset}
         onStateChange={setState}
-        onTypeChange={setType}
       />
     </>
   );
@@ -64,13 +62,11 @@ function StateCreateContent({
   open,
   onClose,
   onStateChange,
-  onTypeChange,
 }: {
   deviceTypeId: string;
   open: boolean;
   onClose: () => void;
   onStateChange: (state: typeof EMPTY_WIZARD_CREATE_STATE) => void;
-  onTypeChange: (type: InfraredStateType) => void;
 }) {
   const [state, action, pending] = useActionState(
     createStateForWizardAction,
@@ -114,14 +110,7 @@ function StateCreateContent({
         </div>
         <div>
           <Label htmlFor={`${fieldId}-type`}>Type</Label>
-          <Select
-            id={`${fieldId}-type`}
-            name="type"
-            defaultValue="ENUM"
-            onChange={(event) =>
-              onTypeChange(event.target.value as InfraredStateType)
-            }
-          >
+          <Select id={`${fieldId}-type`} name="type" defaultValue="ENUM">
             <option value="ENUM">Enum (fixed options)</option>
             <option value="RANGE">Range (min/max/step)</option>
           </Select>

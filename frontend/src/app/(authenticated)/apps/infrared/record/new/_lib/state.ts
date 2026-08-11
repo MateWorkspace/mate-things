@@ -1,3 +1,4 @@
+import type { InfraredStateType } from "@/lib/api/infrared";
 import type { ActionState } from "@/lib/forms/action-state";
 
 export type NewRecordSessionActionState = ActionState<string>;
@@ -9,6 +10,7 @@ export const EMPTY_NEW_RECORD_SESSION_STATE: NewRecordSessionActionState = {
 export interface WizardCreatedItem {
   id: string;
   name: string;
+  type?: InfraredStateType;
 }
 
 export type WizardCreateActionState = ActionState<string> & {

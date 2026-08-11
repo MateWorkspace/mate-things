@@ -169,6 +169,6 @@ export async function createStateForWizardAction(
     status: "success",
     title: "State created",
     message: `${name} is ready to use.`,
-    created: { id: created.id, name },
+    created: { id: created.id, name, type: type as InfraredStateType },
   };
 }

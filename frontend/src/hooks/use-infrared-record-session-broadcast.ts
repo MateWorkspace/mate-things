@@ -30,10 +30,20 @@ export function useInfraredRecordSessionBroadcast(
     let cancelled = false;
     let socket: WebSocket | null = null;
     let retryTimeout: number | undefined;
+    attemptRef.current = 0;
 
     async function connect() {
-      const token = await getTokenRef.current();
-      if (cancelled || !token) {
+      let token: string | null;
+      try {
+        token = await getTokenRef.current();
+      } catch {
+        token = null;
+      }
+      if (cancelled) {
+        return;
+      }
+      if (!token) {
+        setExhausted(true);
         return;
       }
 

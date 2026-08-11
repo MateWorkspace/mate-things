@@ -37,21 +37,13 @@ export default async function RecordSessionDetailPage({
   }
 
   const canReadReferences = permissions.has("infrared_reference:get");
-  const [cases, coder, testCases, device, deviceTypes] = await Promise.all([
+  const [cases, coder, testCases] = await Promise.all([
     listInfraredRecordSessionCases(id),
     getOptionalById(() => getInfraredRecordSessionCoder(id)),
     // 404s with "infrared_state_coder not found" until a coder exists.
     getOptionalById(() => listInfraredRecordSessionTestCases(id)),
-    canReadReferences
-      ? getInfraredDevice(session.infrared_device_id)
-      : Promise.resolve(null),
-    canReadReferences ? listInfraredDeviceTypes() : Promise.resolve([]),
   ]);
 
-  const deviceTypeName = device
-    ? (deviceTypes.find((dt) => dt.id === device.infrared_device_type_id)
-        ?.name ?? "Unknown")
-    : null;
   // Terminal sessions (COMPLETED/FAILED) must not expose mutation controls.
   const canMutate =
     permissions.has("infrared_record_session:set") && !session.is_completed;
@@ -73,6 +65,18 @@ export default async function RecordSessionDetailPage({
       </main>
     );
   }
+
+  const [device, deviceTypes] = await Promise.all([
+    canReadReferences
+      ? getInfraredDevice(session.infrared_device_id)
+      : Promise.resolve(null),
+    canReadReferences ? listInfraredDeviceTypes() : Promise.resolve([]),
+  ]);
+
+  const deviceTypeName = device
+    ? (deviceTypes.find((dt) => dt.id === device.infrared_device_type_id)
+        ?.name ?? "Unknown")
+    : null;
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
