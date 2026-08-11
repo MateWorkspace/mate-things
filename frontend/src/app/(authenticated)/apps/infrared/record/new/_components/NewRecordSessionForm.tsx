@@ -22,10 +22,9 @@ import {
 import { EMPTY_NEW_RECORD_SESSION_STATE } from "../_lib/state";
 import StringListEditor from "../../_components/StringListEditor";
 import WizardStepper from "../../_components/WizardStepper";
+import { RECORD_WIZARD_STEPS } from "../../_lib/wizard-steps";
 import DeviceTypeCreateDialog from "./DeviceTypeCreateDialog";
 import StateCreateDialog from "./StateCreateDialog";
-
-const PRE_SESSION_STEPS = ["Device details", "State values"] as const;
 
 interface StateDraft {
   stateId: string;
@@ -158,7 +157,10 @@ export default function NewRecordSessionForm({
 
   return (
     <div className="space-y-6">
-      <WizardStepper steps={PRE_SESSION_STEPS} currentIndex={wizardStep - 1} />
+      <WizardStepper
+        steps={RECORD_WIZARD_STEPS}
+        currentIndex={wizardStep - 1}
+      />
       {wizardStep === 1 ? (
         <div className="space-y-4">
           <div>

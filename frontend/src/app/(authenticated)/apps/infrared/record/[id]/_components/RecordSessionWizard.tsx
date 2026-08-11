@@ -12,21 +12,11 @@ import type {
 } from "@/lib/api/infrared";
 
 import WizardStepper from "../../_components/WizardStepper";
+import { RECORD_WIZARD_STEPS } from "../../_lib/wizard-steps";
 import { getBroadcastToken } from "../_lib/broadcast-token";
 import RecordCaseList from "./RecordCaseList";
 import RecordTestCaseList from "./RecordTestCaseList";
 import WizardCaseRecorder from "./WizardCaseRecorder";
-
-const WIZARD_STEPS = [
-  "Device details",
-  "State values",
-  "Building cases",
-  "Review & set default",
-  "Recording",
-  "Analyzing",
-  "Testing",
-  "Finishing",
-] as const;
 
 function currentStepIndex(
   recordingState: InfraredRecordSessionResponse["recording_state"],
@@ -85,7 +75,7 @@ export default function RecordSessionWizard({
 
   return (
     <div className="space-y-6">
-      <WizardStepper steps={WIZARD_STEPS} currentIndex={stepIndex} />
+      <WizardStepper steps={RECORD_WIZARD_STEPS} currentIndex={stepIndex} />
 
       {session.recording_state === "DRAFT" ||
       session.recording_state === "CASES_GENERATING" ? (
