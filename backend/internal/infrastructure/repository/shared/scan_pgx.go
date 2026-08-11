@@ -356,6 +356,34 @@ func ScanPgxActionLogListItems(rows pgx.Rows) ([]domainmodels.ActionLogListItem,
 	return items, rows.Err()
 }
 
+func ScanPgxInfraredRecordSessionListItem(row pgx.Row) (domainmodels.InfraredRecordSessionListItem, error) {
+	var item domainmodels.InfraredRecordSessionListItem
+	err := row.Scan(
+		&item.Id,
+		&item.RecordingState,
+		&item.IsCompleted,
+		&item.InfraredDeviceId,
+		&item.Brand,
+		&item.Model,
+		&item.InfraredDeviceTypeId,
+		&item.DeviceTypeName,
+		&item.CreatedAt,
+	)
+	return item, err
+}
+
+func ScanPgxInfraredRecordSessionListItems(rows pgx.Rows) ([]domainmodels.InfraredRecordSessionListItem, error) {
+	items := make([]domainmodels.InfraredRecordSessionListItem, 0)
+	for rows.Next() {
+		item, err := ScanPgxInfraredRecordSessionListItem(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func ScanPgxFirmwareConfigParameter(row pgx.Row) (domainmodels.FirmwareConfigParameter, error) {
 	var item domainmodels.FirmwareConfigParameter
 	err := row.Scan(

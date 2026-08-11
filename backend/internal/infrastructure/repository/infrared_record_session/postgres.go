@@ -3,6 +3,7 @@ package infrastructurerepositoryinfraredrecordsession
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 	domaincontractsrepository "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/repository"
@@ -81,6 +82,41 @@ func (p *postgresImpl) ReadActiveByNodeId(ctx context.Context, nodeId uuid.UUID)
 		return nil, infrastructurerepositoryshared.MapPgxError("failed to read active infrared_record_session", err)
 	}
 	return &item, nil
+}
+
+func (p *postgresImpl) ReadByFilter(
+	ctx context.Context,
+	recordingState *string,
+	infraredDeviceTypeId *uuid.UUID,
+	createdAtStart *time.Time,
+	createdAtEnd *time.Time,
+	page int,
+	limit int,
+) (items []domainmodels.InfraredRecordSessionListItem, total int, err error) {
+	totalQuery, totalArgs, query, queryArgs, err := p.queryReadByFilter(recordingState, infraredDeviceTypeId, createdAtStart, createdAtEnd, page, limit)
+	if err != nil {
+		return nil, 0, infrastructurerepositoryshared.QueryBuildError("failed to build read infrared_record_session query", err)
+	}
+
+	if err := p.Dt.QueryRow(ctx, totalQuery, totalArgs...).Scan(&total); err != nil {
+		return nil, 0, infrastructurerepositoryshared.MapPgxError("failed to count infrared_record_session", err)
+	}
+	if total == 0 {
+		return []domainmodels.InfraredRecordSessionListItem{}, 0, nil
+	}
+
+	rows, err := p.Dt.Query(ctx, query, queryArgs...)
+	if err != nil {
+		return nil, 0, infrastructurerepositoryshared.MapPgxError("failed to read infrared_record_session", err)
+	}
+	defer rows.Close()
+
+	items, err = infrastructurerepositoryshared.ScanPgxInfraredRecordSessionListItems(rows)
+	if err != nil {
+		return nil, 0, infrastructurerepositoryshared.MapPgxError("failed to scan infrared_record_session", err)
+	}
+
+	return items, total, nil
 }
 
 func (p *postgresImpl) UpdateRecordingStateById(ctx context.Context, id uuid.UUID, recordingState string, isCompleted bool) error {

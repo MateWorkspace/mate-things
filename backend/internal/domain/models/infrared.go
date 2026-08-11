@@ -56,6 +56,18 @@ type InfraredRecordSession struct {
 	DeletedBy                   *uuid.UUID
 }
 
+type InfraredRecordSessionListItem struct {
+	Id                   uuid.UUID
+	RecordingState       string
+	IsCompleted          bool
+	InfraredDeviceId     uuid.UUID
+	Brand                string
+	Model                string
+	InfraredDeviceTypeId uuid.UUID
+	DeviceTypeName       string
+	CreatedAt            time.Time
+}
+
 type InfraredStateType string
 
 const (

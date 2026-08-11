@@ -1,6 +1,8 @@
 package infrastructurerepositoryinfraredrecordsession
 
 import (
+	"time"
+
 	"github.com/Masterminds/squirrel"
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 	"github.com/google/uuid"
@@ -71,6 +73,82 @@ func (p *postgresImpl) queryUpdateCurrentRecordCaseIdById(id uuid.UUID, currentR
 		Where("deleted_at IS NULL").
 		Set("current_record_case_id", currentRecordCaseId).
 		ToSql()
+}
+
+func (p *postgresImpl) queryReadByFilter(
+	recordingState *string,
+	infraredDeviceTypeId *uuid.UUID,
+	createdAtStart *time.Time,
+	createdAtEnd *time.Time,
+	page int,
+	limit int,
+) (totalQuery string, totalArgs []any, query string, queryArgs []any, err error) {
+	baseQ := p.SqrD.Select(
+		"infrared_record_session.id",
+		"infrared_record_session.recording_state",
+		"infrared_record_session.is_completed",
+		"infrared_device.id",
+		"infrared_device.brand",
+		"infrared_device.model",
+		"infrared_device_type.id",
+		"infrared_device_type.name",
+		"infrared_record_session.created_at",
+	).
+		From("infrared_record_session").
+		Join("infrared_device ON infrared_device.id = infrared_record_session.infrared_device_id").
+		Join("infrared_device_type ON infrared_device_type.id = infrared_device.infrared_device_type_id")
+	totalQ := p.SqrD.Select("COUNT(*)").
+		From("infrared_record_session").
+		Join("infrared_device ON infrared_device.id = infrared_record_session.infrared_device_id").
+		Join("infrared_device_type ON infrared_device_type.id = infrared_device.infrared_device_type_id")
+
+	baseQ = baseQ.Where("infrared_record_session.deleted_at IS NULL")
+	totalQ = totalQ.Where("infrared_record_session.deleted_at IS NULL")
+
+	baseQ, totalQ = applyInfraredRecordSessionFilters(baseQ, totalQ, recordingState, infraredDeviceTypeId, createdAtStart, createdAtEnd)
+
+	totalQuery, totalArgs, err = totalQ.ToSql()
+	if err != nil {
+		return
+	}
+
+	query, queryArgs, err = baseQ.
+		OrderBy("infrared_record_session.created_at DESC", "infrared_record_session.id ASC").
+		Limit(uint64(limit)).
+		Offset(uint64((page - 1) * limit)).
+		ToSql()
+	return
+}
+
+func applyInfraredRecordSessionFilters(
+	baseQ squirrel.SelectBuilder,
+	totalQ squirrel.SelectBuilder,
+	recordingState *string,
+	infraredDeviceTypeId *uuid.UUID,
+	createdAtStart *time.Time,
+	createdAtEnd *time.Time,
+) (squirrel.SelectBuilder, squirrel.SelectBuilder) {
+	if recordingState != nil {
+		condition := squirrel.Eq{"infrared_record_session.recording_state": *recordingState}
+		baseQ = baseQ.Where(condition)
+		totalQ = totalQ.Where(condition)
+	}
+	if infraredDeviceTypeId != nil {
+		condition := squirrel.Eq{"infrared_device_type.id": *infraredDeviceTypeId}
+		baseQ = baseQ.Where(condition)
+		totalQ = totalQ.Where(condition)
+	}
+	if createdAtStart != nil {
+		condition := squirrel.GtOrEq{"infrared_record_session.created_at": *createdAtStart}
+		baseQ = baseQ.Where(condition)
+		totalQ = totalQ.Where(condition)
+	}
+	if createdAtEnd != nil {
+		condition := squirrel.LtOrEq{"infrared_record_session.created_at": *createdAtEnd}
+		baseQ = baseQ.Where(condition)
+		totalQ = totalQ.Where(condition)
+	}
+	return baseQ, totalQ
 }
 
 func (p *postgresImpl) queryDeleteById(id uuid.UUID, deletedBy *uuid.UUID) (query string, args []any, err error) {
