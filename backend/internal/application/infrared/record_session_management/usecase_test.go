@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -142,14 +143,30 @@ func (f *fakeStateRepository) ReadListByDeviceTypeId(_ context.Context, _ uuid.U
 type fakeEncoderRunner struct {
 	err           error
 	receivedState map[string]string
+	raw           []int32            // if set, always returned regardless of state (repair-loop tests)
+	byState       map[string][]int32 // if set, looked up by state["POWER"]+"|"+state["MODE"]
+	bySource      map[string][]int32 // if set, looked up by the encoder source itself — lets a test give a repaired encoder different behavior from the broken one it replaced
 }
 
-func (f *fakeEncoderRunner) RunEncoder(_ string, state map[string]string, _ time.Duration) ([]int32, error) {
+func (f *fakeEncoderRunner) RunEncoder(source string, state map[string]string, _ time.Duration) ([]int32, error) {
 	f.receivedState = state
 	if f.err != nil {
 		return nil, f.err
 	}
-	return []int32{9000, 4500}, nil
+	if f.bySource != nil {
+		if raw, ok := f.bySource[source]; ok {
+			return raw, nil
+		}
+	}
+	if f.byState != nil {
+		if raw, ok := f.byState[state["POWER"]+"|"+state["MODE"]]; ok {
+			return raw, nil
+		}
+	}
+	if f.raw != nil {
+		return f.raw, nil
+	}
+	return []int32{9000, 4500, 560, 560}, nil
 }
 
 type fakeCoderRepository struct {
@@ -266,6 +283,8 @@ type fakeCaseRepository struct {
 	statusValuesByCase       map[uuid.UUID][]domainmodels.InfraredRecordCaseStatus
 	listRawByCaseIdResult    []domainmodels.InfraredStateDeviceRecordRaw
 	listStatesByCaseIdResult []domainmodels.InfraredStateDeviceRecordState
+	listRawByCaseId          map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordRaw
+	listStatesByCaseId       map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordState
 	deleteErr                error
 	deletedId                uuid.UUID
 	deleteStateErr           error
@@ -332,10 +351,16 @@ func (f *fakeCaseRepository) DeleteRawById(_ context.Context, id uuid.UUID, _ *u
 	f.deletedRawId = id
 	return f.deleteRawErr
 }
-func (f *fakeCaseRepository) ReadListRawByCaseId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordRaw, error) {
+func (f *fakeCaseRepository) ReadListRawByCaseId(_ context.Context, caseId uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordRaw, error) {
+	if f.listRawByCaseId != nil {
+		return f.listRawByCaseId[caseId], nil
+	}
 	return f.listRawByCaseIdResult, nil
 }
-func (f *fakeCaseRepository) ReadListStatesByCaseId(_ context.Context, _ uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordState, error) {
+func (f *fakeCaseRepository) ReadListStatesByCaseId(_ context.Context, caseId uuid.UUID) ([]domainmodels.InfraredStateDeviceRecordState, error) {
+	if f.listStatesByCaseId != nil {
+		return f.listStatesByCaseId[caseId], nil
+	}
 	return f.listStatesByCaseIdResult, nil
 }
 func (f *fakeCaseRepository) CountAcceptedRawByCaseId(_ context.Context, caseId uuid.UUID) (int, error) {
@@ -365,22 +390,44 @@ func (f *fakeCaseRepository) StatusUpdatesForCase(caseId uuid.UUID) []domainmode
 // callers; runAnalysisAndGeneration's WriteCoder expects a differently
 // shaped JSON object, so fakeLlmClientFactory.responseText lets a test
 // override it.
-type fakeLlmClient struct{ text string }
+type fakeLlmClient struct {
+	text        string
+	err         error
+	texts       []string // if set, successive GenerateText calls on THIS client return these in order, sticking on the last entry once exhausted
+	callCount   int
+	lastRequest domaincontractsllm.GenerateTextRequest
+}
 
-func (f *fakeLlmClient) GenerateText(_ context.Context, _ domaincontractsllm.GenerateTextRequest) (domaincontractsllm.GenerateTextResult, error) {
+func (f *fakeLlmClient) GenerateText(_ context.Context, req domaincontractsllm.GenerateTextRequest) (domaincontractsllm.GenerateTextResult, error) {
+	f.lastRequest = req
+	if f.err != nil {
+		return domaincontractsllm.GenerateTextResult{}, f.err
+	}
+	if len(f.texts) > 0 {
+		i := f.callCount
+		if i >= len(f.texts) {
+			i = len(f.texts) - 1
+		}
+		f.callCount++
+		return domaincontractsllm.GenerateTextResult{Text: f.texts[i]}, nil
+	}
 	return domaincontractsllm.GenerateTextResult{Text: f.text}, nil
 }
 
 type fakeLlmClientFactory struct {
-	err           error
-	responseText  string   // existing field — single-response tests keep using this
-	responseTexts []string // if set, Current() returns these in order, one per call
-	callIndex     int
+	err            error
+	responseText   string   // existing field — single-response tests keep using this
+	responseTexts  []string // if set, Current() returns these in order, one per call
+	callIndex      int
+	clientSequence []string // when set, Current() returns ONE client whose successive GenerateText calls cycle through this list — for testing multi-call loops (e.g. the repair loop) on a single client
 }
 
 func (f *fakeLlmClientFactory) Current(_ context.Context) (domaincontractsllm.Client, error) {
 	if f.err != nil {
 		return nil, f.err
+	}
+	if len(f.clientSequence) > 0 {
+		return &fakeLlmClient{texts: f.clientSequence}, nil
 	}
 	if len(f.responseTexts) > 0 {
 		i := f.callIndex
@@ -1029,6 +1076,291 @@ func TestRunAnalysisAndGenerationFailsSessionWhenEncoderThrows(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("status updates = %v, want to include FAILED", sessionRepo.StatusUpdates())
+	}
+}
+
+func TestRunAnalysisAndGenerationRepairsAnInitiallyFailingEncoder(t *testing.T) {
+	sessionId := uuid.New()
+	powerId := uuid.New()
+
+	rawBytes, err := json.Marshal([]int32{9000, 4500, 560, 560})
+	if err != nil {
+		t.Fatalf("failed to marshal fixture raw data: %v", err)
+	}
+	baselineCaseId := uuid.New()
+
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}}
+	definitionRepo := &fakeDefinitionRepository{listByDeviceIdResult: []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"ON", "OFF"}},
+	}}
+	caseRepo := &fakeCaseRepository{
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		},
+		listRawByCaseIdResult: []domainmodels.InfraredStateDeviceRecordRaw{
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+		},
+		listStatesByCaseIdResult: []domainmodels.InfraredStateDeviceRecordState{
+			{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "ON"},
+		},
+	}
+	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: uuid.New(), SummaryReadme: "summary", DetailReadme: "detail"}}
+
+	// clientSequence drives successive GenerateText calls on the ONE client
+	// runAnalysisAndGeneration resolves: call 1 is WriteCoder's, call 2 is
+	// the first repair round's.
+	brokenSource := "function encode(state) { return [1]; }"
+	repairedSource := "function encode(state) { return [9000, 4500, 560, 560]; }"
+	llmFactory := &fakeLlmClientFactory{
+		clientSequence: []string{
+			`{"encoder_source": "` + brokenSource + `", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
+			`{"encoder_source": "` + repairedSource + `", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s2", "detail_readme": "d2"}`,
+		},
+	}
+
+	// The broken encoder emits a header-only signal (zero decoded bits), so
+	// the single known baseline bit is wrong; the repaired one reproduces
+	// the fixture exactly.
+	encoderRunner := &fakeEncoderRunner{bySource: map[string][]int32{
+		brokenSource:   {9000, 4500},
+		repairedSource: {9000, 4500, 560, 560},
+	}}
+	testCaseRepo := &fakeTestCaseRepository{}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
+		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
+	).(*usecase)
+
+	impl.runAnalysisAndGeneration(sessionId)
+
+	if !coderRepo.createCalled {
+		t.Fatal("coder repository Create() was never called, want the repair loop to eventually succeed and persist")
+	}
+	if !strings.Contains(coderRepo.created.EncoderSource, "560, 560") {
+		t.Fatalf("persisted EncoderSource = %q, want the REPAIRED (second) attempt, not the initial broken one", coderRepo.created.EncoderSource)
+	}
+}
+
+func TestRunAnalysisAndGenerationPersistsDegradedBestAttemptAboveFatalFloor(t *testing.T) {
+	sessionId := uuid.New()
+	powerId := uuid.New()
+
+	// header(9000,4500) then three data bits with spaces 560/1690/1690 ->
+	// baseline bits [0, 1, 1]. Three owned bits is the smallest fixture that
+	// can land strictly between the 60% fatal floor and a full pass.
+	rawBytes, err := json.Marshal([]int32{9000, 4500, 560, 560, 560, 1690, 560, 1690})
+	if err != nil {
+		t.Fatalf("failed to marshal fixture raw data: %v", err)
+	}
+	baselineCaseId := uuid.New()
+
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}}
+	definitionRepo := &fakeDefinitionRepository{listByDeviceIdResult: []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"ON", "OFF"}},
+	}}
+	caseRepo := &fakeCaseRepository{
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		},
+		listRawByCaseIdResult: []domainmodels.InfraredStateDeviceRecordRaw{
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+		},
+		listStatesByCaseIdResult: []domainmodels.InfraredStateDeviceRecordState{
+			{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "ON"},
+		},
+	}
+	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: uuid.New(), SummaryReadme: "summary", DetailReadme: "detail"}}
+
+	// Every attempt (initial + all three repair rounds) runs through this
+	// same runner, which decodes to [0, 1, 0] against the real [0, 1, 1] ->
+	// 2/3 = 66.7% owned accuracy: never a pass, but above the 60% floor, so
+	// the best attempt must still be persisted.
+	encoderRunner := &fakeEncoderRunner{raw: []int32{9000, 4500, 560, 560, 560, 1690, 560, 560}}
+
+	llmFactory := &fakeLlmClientFactory{
+		clientSequence: []string{
+			`{"encoder_source": "function encode(state) { return [1]; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
+			`{"encoder_source": "function encode(state) { return [2]; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
+			`{"encoder_source": "function encode(state) { return [3]; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
+			`{"encoder_source": "function encode(state) { return [4]; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
+		},
+	}
+
+	testCaseRepo := &fakeTestCaseRepository{}
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
+		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, testCaseRepo, &fakePublish{}, &noopLogger{},
+	).(*usecase)
+
+	impl.runAnalysisAndGeneration(sessionId)
+
+	if !coderRepo.createCalled {
+		t.Fatal("coder repository Create() was never called, want the best (66.7%, above the 60% floor) attempt persisted")
+	}
+}
+
+func TestRunAnalysisAndGenerationFailsBelowFatalFloorAfterRepairExhausted(t *testing.T) {
+	sessionId := uuid.New()
+	powerId := uuid.New()
+
+	rawBytes, err := json.Marshal([]int32{9000, 4500, 560, 560})
+	if err != nil {
+		t.Fatalf("failed to marshal fixture raw data: %v", err)
+	}
+	baselineCaseId := uuid.New()
+
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}}
+	definitionRepo := &fakeDefinitionRepository{listByDeviceIdResult: []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"ON", "OFF"}},
+	}}
+	caseRepo := &fakeCaseRepository{
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		},
+		listRawByCaseIdResult: []domainmodels.InfraredStateDeviceRecordRaw{
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: rawBytes, Status: domainmodels.InfraredRecordRawStatusAccepted},
+		},
+		listStatesByCaseIdResult: []domainmodels.InfraredStateDeviceRecordState{
+			{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "ON"},
+		},
+	}
+	coderRepo := &fakeCoderRepository{}
+	// RunEncoder always throws -> every case always fails -> 0% accuracy,
+	// below the 60% floor even after 3 exhausted repair rounds.
+	encoderRunner := &fakeEncoderRunner{err: errors.New("encoder threw")}
+	llmFactory := &fakeLlmClientFactory{responseText: `{"encoder_source": "function encode(state) { return [9000, 4500]; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
+		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	).(*usecase)
+
+	impl.runAnalysisAndGeneration(sessionId)
+
+	if coderRepo.createCalled {
+		t.Fatal("coder repository Create() was called despite 0% accuracy after exhausted repair, want no persisted row")
+	}
+	found := false
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateFailed {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("status updates = %v, want to include FAILED", sessionRepo.StatusUpdates())
+	}
+}
+
+func TestRunAnalysisAndGenerationRequestsChecksumClarificationOnChecksumOnlyGap(t *testing.T) {
+	sessionId := uuid.New()
+	powerId, modeId := uuid.New(), uuid.New()
+	baselineCaseId, case1Id, case2Id := uuid.New(), uuid.New(), uuid.New()
+
+	// 4-bit fixture: header(9000,4500) + 4 data bits. Baseline is all zero.
+	// case1 targets POWER (bits 0 and 3 flip). case2 targets MODE (bits 1
+	// and 3 flip). Bit 3 changes for BOTH cases -> Attribute() flags it as a
+	// checksum bit via its intersection rule.
+	marshalRaw := func(durations []int32) []byte {
+		b, err := json.Marshal(durations)
+		if err != nil {
+			t.Fatalf("failed to marshal fixture raw data: %v", err)
+		}
+		return b
+	}
+	baselineRaw := marshalRaw([]int32{9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560})
+	case1Raw := marshalRaw([]int32{9000, 4500, 560, 1690, 560, 560, 560, 560, 560, 1690}) // decodes [1,0,0,1]
+	case2Raw := marshalRaw([]int32{9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 1690}) // decodes [0,1,0,1]
+
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
+	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{
+		{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum},
+		{Id: modeId, Name: "MODE", Type: domainmodels.InfraredStateTypeEnum},
+	}}
+	definitionRepo := &fakeDefinitionRepository{listByDeviceIdResult: []domainmodels.InfraredStateDeviceDefinition{
+		{InfraredStateId: powerId, Options: []string{"OFF", "ON"}},   // baseline = Options[0] = "OFF"
+		{InfraredStateId: modeId, Options: []string{"COOL", "HEAT"}}, // baseline = Options[0] = "COOL"
+	}}
+	caseRepo := &fakeCaseRepository{
+		listBySessionIdResult: []domainmodels.InfraredStateDeviceRecordCase{
+			{Id: baselineCaseId, InfraredRecordSessionId: sessionId, Step: 1, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+			{Id: case1Id, InfraredRecordSessionId: sessionId, Step: 2, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+			{Id: case2Id, InfraredRecordSessionId: sessionId, Step: 3, Status: domainmodels.InfraredRecordCaseStatusAccepted},
+		},
+		listRawByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordRaw{
+			baselineCaseId: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: baselineRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: baselineCaseId, RawData: baselineRaw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+			case1Id: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case1Id, RawData: case1Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case1Id, RawData: case1Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+			case2Id: {
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case2Id, RawData: case2Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+				{Id: uuid.New(), InfraredStateDeviceRecordCaseId: case2Id, RawData: case2Raw, Status: domainmodels.InfraredRecordRawStatusAccepted},
+			},
+		},
+		listStatesByCaseId: map[uuid.UUID][]domainmodels.InfraredStateDeviceRecordState{
+			baselineCaseId: {
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: powerId, StateValue: "OFF"},
+				{InfraredStateDeviceRecordCaseId: baselineCaseId, InfraredStateId: modeId, StateValue: "COOL"},
+			},
+			case1Id: {
+				{InfraredStateDeviceRecordCaseId: case1Id, InfraredStateId: powerId, StateValue: "ON"},
+				{InfraredStateDeviceRecordCaseId: case1Id, InfraredStateId: modeId, StateValue: "COOL"},
+			},
+			case2Id: {
+				{InfraredStateDeviceRecordCaseId: case2Id, InfraredStateId: powerId, StateValue: "OFF"},
+				{InfraredStateDeviceRecordCaseId: case2Id, InfraredStateId: modeId, StateValue: "HEAT"},
+			},
+		},
+	}
+	coderRepo := &fakeCoderRepository{}
+	// The encoder reproduces every owned bit (0 and 1) correctly for every
+	// known state but always emits 0 at the checksum bit (3) -> a pure
+	// ChecksumOnlyGap.
+	encoderRunner := &fakeEncoderRunner{byState: map[string][]int32{
+		"OFF|COOL": {9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560},  // [0,0,0,0] vs real [0,0,0,0] -> all correct
+		"ON|COOL":  {9000, 4500, 560, 1690, 560, 560, 560, 560, 560, 560}, // [1,0,0,0] vs real [1,0,0,1] -> bit3 wrong only
+		"OFF|HEAT": {9000, 4500, 560, 560, 560, 1690, 560, 560, 560, 560}, // [0,1,0,0] vs real [0,1,0,1] -> bit3 wrong only
+	}}
+	llmFactory := &fakeLlmClientFactory{clientSequence: []string{
+		`{"encoder_source": "function encode(state) { return []; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
+		`[{"description": "repeat baseline twice more", "states": {"POWER": "OFF", "MODE": "COOL"}}]`,
+	}}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, definitionRepo,
+		stateRepo, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		llmFactory, &fakeNodeRepository{}, encoderRunner, coderRepo, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	).(*usecase)
+
+	impl.runAnalysisAndGeneration(sessionId)
+
+	if coderRepo.createCalled {
+		t.Fatal("coder repository Create() was called on a checksum-only gap, want the session sent back to RECORDING instead")
+	}
+	if len(caseRepo.CreatedCaseIds()) == 0 {
+		t.Fatal("no new case was persisted, want WriteChecksumClarificationCases' plan to have been recorded via persistNewCasesAndReturnToRecording")
+	}
+	found := false
+	for _, s := range sessionRepo.StatusUpdates() {
+		if s == domainmodels.InfraredRecordingStateRecording {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("status updates = %v, want to include RECORDING (checksum clarification sends the session back to record more)", sessionRepo.StatusUpdates())
 	}
 }
 

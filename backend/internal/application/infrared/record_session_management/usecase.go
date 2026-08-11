@@ -3,6 +3,7 @@ package applicationinfraredrecordsessionmanagement
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	applicationinfraredanalysis "github.com/MateWorkspace/mate-things/backend/internal/application/infrared/analysis"
@@ -21,10 +22,13 @@ import (
 )
 
 const caseGenerationTimeout = 2 * time.Minute
-const analysisTimeout = 3 * time.Minute
+const analysisTimeout = 10 * time.Minute
+const coderGenerationCallTimeout = 2 * time.Minute
 const encoderSmokeTestTimeout = 2 * time.Second
 const testCaseGenerationTimeout = 2 * time.Minute
 const retryCaseGenerationTimeout = 2 * time.Minute
+const maxRepairRounds = 3
+const ownedBitFatalFloor = 0.6
 
 type usecase struct {
 	session       domaincontractsrepository.InfraredRecordSession
@@ -370,8 +374,6 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 	}
 
 	payload, baselineState, baselineBits, recordedCases, err := u.buildAnalysisPayload(ctx, tag, cases, states, definitions)
-	_ = baselineBits
-	_ = recordedCases
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to analyze recorded cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
@@ -387,30 +389,97 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 		return
 	}
 
-	written, err := applicationinfraredcodergeneration.WriteCoder(ctx, client, device.Brand, device.Model, states, definitions, payload)
+	// RunEncoder (and the prompt WriteCoder builds) both expect a
+	// state-NAME-keyed map (e.g. state.POWER); buildAnalysisPayload's
+	// baselineState is UUID-keyed to match its own internal precision needs,
+	// so it must be converted before crossing this boundary.
+	baselineValues := stateIdToName(states, baselineState)
+
+	callCtx, cancel := context.WithTimeout(ctx, coderGenerationCallTimeout)
+	best, err := applicationinfraredcodergeneration.WriteCoder(callCtx, client, device.Brand, device.Model, states, definitions, payload, baselineValues)
+	cancel()
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to write coder", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
 		return
 	}
 
-	// RunEncoder (and the prompt WriteCoder just built) both expect a
-	// state-NAME-keyed map (e.g. state.POWER); buildAnalysisPayload's
-	// baselineState is UUID-keyed to match its own internal precision needs,
-	// so it must be converted before crossing this boundary.
-	if _, err := u.encoderRunner.RunEncoder(written.EncoderSource, stateIdToName(states, baselineState), encoderSmokeTestTimeout); err != nil {
-		u.logger.Error(ctx, tag, "generated encoder failed its smoke test", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
-		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+	knownCases := buildKnownCases(states, baselineValues, baselineBits, recordedCases)
+	bestResult := applicationinfraredcodergeneration.Validate(u.encoderRunner, best.EncoderSource, payload.ChecksumBits, knownCases, encoderSmokeTestTimeout)
+
+	// NOTE: ChecksumOnlyGap() can only be true when owned bits are already
+	// 100% correct — which means Passed() is ALSO already true at that
+	// point (Passed() deliberately ignores checksum bits). So this branch's
+	// condition checks ChecksumOnlyGap() alone, not
+	// "!Passed() && ChecksumOnlyGap()" — that combination can never be true
+	// and would make this branch dead code. If this session has already used
+	// its one clarification attempt and checksum is still imperfect, the
+	// coder is persisted anyway via the fallthrough below: a second
+	// clarification round wouldn't help a data problem this session already
+	// tried once to resolve.
+	if bestResult.ChecksumOnlyGap() && session.ChecksumClarificationUsedAt == nil {
+		plans, err := applicationinfraredcodergeneration.WriteChecksumClarificationCases(ctx, client, device.Brand, device.Model, best, states)
+		if err != nil {
+			u.logger.Error(ctx, tag, "failed to write checksum clarification cases", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+			return
+		}
+		if len(plans) == 0 {
+			u.logger.Error(ctx, tag, "llm proposed no checksum clarification cases", domainmodels.LoggerMeta{"session_id": sessionId})
+			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+			return
+		}
+		if err := u.session.MarkChecksumClarificationUsedById(ctx, sessionId); err != nil {
+			u.logger.Error(ctx, tag, "failed to mark checksum clarification used", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+			return
+		}
+
+		nextStep := int32(1)
+		for _, c := range cases {
+			if c.Step >= nextStep {
+				nextStep = c.Step + 1
+			}
+		}
+		u.persistNewCasesAndReturnToRecording(ctx, tag, sessionId, nextStep, plans)
 		return
+	}
+
+	for round := 1; round <= maxRepairRounds && !bestResult.Passed(); round++ {
+		repairCtx, repairCancel := context.WithTimeout(ctx, coderGenerationCallTimeout)
+		repaired, err := applicationinfraredcodergeneration.RepairCoder(repairCtx, client, device.Brand, device.Model, best.EncoderSource, best.DecoderSource, bestResult)
+		repairCancel()
+		if err != nil {
+			u.logger.Warn(ctx, tag, "repair round failed to generate, keeping best attempt", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "round": round})
+			continue
+		}
+		result := applicationinfraredcodergeneration.Validate(u.encoderRunner, repaired.EncoderSource, payload.ChecksumBits, knownCases, encoderSmokeTestTimeout)
+		if result.OwnedCorrect > bestResult.OwnedCorrect {
+			best, bestResult = repaired, result
+		}
+	}
+
+	if !bestResult.Passed() {
+		accuracy := bestResult.OwnedAccuracy()
+		if accuracy < ownedBitFatalFloor {
+			err := domainmodels.NewError(fmt.Sprintf("llm failed to capture the device's encoding pattern (best attempt: %.0f%% of known bits correct)", accuracy*100), domainmodels.ErrTypeFailure, nil)
+			u.logger.Error(ctx, tag, "coder generation exhausted repair attempts below fatal floor", domainmodels.LoggerMeta{"err": err, "session_id": sessionId, "owned_accuracy": accuracy})
+			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
+			return
+		}
+		u.logger.Warn(ctx, tag, "persisting best-effort coder below full validation", domainmodels.LoggerMeta{
+			"session_id": sessionId, "owned_accuracy": accuracy,
+			"checksum_correct": bestResult.ChecksumOK, "checksum_total": bestResult.ChecksumTotal,
+		})
 	}
 
 	coderId, err := u.coder.Create(ctx, domainmodels.InfraredStateCoder{
 		InfraredDeviceId:        session.InfraredDeviceId,
 		InfraredRecordSessionId: sessionId,
-		EncoderSource:           written.EncoderSource,
-		DecoderSource:           written.DecoderSource,
-		SummaryReadme:           written.SummaryReadme,
-		DetailReadme:            written.DetailReadme,
+		EncoderSource:           best.EncoderSource,
+		DecoderSource:           best.DecoderSource,
+		SummaryReadme:           best.SummaryReadme,
+		DetailReadme:            best.DetailReadme,
 	})
 	if err != nil {
 		u.logger.Error(ctx, tag, "failed to persist coder", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
@@ -419,6 +488,48 @@ func (u *usecase) runAnalysisAndGeneration(sessionId uuid.UUID) {
 	}
 
 	go u.runTestCaseGeneration(sessionId, coderId)
+}
+
+// buildKnownCases converts buildAnalysisPayload's baseline/recordedCases
+// output into the coder_generation.KnownCase list Validate() needs — each
+// entry pairs a full, name-keyed state map (ready for RunEncoder) with that
+// exact state's real recorded bits. Non-baseline cases are reconstructed by
+// copying the baseline's full state and overriding the one field this case's
+// OFAT construction changed, since a recorded non-baseline case's row only
+// carries its target state/value delta, not a full state snapshot.
+func buildKnownCases(states []domainmodels.InfraredState, baselineValues map[string]string, baselineBits []int, recordedCases []recordedCase) []applicationinfraredcodergeneration.KnownCase {
+	nameById := make(map[string]string, len(states))
+	for _, s := range states {
+		nameById[s.Id.String()] = s.Name
+	}
+
+	baselineCopy := make(map[string]string, len(baselineValues))
+	for k, v := range baselineValues {
+		baselineCopy[k] = v
+	}
+
+	knownCases := []applicationinfraredcodergeneration.KnownCase{
+		{Label: "baseline", State: baselineCopy, Bits: baselineBits},
+	}
+
+	for _, rc := range recordedCases {
+		stateName, ok := nameById[rc.TargetStateId.String()]
+		if !ok {
+			continue
+		}
+		state := make(map[string]string, len(baselineValues))
+		for k, v := range baselineValues {
+			state[k] = v
+		}
+		state[stateName] = rc.TargetValue
+		knownCases = append(knownCases, applicationinfraredcodergeneration.KnownCase{
+			Label: fmt.Sprintf("%s=%s", stateName, rc.TargetValue),
+			State: state,
+			Bits:  rc.Bits,
+		})
+	}
+
+	return knownCases
 }
 
 // runTestCaseGeneration is this plan's third background-goroutine job,
@@ -745,6 +856,19 @@ func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID,
 		}
 	}
 
+	u.persistNewCasesAndReturnToRecording(ctx, tag, sessionId, nextStep, plans)
+}
+
+// persistNewCasesAndReturnToRecording persists a batch of newly-proposed
+// record cases starting at nextStep, activates the first one, sets it as the
+// session's current case, and transitions the session back to RECORDING.
+// Shared by runRetryCaseGeneration (post-test-case-failure) and the
+// checksum-clarification path (pre-persistence) — both need identical
+// "append cases and go record them" mechanics, even though they trigger from
+// very different points in the session lifecycle. Returns false if it
+// already transitioned the session to FAILED on an internal error, so
+// callers know not to do anything further.
+func (u *usecase) persistNewCasesAndReturnToRecording(ctx context.Context, tag string, sessionId uuid.UUID, nextStep int32, plans []applicationinfraredcodergeneration.RetryCasePlan) bool {
 	var firstNewCaseId uuid.UUID
 	for i, plan := range plans {
 		caseStates := make([]domainmodels.InfraredStateDeviceRecordState, 0, len(plan.States))
@@ -753,9 +877,9 @@ func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID,
 		}
 		caseId, err := u.recordCase.CreateWithStates(ctx, sessionId, nextStep+int32(i), plan.Description, caseStates)
 		if err != nil {
-			u.logger.Error(ctx, tag, "failed to persist retry case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+			u.logger.Error(ctx, tag, "failed to persist new record case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 			u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
-			return
+			return false
 		}
 		if i == 0 {
 			firstNewCaseId = caseId
@@ -763,16 +887,17 @@ func (u *usecase) runRetryCaseGeneration(sessionId uuid.UUID, coderId uuid.UUID,
 	}
 
 	if err := u.recordCase.UpdateStatusById(ctx, firstNewCaseId, domainmodels.InfraredRecordCaseStatusActive); err != nil {
-		u.logger.Error(ctx, tag, "failed to activate first retry case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.logger.Error(ctx, tag, "failed to activate first new case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
-		return
+		return false
 	}
 	if err := u.session.UpdateCurrentRecordCaseIdById(ctx, sessionId, &firstNewCaseId); err != nil {
-		u.logger.Error(ctx, tag, "failed to set session cursor to first retry case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
+		u.logger.Error(ctx, tag, "failed to set session cursor to first new case", domainmodels.LoggerMeta{"err": err, "session_id": sessionId})
 		u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateFailed)
-		return
+		return false
 	}
 	u.transition(ctx, tag, sessionId, domainmodels.InfraredRecordingStateRecording)
+	return true
 }
 
 // coderById is a small helper since InfraredStateCoder's repository only
