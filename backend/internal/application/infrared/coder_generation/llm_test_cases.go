@@ -11,17 +11,43 @@ import (
 	"github.com/google/uuid"
 )
 
+// The schema wraps the array under an "entries" object property, and
+// represents each case's states as an array of {name, value} pairs rather
+// than a free-form object map: OpenAI's Structured Outputs mode rejects
+// both an array-rooted schema and any "additionalProperties" holding a
+// schema (open-ended dictionaries aren't representable in strict mode -
+// every property has to be named in "required"), while Claude and Gemini
+// accept both shapes fine. One schema, working for every provider, beats
+// branching per client.
 const testCaseResponseSchema = `{
-	"type": "array",
-	"items": {
-		"type": "object",
-		"properties": {
-			"description": {"type": "string"},
-			"states": {"type": "object", "additionalProperties": {"type": "string"}}
-		},
-		"required": ["description", "states"],
-		"additionalProperties": false
-	}
+	"type": "object",
+	"properties": {
+		"entries": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"description": {"type": "string"},
+					"states": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"name": {"type": "string"},
+								"value": {"type": "string"}
+							},
+							"required": ["name", "value"],
+							"additionalProperties": false
+						}
+					}
+				},
+				"required": ["description", "states"],
+				"additionalProperties": false
+			}
+		}
+	},
+	"required": ["entries"],
+	"additionalProperties": false
 }`
 
 type TestCasePlan struct {
@@ -29,9 +55,18 @@ type TestCasePlan struct {
 	States      map[uuid.UUID]string
 }
 
+type testCaseStateResponse struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 type testCasePlanResponse struct {
-	Description string            `json:"description"`
-	States      map[string]string `json:"states"`
+	Description string                  `json:"description"`
+	States      []testCaseStateResponse `json:"states"`
+}
+
+type testCasePlanListResponse struct {
+	Entries []testCasePlanResponse `json:"entries"`
 }
 
 // WriteTestCases asks the LLM to propose a minimal-but-sufficient set of
@@ -65,7 +100,7 @@ func WriteTestCases(
 	}
 
 	prompt := fmt.Sprintf(
-		"Device: %s %s\n\nProtocol summary: %s\n\nProtocol detail: %s\n\nDevice states and their legal values:\n%s\nPropose a minimal but sufficient set of test scenarios to verify this encoder works correctly on real hardware. Each scenario names a full target state (every field, using exactly the state names given above) and a short description of what a technician should observe. Respond as a JSON array matching the given schema.",
+		"Device: %s %s\n\nProtocol summary: %s\n\nProtocol detail: %s\n\nDevice states and their legal values:\n%s\nPropose a minimal but sufficient set of test scenarios to verify this encoder works correctly on real hardware. Each scenario names a full target state (every field, using exactly the state names given above) and a short description of what a technician should observe. Respond as JSON matching the given schema.",
 		deviceBrand, deviceModel, coder.SummaryReadme, coder.DetailReadme, stateCatalog.String(),
 	)
 
@@ -79,20 +114,20 @@ func WriteTestCases(
 		return nil, domainmodels.NewError("failed to generate test cases", domainmodels.ErrTypeFailure, err)
 	}
 
-	var responses []testCasePlanResponse
-	if err := json.Unmarshal([]byte(result.Text), &responses); err != nil {
+	var wrapper testCasePlanListResponse
+	if err := json.Unmarshal([]byte(result.Text), &wrapper); err != nil {
 		return nil, domainmodels.NewError("llm returned malformed test case response", domainmodels.ErrTypeFailure, err)
 	}
 
-	plans := make([]TestCasePlan, 0, len(responses))
-	for _, r := range responses {
+	plans := make([]TestCasePlan, 0, len(wrapper.Entries))
+	for _, r := range wrapper.Entries {
 		states := make(map[uuid.UUID]string, len(r.States))
-		for name, value := range r.States {
-			stateId, ok := stateIdByName[name]
+		for _, s := range r.States {
+			stateId, ok := stateIdByName[s.Name]
 			if !ok {
-				return nil, domainmodels.NewError(fmt.Sprintf("llm referenced unknown state %q", name), domainmodels.ErrTypeFailure, nil)
+				return nil, domainmodels.NewError(fmt.Sprintf("llm referenced unknown state %q", s.Name), domainmodels.ErrTypeFailure, nil)
 			}
-			states[stateId] = value
+			states[stateId] = s.Value
 		}
 		plans = append(plans, TestCasePlan{Description: r.Description, States: states})
 	}

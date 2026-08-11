@@ -11,24 +11,41 @@ import (
 	domainmodels "github.com/MateWorkspace/mate-things/backend/internal/domain/models"
 )
 
+// The schema wraps the array under an "entries" object property rather
+// than using an array as the JSON root: OpenAI's Structured Outputs mode
+// rejects any response_format schema whose root type isn't "object"
+// ("schema must be a JSON Schema of 'type: object'"), while Claude and
+// Gemini accept both shapes fine — wrapping keeps one schema working for
+// every provider instead of branching per client.
 const responseSchema = `{
-	"type": "array",
-	"items": {
-		"type": "object",
-		"properties": {
-			"case_index": {"type": "integer"},
-			"description": {"type": "string"},
-			"order": {"type": "integer"}
-		},
-		"required": ["case_index", "description", "order"],
-		"additionalProperties": false
-	}
+	"type": "object",
+	"properties": {
+		"entries": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"case_index": {"type": "integer"},
+					"description": {"type": "string"},
+					"order": {"type": "integer"}
+				},
+				"required": ["case_index", "description", "order"],
+				"additionalProperties": false
+			}
+		}
+	},
+	"required": ["entries"],
+	"additionalProperties": false
 }`
 
 type scriptEntry struct {
 	CaseIndex   int    `json:"case_index"`
 	Description string `json:"description"`
 	Order       int    `json:"order"`
+}
+
+type scriptResponse struct {
+	Entries []scriptEntry `json:"entries"`
 }
 
 // WriteScript asks the LLM to write a human-facing instruction for every
@@ -54,8 +71,8 @@ func WriteScript(
 	promptBuilder.WriteString("Below is a numbered list of remote-control states to physically set up, one per case. ")
 	promptBuilder.WriteString("For each case, write a short, clear instruction telling a technician the FULL state to set the remote to " +
 		"(every field, not just what changed from the previous case), then choose a press-order (\"order\", 1-based) that groups similar " +
-		"button sequences together to minimize physical button presses across the whole list. Respond as a JSON array matching the given schema, " +
-		"one entry per case_index below.\n\n")
+		"button sequences together to minimize physical button presses across the whole list. Respond as JSON matching the given schema, " +
+		"with one entries[] item per case_index below.\n\n")
 	for i, c := range cases {
 		fmt.Fprintf(&promptBuilder, "case_index %d: ", i)
 		fields := make([]string, 0, len(c.States))
@@ -77,10 +94,11 @@ func WriteScript(
 		return nil, domainmodels.NewError("failed to generate case script", domainmodels.ErrTypeFailure, err)
 	}
 
-	var entries []scriptEntry
-	if err := json.Unmarshal([]byte(result.Text), &entries); err != nil {
+	var wrapper scriptResponse
+	if err := json.Unmarshal([]byte(result.Text), &wrapper); err != nil {
 		return nil, domainmodels.NewError("llm returned malformed case script", domainmodels.ErrTypeFailure, err)
 	}
+	entries := wrapper.Entries
 	if len(entries) != len(cases) {
 		return nil, domainmodels.NewError(
 			fmt.Sprintf("llm returned %d case script entries, want %d", len(entries), len(cases)),

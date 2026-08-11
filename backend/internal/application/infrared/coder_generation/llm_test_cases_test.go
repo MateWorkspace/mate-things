@@ -16,9 +16,11 @@ func TestWriteTestCasesParsesStructuredResponse(t *testing.T) {
 	definitions := []domainmodels.InfraredStateDeviceDefinition{{InfraredStateId: powerId, Options: []string{"ON", "OFF"}}}
 	coder := domainmodels.InfraredStateCoder{SummaryReadme: "summary", DetailReadme: "detail"}
 
-	responseBody, _ := json.Marshal([]map[string]interface{}{
-		{"description": "Turn the unit on.", "states": map[string]string{"POWER": "ON"}},
-		{"description": "Turn the unit off.", "states": map[string]string{"POWER": "OFF"}},
+	responseBody, _ := json.Marshal(map[string]any{
+		"entries": []map[string]any{
+			{"description": "Turn the unit on.", "states": []map[string]string{{"name": "POWER", "value": "ON"}}},
+			{"description": "Turn the unit off.", "states": []map[string]string{{"name": "POWER", "value": "OFF"}}},
+		},
 	})
 	client := &fakeLlmClient{responseText: string(responseBody)}
 
@@ -41,6 +43,41 @@ func TestWriteTestCasesParsesStructuredResponse(t *testing.T) {
 	}
 }
 
+// OpenAI's Structured Outputs mode rejects both an array-rooted schema and
+// any "additionalProperties" holding a schema (open-ended dictionaries).
+// This guards against the schema regressing back to either shape, which
+// passed unit tests before but failed for real against OpenAI (confirmed
+// via manual reproduction against the live API before this fix).
+func TestWriteTestCasesRequestsAnObjectRootedSchemaWithNoOpenEndedDictionaries(t *testing.T) {
+	powerId := uuid.New()
+	states := []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}
+	responseBody, _ := json.Marshal(map[string]any{
+		"entries": []map[string]any{
+			{"description": "d", "states": []map[string]string{{"name": "POWER", "value": "ON"}}},
+		},
+	})
+	client := &fakeLlmClient{responseText: string(responseBody)}
+
+	if _, err := WriteTestCases(context.Background(), client, "Polytron", "PAC-09HDN", domainmodels.InfraredStateCoder{}, states, nil); err != nil {
+		t.Fatalf("WriteTestCases() error = %v, want nil", err)
+	}
+
+	var schema map[string]any
+	if err := json.Unmarshal(client.lastRequest.ResponseSchema, &schema); err != nil {
+		t.Fatalf("ResponseSchema is not valid JSON: %v", err)
+	}
+	if schema["type"] != "object" {
+		t.Fatalf("ResponseSchema root type = %v, want \"object\"", schema["type"])
+	}
+
+	var raw string
+	rawBytes, _ := json.Marshal(schema)
+	raw = string(rawBytes)
+	if strings.Contains(raw, `"additionalProperties":{`) {
+		t.Fatalf("ResponseSchema contains an additionalProperties-as-schema (open-ended dictionary), which OpenAI's strict mode rejects: %s", raw)
+	}
+}
+
 func TestWriteTestCasesPropagatesLlmError(t *testing.T) {
 	client := &fakeLlmClient{err: context.DeadlineExceeded}
 	_, err := WriteTestCases(context.Background(), client, "Polytron", "PAC-09HDN", domainmodels.InfraredStateCoder{}, nil, nil)
@@ -51,8 +88,10 @@ func TestWriteTestCasesPropagatesLlmError(t *testing.T) {
 
 func TestWriteTestCasesErrorsOnUnknownStateName(t *testing.T) {
 	states := []domainmodels.InfraredState{{Id: uuid.New(), Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}
-	responseBody, _ := json.Marshal([]map[string]interface{}{
-		{"description": "bad", "states": map[string]string{"NONEXISTENT": "X"}},
+	responseBody, _ := json.Marshal(map[string]any{
+		"entries": []map[string]any{
+			{"description": "bad", "states": []map[string]string{{"name": "NONEXISTENT", "value": "X"}}},
+		},
 	})
 	client := &fakeLlmClient{responseText: string(responseBody)}
 
@@ -68,8 +107,10 @@ func TestWriteTestCasesPromptEnumeratesStateNamesAndValues(t *testing.T) {
 	definitions := []domainmodels.InfraredStateDeviceDefinition{{InfraredStateId: powerId, Options: []string{"ON", "OFF"}}}
 	coder := domainmodels.InfraredStateCoder{SummaryReadme: "summary", DetailReadme: "detail"}
 
-	responseBody, _ := json.Marshal([]map[string]interface{}{
-		{"description": "Turn the unit on.", "states": map[string]string{"POWER": "ON"}},
+	responseBody, _ := json.Marshal(map[string]any{
+		"entries": []map[string]any{
+			{"description": "Turn the unit on.", "states": []map[string]string{{"name": "POWER", "value": "ON"}}},
+		},
 	})
 	client := &fakeLlmClient{responseText: string(responseBody)}
 

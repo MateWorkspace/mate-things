@@ -16,8 +16,10 @@ func TestWriteRetryCasesParsesStructuredResponse(t *testing.T) {
 	coder := domainmodels.InfraredStateCoder{SummaryReadme: "summary", DetailReadme: "detail"}
 	failedStates := []map[uuid.UUID]string{{powerId: "OFF"}}
 
-	responseBody, _ := json.Marshal([]map[string]interface{}{
-		{"description": "Re-record POWER OFF.", "states": map[string]string{"POWER": "OFF"}},
+	responseBody, _ := json.Marshal(map[string]any{
+		"entries": []map[string]any{
+			{"description": "Re-record POWER OFF.", "states": []map[string]string{{"name": "POWER", "value": "OFF"}}},
+		},
 	})
 	client := &fakeLlmClient{responseText: string(responseBody)}
 
@@ -54,8 +56,10 @@ func TestWriteRetryCasesDescribesEachFailureSeparately(t *testing.T) {
 		{powerId: "OFF", modeId: "HEAT"},
 	}
 
-	responseBody, _ := json.Marshal([]map[string]interface{}{
-		{"description": "Re-record.", "states": map[string]string{"POWER": "OFF"}},
+	responseBody, _ := json.Marshal(map[string]any{
+		"entries": []map[string]any{
+			{"description": "Re-record.", "states": []map[string]string{{"name": "POWER", "value": "OFF"}}},
+		},
 	})
 	client := &fakeLlmClient{responseText: string(responseBody)}
 

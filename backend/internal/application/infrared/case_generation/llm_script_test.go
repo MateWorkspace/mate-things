@@ -2,6 +2,7 @@ package applicationinfraredcasegeneration
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
@@ -28,10 +29,10 @@ func TestWriteScriptAppliesDescriptionsAndReorderingFromLlmResponse(t *testing.T
 		{Step: 2, States: map[uuid.UUID]string{powerStateId: "OFF"}},
 	}
 
-	client := &fakeLlmClient{responseText: `[
+	client := &fakeLlmClient{responseText: `{"entries": [
 		{"case_index": 0, "description": "Set the remote to POWER ON.", "order": 2},
 		{"case_index": 1, "description": "Set the remote to POWER OFF.", "order": 1}
-	]`}
+	]}`}
 
 	result, err := WriteScript(context.Background(), client, "Polytron", "PAC-09HDN", states, cases)
 	if err != nil {
@@ -54,6 +55,30 @@ func TestWriteScriptAppliesDescriptionsAndReorderingFromLlmResponse(t *testing.T
 	}
 	if client.lastRequest.MaxOutputTokens <= 0 {
 		t.Fatalf("GenerateText() request had MaxOutputTokens = %d, want > 0", client.lastRequest.MaxOutputTokens)
+	}
+}
+
+// OpenAI's Structured Outputs mode rejects any response_format schema
+// whose root isn't "type": "object" - this guards against the schema
+// constant regressing back to an array root, which passed unit tests
+// before but failed for real against OpenAI (confirmed via manual
+// reproduction against the live API before this fix).
+func TestWriteScriptRequestsAnObjectRootedSchema(t *testing.T) {
+	powerStateId := uuid.New()
+	states := []domainmodels.InfraredState{{Id: powerStateId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}
+	cases := []GeneratedCase{{Step: 1, States: map[uuid.UUID]string{powerStateId: "ON"}}}
+	client := &fakeLlmClient{responseText: `{"entries": [{"case_index": 0, "description": "d", "order": 1}]}`}
+
+	if _, err := WriteScript(context.Background(), client, "Polytron", "PAC-09HDN", states, cases); err != nil {
+		t.Fatalf("WriteScript() error = %v, want nil", err)
+	}
+
+	var schema map[string]any
+	if err := json.Unmarshal(client.lastRequest.ResponseSchema, &schema); err != nil {
+		t.Fatalf("ResponseSchema is not valid JSON: %v", err)
+	}
+	if schema["type"] != "object" {
+		t.Fatalf("ResponseSchema root type = %v, want \"object\" (OpenAI Structured Outputs rejects array-rooted schemas)", schema["type"])
 	}
 }
 

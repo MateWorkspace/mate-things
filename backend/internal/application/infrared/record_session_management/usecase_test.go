@@ -469,7 +469,7 @@ func (f *fakeLlmClientFactory) Current(_ context.Context) (domaincontractsllm.Cl
 	}
 	text := f.responseText
 	if text == "" {
-		text = `[{"case_index": 0, "description": "baseline", "order": 1}]`
+		text = `{"entries": [{"case_index": 0, "description": "baseline", "order": 1}]}`
 	}
 	return &fakeLlmClient{text: text}, nil
 }
@@ -1086,7 +1086,7 @@ func TestRunAnalysisAndGenerationPersistsCoderAndAdvancesToTestCaseGeneration(t 
 	// array — fakeLlmClientFactory.responseTexts feeds them in that order.
 	llmFactory := &fakeLlmClientFactory{responseTexts: []string{
 		`{"encoder_source": "function encode(state) { return [9000, 4500]; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "summary", "detail_readme": "detail"}`,
-		`[{"description": "d1", "states": {"POWER": "ON"}}]`,
+		`{"entries": [{"description": "d1", "states": [{"name": "POWER", "value": "ON"}]}]}`,
 	}}
 	encoderRunner := &fakeEncoderRunner{}
 	testCaseRepo := &fakeTestCaseRepository{}
@@ -1481,7 +1481,7 @@ func TestRunAnalysisAndGenerationRequestsChecksumClarificationOnChecksumOnlyGap(
 	}}
 	llmFactory := &fakeLlmClientFactory{clientSequence: []string{
 		`{"encoder_source": "function encode(state) { return []; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
-		`[{"description": "repeat baseline twice more", "states": {"POWER": "OFF", "MODE": "COOL"}}]`,
+		`{"entries": [{"description": "repeat baseline twice more", "states": [{"name": "POWER", "value": "OFF"}, {"name": "MODE", "value": "COOL"}]}]}`,
 	}}
 
 	impl := NewUsecaseImpl(
@@ -1605,7 +1605,7 @@ func TestRunAnalysisAndGenerationRequestsChecksumClarificationAfterRepairRound(t
 	llmFactory := &fakeLlmClientFactory{clientSequence: []string{
 		`{"encoder_source": "` + brokenSource + `", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
 		`{"encoder_source": "` + repairedSource + `", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s2", "detail_readme": "d2"}`,
-		`[{"description": "repeat baseline twice more", "states": {"POWER": "OFF", "MODE": "COOL"}}]`,
+		`{"entries": [{"description": "repeat baseline twice more", "states": [{"name": "POWER", "value": "OFF"}, {"name": "MODE", "value": "COOL"}]}]}`,
 	}}
 
 	impl := NewUsecaseImpl(
@@ -1712,7 +1712,7 @@ func TestRunAnalysisAndGenerationSkipsChecksumClarificationWhenAlreadyUsed(t *te
 	}}
 	llmFactory := &fakeLlmClientFactory{responseTexts: []string{
 		`{"encoder_source": "function encode(state) { return []; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
-		`[{"description": "d1", "states": {"POWER": "OFF"}}]`,
+		`{"entries": [{"description": "d1", "states": [{"name": "POWER", "value": "OFF"}]}]}`,
 	}}
 
 	impl := NewUsecaseImpl(
@@ -1798,7 +1798,7 @@ func TestRunAnalysisAndGenerationSkipsNonOfatCaseInsteadOfFailing(t *testing.T) 
 	encoderRunner := &fakeEncoderRunner{raw: []int32{9000, 4500, 560, 560, 560, 560}}
 	llmFactory := &fakeLlmClientFactory{responseTexts: []string{
 		`{"encoder_source": "function encode(state) { return []; }", "decoder_source": "function decode(raw) { return {}; }", "summary_readme": "s", "detail_readme": "d"}`,
-		`[{"description": "d1", "states": {"POWER": "OFF"}}]`,
+		`{"entries": [{"description": "d1", "states": [{"name": "POWER", "value": "OFF"}]}]}`,
 	}}
 
 	impl := NewUsecaseImpl(
@@ -1937,7 +1937,7 @@ func TestRunTestCaseGenerationPersistsOneTestCasePerPlanAndTransitionsToTesting(
 	stateRepo := &fakeStateRepository{listByDeviceTypeIdResult: []domainmodels.InfraredState{{Id: powerId, Name: "POWER", Type: domainmodels.InfraredStateTypeEnum}}}
 	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: coderId, SummaryReadme: "s", DetailReadme: "d"}}
 	testCaseRepo := &fakeTestCaseRepository{}
-	llmFactory := &fakeLlmClientFactory{responseText: `[{"description": "d1", "states": {"POWER": "ON"}}, {"description": "d2", "states": {"POWER": "OFF"}}]`}
+	llmFactory := &fakeLlmClientFactory{responseText: `{"entries": [{"description": "d1", "states": [{"name": "POWER", "value": "ON"}]}, {"description": "d2", "states": [{"name": "POWER", "value": "OFF"}]}]}`}
 
 	impl := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
@@ -2153,7 +2153,7 @@ func TestRecordTestCaseResultTriggersRetryLoopWhenAnyFail(t *testing.T) {
 			{Id: uuid.New(), InfraredRecordSessionId: sessionId, Step: 3, Status: domainmodels.InfraredRecordCaseStatusAccepted},
 		},
 	}
-	llmFactory := &fakeLlmClientFactory{responseText: `[{"description": "Re-record POWER OFF.", "states": {"POWER": "OFF"}}]`}
+	llmFactory := &fakeLlmClientFactory{responseText: `{"entries": [{"description": "Re-record POWER OFF.", "states": [{"name": "POWER", "value": "OFF"}]}]}`}
 
 	impl := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
@@ -2297,7 +2297,7 @@ func TestRunTestCaseGenerationFailsSessionWhenNoPlansProposed(t *testing.T) {
 	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, InfraredDeviceId: uuid.New()}}
 	coderRepo := &fakeCoderRepository{getResult: &domainmodels.InfraredStateCoder{Id: coderId, SummaryReadme: "s", DetailReadme: "d"}}
 	testCaseRepo := &fakeTestCaseRepository{}
-	llmFactory := &fakeLlmClientFactory{responseText: "[]"}
+	llmFactory := &fakeLlmClientFactory{responseText: `{"entries": []}`}
 
 	impl := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},

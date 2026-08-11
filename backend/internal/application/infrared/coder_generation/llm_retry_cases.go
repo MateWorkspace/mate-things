@@ -48,7 +48,7 @@ func WriteRetryCases(
 	}
 
 	prompt := fmt.Sprintf(
-		"Device: %s %s\n\nProtocol summary: %s\n\nProtocol detail: %s\n\nA hardware test transmitting this target state failed: %s\n\nPropose new targeted recording scenarios (full target state plus a short description) likely to explain the discrepancy and improve the encoder. Respond as a JSON array matching the given schema.",
+		"Device: %s %s\n\nProtocol summary: %s\n\nProtocol detail: %s\n\nA hardware test transmitting this target state failed: %s\n\nPropose new targeted recording scenarios (full target state plus a short description) likely to explain the discrepancy and improve the encoder. Respond as JSON matching the given schema.",
 		deviceBrand, deviceModel, coder.SummaryReadme, coder.DetailReadme, failedDescription.String(),
 	)
 
@@ -62,20 +62,20 @@ func WriteRetryCases(
 		return nil, domainmodels.NewError("failed to generate retry cases", domainmodels.ErrTypeFailure, err)
 	}
 
-	var responses []testCasePlanResponse
-	if err := json.Unmarshal([]byte(result.Text), &responses); err != nil {
+	var wrapper testCasePlanListResponse
+	if err := json.Unmarshal([]byte(result.Text), &wrapper); err != nil {
 		return nil, domainmodels.NewError("llm returned malformed retry case response", domainmodels.ErrTypeFailure, err)
 	}
 
-	plans := make([]RetryCasePlan, 0, len(responses))
-	for _, r := range responses {
+	plans := make([]RetryCasePlan, 0, len(wrapper.Entries))
+	for _, r := range wrapper.Entries {
 		planStates := make(map[uuid.UUID]string, len(r.States))
-		for name, value := range r.States {
-			stateId, ok := stateIdByName[name]
+		for _, s := range r.States {
+			stateId, ok := stateIdByName[s.Name]
 			if !ok {
-				return nil, domainmodels.NewError(fmt.Sprintf("llm referenced unknown state %q", name), domainmodels.ErrTypeFailure, nil)
+				return nil, domainmodels.NewError(fmt.Sprintf("llm referenced unknown state %q", s.Name), domainmodels.ErrTypeFailure, nil)
 			}
-			planStates[stateId] = value
+			planStates[stateId] = s.Value
 		}
 		plans = append(plans, RetryCasePlan{Description: r.Description, States: planStates})
 	}
