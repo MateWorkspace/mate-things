@@ -3,6 +3,7 @@ package applicationinfraredcodergeneration
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -22,6 +23,8 @@ func (f *fakeLlmClient) GenerateText(_ context.Context, req domaincontractsllm.G
 	f.lastRequest = req
 	return domaincontractsllm.GenerateTextResult{Text: f.responseText}, f.err
 }
+
+var errPlaceholder = errors.New("boom")
 
 func TestWriteCoderParsesStructuredResponse(t *testing.T) {
 	powerId := uuid.New()
