@@ -86,13 +86,25 @@ func Validate(
 
 For each known case (baseline + every already-recorded non-baseline case,
 built by the caller from `buildAnalysisPayload`'s existing outputs): run
-`RunEncoder(encoderSource, state, encoderSmokeTestTimeout)`, decode the
-result via the existing `DemodulateBits`, and compare position-by-position
+`RunEncoder(encoderSource, state, encoderRunTimeout)`, decode the
+result through the **same pipeline the recorded bits went through** —
+`SegmentFrames(raw)` → `frames[0]` → `DemodulateBits(frames[0])`, exactly
+as `buildAnalysisPayload` does — and compare position-by-position
 against that case's real bits — owned-bit positions (from
 `payload.States[].BitOffsets` unioned) scored separately from
 `payload.ChecksumBits` positions, exactly as this session's test scripts
 did. A `RunError` short-circuits that case's comparison (0 owned, 0
-checksum — it contributes to the denominator as a full miss).
+checksum — it contributes to the denominator as a full miss). Raw output
+that segments to zero frames is treated the same way, as a `RunError`.
+
+Calling `DemodulateBits(raw)` directly on the encoder's whole output is
+**not** equivalent and must not be done: `DemodulateBits` classifies each
+space against the min/max midpoint of the array it is given, so a trailing
+inter-frame gap (>5000µs) or a repeated frame — both routine in real IR
+encoder output — drags that midpoint up and can misclassify every bit of a
+perfectly correct encoder, hard-failing the session at §5's 60% floor for
+no real reason. The comparison is only meaningful when both sides are
+decoded identically.
 
 **Pass bar:** `OwnedCorrect == OwnedTotal` (100% exact match) — these are
 real recorded bits, not estimates, so any mismatch is a genuine defect, not
@@ -166,20 +178,37 @@ attempt, so a bad round doesn't poison the next one either.)
 
 ## 4. Checksum-only gap → new pre-persistence case-request path
 
-After validation (initial or any repair round), if `OwnedCorrect ==
-OwnedTotal` but `ChecksumOK < ChecksumTotal`, that's scoped as a data
-problem (too few examples to reverse-engineer the checksum algorithm — a
-plausible failure mode independent of model quality), not something a
-repair prompt can fix. Skip the repair loop (or abandon it if already
-mid-loop) and take a new path instead of persisting a coder yet:
+If `OwnedCorrect == OwnedTotal` but `ChecksumOK < ChecksumTotal`, that's
+scoped as a data problem (too few examples to reverse-engineer the checksum
+algorithm — a plausible failure mode independent of model quality), not
+something a repair prompt can fix.
+
+This is checked on **whatever `bestResult` holds once the repair loop has
+finished**, not only on the initial attempt — i.e. the check sits between
+the §3 loop and the §5 floor logic. A checksum-only gap on the initial
+attempt means `Passed()` is already true (`Passed()` ignores checksum
+bits), so the loop body never executes and the check sees the initial
+result unchanged; placing it after the loop additionally catches the case
+where a repair round fixes the owned bits but leaves the checksum bits
+wrong — a state that would otherwise be persisted as a "clean pass" with a
+known-broken checksum.
+
+When it holds, take a new path instead of persisting a coder yet:
 
 - New `coder_generation.WriteChecksumClarificationCases(ctx, client,
   brand, model, coder Coder, states []InfraredState) ([]RetryCasePlan,
   error)` — same shape as the existing `WriteRetryCases`
   (`RetryCasePlan{Description string; States map[uuid.UUID]string}`, same
   `testCaseResponseSchema`), new prompt asking specifically for recording
-  scenarios likely to help pin down the checksum algorithm (e.g. varying
-  multiple states together, or repeating a case to confirm determinism).
+  scenarios likely to help pin down the checksum algorithm. The prompt must
+  demand strict OFAT scenarios (exactly one state changed from baseline, to
+  a value not recorded yet — or a repeat of an existing case to confirm
+  determinism): `buildAnalysisPayload`/`Attribute()` can only attribute a
+  case that differs from baseline in exactly one state, so asking for
+  multi-state scenarios would corrupt the next pass's attribution rather
+  than help it. `buildAnalysisPayload` also skips (with a `Warn`, not a
+  session failure) any recorded case it cannot attribute to exactly one
+  state.
 - Extract the shared tail of `runRetryCaseGeneration` (persist new cases via
   `recordCase.CreateWithStates`, activate the first one, set it as the
   session's current case, transition to `RECORDING`) into a private helper
