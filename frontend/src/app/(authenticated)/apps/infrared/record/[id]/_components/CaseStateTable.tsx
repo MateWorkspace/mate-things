@@ -27,7 +27,7 @@ export default function CaseStateTable({
         {sortedStates(states).map((s) => (
           <tr key={s.infrared_state_id}>
             <td className="border-border/40 text-muted-foreground border px-2 py-1 text-right whitespace-nowrap">
-              {nameById.get(s.infrared_state_id) ?? "State"}:
+              {nameById.get(s.infrared_state_id) ?? "State"}
             </td>
             <td
               className={`border-border/40 border px-2 py-1 text-left whitespace-nowrap ${
