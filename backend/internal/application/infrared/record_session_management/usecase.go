@@ -668,6 +668,9 @@ func (u *usecase) TransmitTestCase(ctx context.Context, testCaseId uuid.UUID) er
 		u.logger.Error(ctx, tag, "failed to look up session for test case", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
 		return err
 	}
+	if session.IsCompleted {
+		return sessionAlreadyFinishedError()
+	}
 	node, err := u.node.ReadById(ctx, session.NodeId)
 	if err != nil || node == nil {
 		u.logger.Error(ctx, tag, "failed to look up node for test case", domainmodels.LoggerMeta{"err": err, "test_case_id": testCaseId})
@@ -920,6 +923,37 @@ func (u *usecase) coderById(ctx context.Context, coderId uuid.UUID) (*domainmode
 	return u.coder.ReadById(ctx, coderId)
 }
 
+// sessionAlreadyFinishedError is returned by every mutation entrypoint
+// below once a session has reached a terminal state (COMPLETED or
+// FAILED) — kept as a single function so every caller reports the
+// identical reason.
+func sessionAlreadyFinishedError() error {
+	return domainmodels.NewError("record session has already finished and can no longer be modified", domainmodels.ErrTypeValidation, nil)
+}
+
+// requireMutableSession reads the session and rejects the caller if it has
+// already reached a terminal state (COMPLETED or FAILED, both captured by
+// IsCompleted) — without this guard, a mutation could destroy
+// already-accepted captures with no way to recapture them, or leave a
+// finished session's case/cursor state internally inconsistent (e.g. a
+// non-nil CurrentRecordCaseId on a COMPLETED session). The frontend
+// already hides the controls that would trigger these calls once a
+// session is done; this is the guard that holds regardless of which
+// client is calling.
+func (u *usecase) requireMutableSession(ctx context.Context, sessionId uuid.UUID) (*domainmodels.InfraredRecordSession, error) {
+	session, err := u.session.ReadById(ctx, sessionId)
+	if err != nil {
+		return nil, err
+	}
+	if session == nil {
+		return nil, domainmodels.NewError("record session not found", domainmodels.ErrTypeNotFound, nil)
+	}
+	if session.IsCompleted {
+		return nil, sessionAlreadyFinishedError()
+	}
+	return session, nil
+}
+
 // stateIdToNameLookup scans states for a matching Id and returns its Name —
 // a different shape from stateIdToName below (which converts a whole map at
 // once), since TransmitTestCase already iterates testCaseStates one at a
@@ -1166,6 +1200,10 @@ func (u *usecase) RetryCase(ctx context.Context, caseId uuid.UUID) error {
 
 func (u *usecase) SetCurrentCase(ctx context.Context, sessionId uuid.UUID, caseId uuid.UUID) error {
 	const tag = "infrared/record_session_management/SetCurrentCase"
+
+	if _, err := u.requireMutableSession(ctx, sessionId); err != nil {
+		return err
+	}
 
 	recordCase, err := u.recordCase.ReadById(ctx, caseId)
 	if err != nil {

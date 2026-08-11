@@ -740,7 +740,7 @@ func TestSetCurrentCaseRejectsCaseFromDifferentSession(t *testing.T) {
 	caseRepo := &fakeCaseRepository{getResult: &domainmodels.InfraredStateDeviceRecordCase{
 		Id: caseId, InfraredRecordSessionId: otherSessionId,
 	}}
-	sessionRepo := &fakeSessionRepository{}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId}}
 
 	usecase := NewUsecaseImpl(
 		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
@@ -763,7 +763,7 @@ func TestSetCurrentCaseSetsSessionCurrentCase(t *testing.T) {
 	caseRepo := &fakeCaseRepository{getResult: &domainmodels.InfraredStateDeviceRecordCase{
 		Id: caseId, InfraredRecordSessionId: sessionId,
 	}}
-	sessionRepo := &fakeSessionRepository{}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId}}
 	broadcaster := &fakeBroadcaster{}
 
 	usecase := NewUsecaseImpl(
@@ -785,6 +785,32 @@ func TestSetCurrentCaseSetsSessionCurrentCase(t *testing.T) {
 	}
 	if len(broadcaster.sentEvents) != 1 || broadcaster.sentEvents[0].CurrentRecordCaseId == nil || *broadcaster.sentEvents[0].CurrentRecordCaseId != caseId {
 		t.Fatalf("broadcaster sent events = %+v, want one event with current case id %v", broadcaster.sentEvents, caseId)
+	}
+}
+
+func TestSetCurrentCaseRejectsCompletedSession(t *testing.T) {
+	sessionId := uuid.New()
+	caseId := uuid.New()
+	caseRepo := &fakeCaseRepository{getResult: &domainmodels.InfraredStateDeviceRecordCase{
+		Id: caseId, InfraredRecordSessionId: sessionId,
+	}}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, IsCompleted: true}}
+
+	usecase := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, caseRepo, &fakeBroadcaster{}, &fakeSubscriptions{},
+		nil, &fakeNodeRepository{}, &fakeEncoderRunner{}, &fakeCoderRepository{}, &fakeTestCaseRepository{}, &fakePublish{}, &noopLogger{},
+	)
+
+	err := usecase.SetCurrentCase(context.Background(), sessionId, caseId)
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("SetCurrentCase() error = %v, want validation error", err)
+	}
+	if len(caseRepo.statusUpdateIds) != 0 {
+		t.Fatalf("case status updates = %v, want none (session already finished)", caseRepo.statusUpdateIds)
+	}
+	if sessionRepo.CurrentCaseId() != nil {
+		t.Fatalf("session current case id = %v, want nil (session already finished)", sessionRepo.CurrentCaseId())
 	}
 }
 
@@ -1921,6 +1947,33 @@ func TestTransmitTestCaseRunsEncoderAndPublishesResult(t *testing.T) {
 	}
 	if publish.transmitCalls != 1 {
 		t.Fatalf("IrTransmit() calls = %d, want 1", publish.transmitCalls)
+	}
+}
+
+func TestTransmitTestCaseRejectsCompletedSession(t *testing.T) {
+	testCaseId := uuid.New()
+	coderId := uuid.New()
+	sessionId := uuid.New()
+
+	testCaseRepo := &fakeTestCaseRepository{
+		getResult: &domainmodels.InfraredTestCase{Id: testCaseId, InfraredStateCoderId: coderId},
+	}
+	coderRepo := &fakeCoderRepository{getByIdResult: &domainmodels.InfraredStateCoder{Id: coderId, InfraredRecordSessionId: sessionId}}
+	sessionRepo := &fakeSessionRepository{getResult: &domainmodels.InfraredRecordSession{Id: sessionId, IsCompleted: true}}
+	publish := &fakePublish{}
+
+	impl := NewUsecaseImpl(
+		sessionRepo, &fakeDeviceRepository{}, &fakeDefinitionRepository{},
+		&fakeStateRepository{}, &fakeCaseRepository{}, &fakeBroadcaster{}, &fakeSubscriptions{},
+		&fakeLlmClientFactory{}, &fakeNodeRepository{}, &fakeEncoderRunner{}, coderRepo, testCaseRepo, publish, &noopLogger{},
+	)
+
+	err := impl.TransmitTestCase(context.Background(), testCaseId)
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("TransmitTestCase() error = %v, want validation error", err)
+	}
+	if publish.transmitCalls != 0 {
+		t.Fatalf("IrTransmit() calls = %d, want 0 (session already finished)", publish.transmitCalls)
 	}
 }
 
