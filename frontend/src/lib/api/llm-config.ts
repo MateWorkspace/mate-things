@@ -17,7 +17,7 @@ export interface LlmConfigResponse {
 export interface UpdateLlmConfigRequest {
   provider: LlmProvider;
   model: string;
-  api_key: string;
+  api_key?: string;
   base_url?: string;
 }
 

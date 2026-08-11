@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useRef } from "react";
+import { useActionState, useId, useRef, useState } from "react";
 
 import ActionMessage from "@/components/forms/ActionMessage";
 import FieldError from "@/components/forms/FieldError";
@@ -10,10 +10,31 @@ import Label from "@/components/ui/label";
 import Select from "@/components/ui/select";
 import { useFirstInvalidField } from "@/hooks/use-first-invalid-field";
 import { useRefreshAfterAction } from "@/hooks/use-refresh-after-action";
-import type { LlmConfigResponse } from "@/lib/api/llm-config";
+import type { LlmConfigResponse, LlmProvider } from "@/lib/api/llm-config";
 
 import { updateLlmConfigAction } from "../_lib/actions";
 import { EMPTY_LLM_CONFIG_STATE } from "../_lib/state";
+
+const MODEL_OPTIONS: Record<LlmProvider, readonly string[]> = {
+  CLAUDE: [
+    "claude-opus-5",
+    "claude-sonnet-5",
+    "claude-fable-5",
+    "claude-haiku-4-5-20251001",
+  ],
+  OPENAI: ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1", "gpt-4o"],
+};
+
+function normalizeProvider(provider: LlmProvider): LlmProvider {
+  return provider === "OPENAI" ? "OPENAI" : "CLAUDE";
+}
+
+function modelOptionsFor(provider: LlmProvider, currentModel: string) {
+  const options = MODEL_OPTIONS[normalizeProvider(provider)];
+  return currentModel && !options.includes(currentModel)
+    ? [currentModel, ...options]
+    : options;
+}
 
 export default function LlmConfigForm({
   config,
@@ -29,6 +50,13 @@ export default function LlmConfigForm({
   useFirstInvalidField(state, formRef);
   useRefreshAfterAction(state);
 
+  const configProvider = normalizeProvider(config.provider);
+  const [provider, setProvider] = useState<LlmProvider>(configProvider);
+  const modelOptions = modelOptionsFor(
+    provider,
+    provider === configProvider ? config.model : "",
+  );
+
   return (
     <form
       ref={formRef}
@@ -41,7 +69,8 @@ export default function LlmConfigForm({
         <Select
           id={`${fieldId}-provider`}
           name="provider"
-          defaultValue={config.provider}
+          value={provider}
+          onChange={(event) => setProvider(event.target.value as LlmProvider)}
         >
           <option value="CLAUDE">Claude</option>
           <option value="OPENAI">OpenAI</option>
@@ -51,17 +80,24 @@ export default function LlmConfigForm({
 
       <div>
         <Label htmlFor={`${fieldId}-model`}>Model</Label>
-        <Input
+        <Select
           id={`${fieldId}-model`}
           name="model"
-          defaultValue={config.model}
-          placeholder="claude-sonnet-5"
-          required
+          key={provider}
+          defaultValue={
+            provider === configProvider ? config.model : modelOptions[0]
+          }
           aria-invalid={Boolean(state.fieldErrors?.model)}
           aria-describedby={
             state.fieldErrors?.model ? `${fieldId}-model-error` : undefined
           }
-        />
+        >
+          {modelOptions.map((model) => (
+            <option key={model} value={model}>
+              {model}
+            </option>
+          ))}
+        </Select>
         <FieldError id={`${fieldId}-model-error`}>
           {state.fieldErrors?.model}
         </FieldError>
@@ -78,6 +114,11 @@ export default function LlmConfigForm({
       </div>
 
       <div>
+        <input
+          type="hidden"
+          name="api_key_was_set"
+          value={String(config.api_key_set)}
+        />
         <Label htmlFor={`${fieldId}-api-key`}>API key</Label>
         <Input
           id={`${fieldId}-api-key`}
@@ -87,7 +128,6 @@ export default function LlmConfigForm({
           placeholder={
             config.api_key_set ? "•••••••• (currently set)" : "Not set"
           }
-          required
           aria-invalid={Boolean(state.fieldErrors?.api_key)}
           aria-describedby={`${fieldId}-api-key-hint`}
         />
@@ -95,8 +135,9 @@ export default function LlmConfigForm({
           id={`${fieldId}-api-key-hint`}
           className="text-muted-foreground mt-1.5 text-xs"
         >
-          Write-only - it&apos;s never shown again after saving. Every save
-          requires it, even one that only changes the model or base URL.
+          {config.api_key_set
+            ? "Write-only - it's never shown again after saving. Leave blank to keep the current key."
+            : "Required the first time you configure this provider."}
         </p>
         <FieldError>{state.fieldErrors?.api_key}</FieldError>
       </div>

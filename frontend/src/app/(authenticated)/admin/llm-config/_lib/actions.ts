@@ -47,14 +47,14 @@ export async function updateLlmConfigAction(
     : undefined;
   const model = String(formData.get("model") ?? "").trim();
   const apiKey = String(formData.get("api_key") ?? "");
+  const apiKeyWasSet = formData.get("api_key_was_set") === "true";
   const baseUrl = String(formData.get("base_url") ?? "").trim();
 
   const fieldErrors: Record<string, string> = {};
   if (!provider) fieldErrors.provider = "Choose a provider.";
   if (!model) fieldErrors.model = "This field is required.";
-  if (!apiKey) {
-    fieldErrors.api_key =
-      "Re-enter your API key - every save requires it, even if you're only changing another field.";
+  if (!apiKey && !apiKeyWasSet) {
+    fieldErrors.api_key = "Required the first time you configure a provider.";
   }
   if (Object.keys(fieldErrors).length > 0) {
     return {
@@ -69,7 +69,7 @@ export async function updateLlmConfigAction(
     await updateLlmConfig({
       provider: provider!,
       model,
-      api_key: apiKey,
+      api_key: apiKey || undefined,
       base_url: baseUrl || undefined,
     });
   } catch (error) {

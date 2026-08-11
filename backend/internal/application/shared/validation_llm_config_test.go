@@ -57,3 +57,21 @@ func TestOptionalLlmBaseURLAllowsNil(t *testing.T) {
 		t.Fatalf("OptionalLlmBaseURL(nil) = %v, want nil", got)
 	}
 }
+
+func TestOptionalLlmApiKeyTreatsNilAndEmptyAsUnset(t *testing.T) {
+	if got := OptionalLlmApiKey(nil); got != nil {
+		t.Fatalf("OptionalLlmApiKey(nil) = %v, want nil", got)
+	}
+	empty := ""
+	if got := OptionalLlmApiKey(&empty); got != nil {
+		t.Fatalf("OptionalLlmApiKey(\"\") = %v, want nil", got)
+	}
+}
+
+func TestOptionalLlmApiKeyReturnsProvidedValue(t *testing.T) {
+	value := "sk-ant-real-key"
+	got := OptionalLlmApiKey(&value)
+	if got == nil || *got != value {
+		t.Fatalf("OptionalLlmApiKey(%q) = %v, want %q", value, got, value)
+	}
+}

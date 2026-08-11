@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 )
 
+func strPtr(value string) *string { return &value }
+
 type recordingLlmConfigRepository struct {
 	upsertCalls    int
 	upsertedApiKey []byte
@@ -78,7 +80,7 @@ func TestUpdateRejectsUnknownProvider(t *testing.T) {
 	err := usecase.Update(context.Background(), domainusecasesadmin.UpdateLlmConfigRequest{
 		Provider: domainmodels.LlmProvider("GEMINI"),
 		Model:    "some-model",
-		ApiKey:   "some-key",
+		ApiKey:   strPtr("some-key"),
 	})
 
 	if !errors.Is(err, domainmodels.ErrTypeValidation) {
@@ -96,7 +98,7 @@ func TestUpdateEncryptsApiKeyBeforeStoring(t *testing.T) {
 	err := usecase.Update(context.Background(), domainusecasesadmin.UpdateLlmConfigRequest{
 		Provider: domainmodels.LlmProviderClaude,
 		Model:    "claude-opus-5",
-		ApiKey:   "sk-ant-real-key",
+		ApiKey:   strPtr("sk-ant-real-key"),
 	})
 
 	if err != nil {
@@ -110,6 +112,50 @@ func TestUpdateEncryptsApiKeyBeforeStoring(t *testing.T) {
 	}
 	if repository.upsertedProv != domainmodels.LlmProviderClaude || repository.upsertedModel != "claude-opus-5" {
 		t.Fatalf("repository Upsert() provider/model = %q/%q, want CLAUDE/claude-opus-5", repository.upsertedProv, repository.upsertedModel)
+	}
+}
+
+func TestUpdateKeepsExistingApiKeyWhenOmitted(t *testing.T) {
+	existing := &domainmodels.LlmConfig{
+		Provider:        domainmodels.LlmProviderClaude,
+		Model:           "claude-sonnet-5",
+		ApiKeyEncrypted: []byte("encrypted:previous-key"),
+	}
+	repository := &recordingLlmConfigRepository{getConfig: existing}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &fakeClientFactory{}, &noopLogger{})
+
+	err := usecase.Update(context.Background(), domainusecasesadmin.UpdateLlmConfigRequest{
+		Provider: domainmodels.LlmProviderClaude,
+		Model:    "claude-opus-5",
+		ApiKey:   nil,
+	})
+
+	if err != nil {
+		t.Fatalf("Update() error = %v, want nil", err)
+	}
+	if repository.upsertCalls != 1 {
+		t.Fatalf("repository Upsert() calls = %d, want 1", repository.upsertCalls)
+	}
+	if string(repository.upsertedApiKey) != "encrypted:previous-key" {
+		t.Fatalf("repository Upsert() apiKeyEncrypted = %q, want the previously stored key preserved", repository.upsertedApiKey)
+	}
+}
+
+func TestUpdateRejectsOmittedApiKeyOnFirstTimeSetup(t *testing.T) {
+	repository := &recordingLlmConfigRepository{getConfig: nil}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, &fakeClientFactory{}, &noopLogger{})
+
+	err := usecase.Update(context.Background(), domainusecasesadmin.UpdateLlmConfigRequest{
+		Provider: domainmodels.LlmProviderClaude,
+		Model:    "claude-opus-5",
+		ApiKey:   nil,
+	})
+
+	if !errors.Is(err, domainmodels.ErrTypeValidation) {
+		t.Fatalf("Update() error = %v, want validation error", err)
+	}
+	if repository.upsertCalls != 0 {
+		t.Fatalf("repository Upsert() calls = %d, want 0", repository.upsertCalls)
 	}
 }
 

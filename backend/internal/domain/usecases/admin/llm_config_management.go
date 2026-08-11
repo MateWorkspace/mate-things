@@ -16,7 +16,7 @@ type LlmConfigManagement interface {
 type UpdateLlmConfigRequest struct {
 	Provider  domainmodels.LlmProvider
 	Model     string
-	ApiKey    string
+	ApiKey    *string
 	BaseURL   *string
 	UpdatedBy *uuid.UUID
 }

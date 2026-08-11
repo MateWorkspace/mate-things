@@ -50,19 +50,28 @@ func (u *usecase) Update(ctx context.Context, request domainusecasesadmin.Update
 	if err != nil {
 		return err
 	}
-	apiKey, err := applicationshared.RequiredLlmApiKey(request.ApiKey, "api_key")
-	if err != nil {
-		return err
-	}
 	baseURL, err := applicationshared.OptionalLlmBaseURL(request.BaseURL, "base_url")
 	if err != nil {
 		return err
 	}
 
-	encryptedApiKey, err := u.encryptor.Encrypt(apiKey)
-	if err != nil {
-		u.logger.Error(ctx, tag, "failed to encrypt api key", domainmodels.LoggerMeta{"err": err})
-		return err
+	var encryptedApiKey []byte
+	if apiKey := applicationshared.OptionalLlmApiKey(request.ApiKey); apiKey != nil {
+		encryptedApiKey, err = u.encryptor.Encrypt(*apiKey)
+		if err != nil {
+			u.logger.Error(ctx, tag, "failed to encrypt api key", domainmodels.LoggerMeta{"err": err})
+			return err
+		}
+	} else {
+		existing, err := u.repository.Get(ctx)
+		if err != nil {
+			u.logger.Error(ctx, tag, "failed to read existing llm config", domainmodels.LoggerMeta{"err": err})
+			return err
+		}
+		if existing == nil {
+			return domainmodels.NewError("api_key is required", domainmodels.ErrTypeValidation, nil)
+		}
+		encryptedApiKey = existing.ApiKeyEncrypted
 	}
 
 	if _, err := u.repository.Upsert(ctx, provider, model, encryptedApiKey, baseURL, request.UpdatedBy); err != nil {

@@ -20,7 +20,7 @@ type PermissionPatchRequest struct {
 type LlmConfigPutRequest struct {
 	Provider domainmodels.LlmProvider `json:"provider" example:"CLAUDE"`
 	Model    string                   `json:"model" example:"claude-opus-5"`
-	ApiKey   string                   `json:"api_key" example:"sk-ant-..."`
+	ApiKey   *string                  `json:"api_key,omitempty" example:"sk-ant-..."`
 	BaseURL  *string                  `json:"base_url,omitempty" example:"https://api.anthropic.com"`
 }
 

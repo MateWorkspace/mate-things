@@ -351,6 +351,15 @@ func RequiredLlmApiKey(value string, field string) (string, error) {
 	return value, nil
 }
 
+// OptionalLlmApiKey returns nil when the key is omitted or blank, meaning
+// the caller should keep the currently stored key unchanged.
+func OptionalLlmApiKey(value *string) *string {
+	if value == nil || *value == "" {
+		return nil
+	}
+	return value
+}
+
 func OptionalLlmBaseURL(value *string, field string) (*string, error) {
 	if value == nil {
 		return nil, nil
