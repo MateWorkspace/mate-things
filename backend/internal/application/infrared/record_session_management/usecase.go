@@ -816,6 +816,17 @@ func stateIdToName(states []domainmodels.InfraredState, byId map[string]string) 
 	return byName
 }
 
+// recordedCase is one already-recorded non-baseline OFAT case's target
+// state/value plus its own demodulated bits — buildAnalysisPayload always
+// computed this internally to feed Attribute(), but previously discarded
+// it once the AnalysisPayload was built. Task 7 uses it to build
+// coder_generation.KnownCase entries for Validate().
+type recordedCase struct {
+	TargetStateId uuid.UUID
+	TargetValue   string
+	Bits          []int
+}
+
 // buildAnalysisPayload turns every case's accepted raws into the pure
 // analysis package's inputs and runs the full frame -> demodulate ->
 // volatile -> attribute pipeline. Returns the payload plus the baseline
@@ -828,17 +839,6 @@ func stateIdToName(states []domainmodels.InfraredState, byId map[string]string) 
 // case that was originally cases[0] can end up at any Step value. Comparing
 // against the deterministically-known baseline values is the only reliable
 // way to find it from persisted rows alone.
-// recordedCase is one already-recorded non-baseline OFAT case's target
-// state/value plus its own demodulated bits — buildAnalysisPayload always
-// computed this internally to feed Attribute(), but previously discarded
-// it once the AnalysisPayload was built. Task 7 uses it to build
-// coder_generation.KnownCase entries for Validate().
-type recordedCase struct {
-	TargetStateId uuid.UUID
-	TargetValue   string
-	Bits          []int
-}
-
 func (u *usecase) buildAnalysisPayload(
 	ctx context.Context,
 	tag string,
