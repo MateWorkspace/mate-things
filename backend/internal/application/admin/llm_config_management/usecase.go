@@ -164,11 +164,21 @@ type pingResponse struct {
 	Status string `json:"status"`
 }
 
+// pingMaxOutputTokens has to clear a reasoning model's hidden "thinking"
+// budget, not just the visible answer: confirmed live against OpenRouter's
+// gpt-5-mini, a 32-token cap left finish_reason="length" with empty
+// content (spent entirely on invisible reasoning tokens before any visible
+// output), while 512 succeeded with room to spare (147 completion tokens,
+// 128 of them reasoning). This mirrors the real generation calls
+// elsewhere in this codebase, which already use several thousand for the
+// same reason.
+const pingMaxOutputTokens = 512
+
 func (u *usecase) ping(ctx context.Context, tag string, client domaincontractsllm.Client) (domainmodels.LlmClientStatus, error) {
 	result, err := client.GenerateText(ctx, domaincontractsllm.GenerateTextRequest{
 		System:          "You are a connectivity test.",
 		Prompt:          `Respond with JSON matching the given schema, setting "status" to the single word OK.`,
-		MaxOutputTokens: 32,
+		MaxOutputTokens: pingMaxOutputTokens,
 		ResponseSchema:  []byte(pingResponseSchema),
 	})
 	if err != nil {

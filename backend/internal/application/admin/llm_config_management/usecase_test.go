@@ -221,6 +221,28 @@ func TestTestConnectionReturnsConnectedStatusOnSuccess(t *testing.T) {
 	}
 }
 
+// A reasoning model (e.g. gpt-5-mini) spends part of its output-token
+// budget on hidden reasoning before any visible content - confirmed live
+// against OpenRouter: a 32-token cap truncated before writing anything
+// (finish_reason "length", empty content), while 512 succeeded with room
+// to spare. A cap too small for that overhead makes the ping fail even
+// though the provider/model genuinely works.
+func TestTestConnectionUsesAGenerousOutputTokenBudget(t *testing.T) {
+	client := &fakeClient{}
+	factory := &fakeClientFactory{client: client}
+	repository := &recordingLlmConfigRepository{}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	if _, err := usecase.TestConnection(context.Background()); err != nil {
+		t.Fatalf("TestConnection() error = %v, want nil", err)
+	}
+
+	const minBudget = 256 // well below the 512 actually used, generous floor against accidental shrinkage
+	if client.lastRequest.MaxOutputTokens < minBudget {
+		t.Fatalf("GenerateText() request had MaxOutputTokens = %d, want >= %d (a reasoning model can exhaust a small budget on hidden reasoning before writing any visible content)", client.lastRequest.MaxOutputTokens, minBudget)
+	}
+}
+
 // Real generation calls always request structured JSON output (an
 // object-rooted response_format schema), and a provider/model/base_url
 // combination can support plain chat while rejecting that - confirmed
