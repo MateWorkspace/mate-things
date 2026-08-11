@@ -94,8 +94,7 @@ export default function RecordSessionWizard({
             <p className="font-semibold">Review the recording plan</p>
             <p className="text-foreground/70 mt-1 text-sm">
               Each case below asks you to press the remote once its target state
-              is active. Before you start, set the device to its default/off
-              state so the first capture has a clean baseline.
+              is active. Set the device's states to match those on Step 1.
             </p>
           </div>
           <RecordCaseList
