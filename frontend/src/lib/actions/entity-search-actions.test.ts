@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { listActions } from "@/lib/api/actions";
+import { listFirmwares } from "@/lib/api/firmwares";
 import { listNodeClasses } from "@/lib/api/node-classes";
 import { listNodes } from "@/lib/api/nodes";
 import { listRoles } from "@/lib/api/roles";
@@ -9,6 +10,7 @@ import { requirePermission } from "@/lib/session";
 
 import {
   searchActionsAction,
+  searchFirmwaresAction,
   searchNodeClassesAction,
   searchNodeDeviceIdsAction,
   searchNodesAction,
@@ -19,6 +21,7 @@ import {
 vi.mock("server-only", () => ({}));
 
 vi.mock("@/lib/api/actions", () => ({ listActions: vi.fn() }));
+vi.mock("@/lib/api/firmwares", () => ({ listFirmwares: vi.fn() }));
 vi.mock("@/lib/api/node-classes", () => ({ listNodeClasses: vi.fn() }));
 vi.mock("@/lib/api/nodes", () => ({ listNodes: vi.fn() }));
 vi.mock("@/lib/api/roles", () => ({ listRoles: vi.fn() }));
@@ -62,6 +65,17 @@ const NODE_CLASS = {
   created_at: "2026-08-10T00:00:00Z",
 };
 
+const FIRMWARE = {
+  id: "firmware-1",
+  node_class_id: "class-1",
+  name: "sensor-fw-1.0.0",
+  size: 1024,
+  checksum: "abc123",
+  binary_path: "firmware/sensor-fw-1.0.0.bin",
+  preferences: {},
+  created_at: "2026-08-10T00:00:00Z",
+};
+
 const ROLE = {
   id: "role-1",
   name: "Operator",
@@ -100,6 +114,7 @@ describe("entity selector actions", () => {
       "node_class:get",
       listNodeClasses,
     ],
+    ["firmwares", searchFirmwaresAction, "firmware:get", listFirmwares],
     ["roles", searchRolesAction, "role:get", listRoles],
     ["users", searchUsersAction, "user:get", listUsers],
   ] as const)(
@@ -119,6 +134,7 @@ describe("entity selector actions", () => {
     [searchNodeDeviceIdsAction, listNodes],
     [searchActionsAction, listActions],
     [searchNodeClassesAction, listNodeClasses],
+    [searchFirmwaresAction, listFirmwares],
     [searchRolesAction, listRoles],
     [searchUsersAction, listUsers],
   ] as const)(
@@ -178,6 +194,12 @@ describe("entity selector actions", () => {
         label: "Sensors",
         description: "Environmental sensors",
       },
+    ],
+    [
+      searchFirmwaresAction,
+      listFirmwares,
+      FIRMWARE,
+      { value: "firmware-1", label: "sensor-fw-1.0.0" },
     ],
     [
       searchRolesAction,

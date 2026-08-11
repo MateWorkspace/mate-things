@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import ActionCard from "@/app/(authenticated)/actions/_components/ActionCard";
+import ActionFilters from "@/app/(authenticated)/actions/_components/ActionFilters";
 import ActionForm from "@/app/(authenticated)/actions/_components/ActionForm";
 import Pagination from "@/components/collection/Pagination";
-import NodeClassSearchCombobox from "@/components/node-classes/NodeClassSearchCombobox";
-import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { listActions } from "@/lib/api/actions";
@@ -64,44 +63,12 @@ export default async function ActionsPage({
         description="Define fleet commands, match them to compatible node classes, and dispatch them safely."
         actions={canCreate ? <ActionForm schemas={schemas} /> : undefined}
       />
-      <form className="border-border bg-muted grid gap-3 rounded-2xl border p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
-        <div>
-          <label
-            className="text-foreground/70 mb-1.5 block text-xs font-semibold"
-            htmlFor="action-search"
-          >
-            Search
-          </label>
-          <Input
-            id="action-search"
-            name="search"
-            defaultValue={pageQuery.search}
-            placeholder="Search actions"
-          />
-        </div>
-        {canReadNodeClasses ? (
-          <NodeClassSearchCombobox
-            name="node_class_id"
-            defaultNodeClassId={nodeClassId}
-            defaultNodeClassName={nodeClassDefault?.name ?? nodeClassId}
-          />
-        ) : (
-          <label>
-            <span className="text-foreground/70 mb-1.5 block text-xs font-semibold">
-              Node class ID
-            </span>
-            <Input
-              aria-label="Node class ID"
-              name="node_class_id"
-              readOnly
-              value={nodeClassId}
-            />
-          </label>
-        )}
-        <button className="bg-primary text-surface mt-auto min-h-11 rounded-xl px-4 text-sm font-semibold">
-          Apply
-        </button>
-      </form>
+      <ActionFilters
+        canReadNodeClasses={canReadNodeClasses}
+        search={pageQuery.search}
+        nodeClassId={nodeClassId}
+        nodeClassName={nodeClassDefault?.name}
+      />
       <p className="text-muted-foreground text-sm">
         {result.page.total_items} action definitions
       </p>

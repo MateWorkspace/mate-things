@@ -1,6 +1,7 @@
 "use server";
 
 import { listActions } from "@/lib/api/actions";
+import { listFirmwares } from "@/lib/api/firmwares";
 import { listNodeClasses } from "@/lib/api/node-classes";
 import { listNodes } from "@/lib/api/nodes";
 import { listRoles } from "@/lib/api/roles";
@@ -71,6 +72,18 @@ export async function searchNodeClassesAction(
     value: nodeClass.id,
     label: nodeClass.name,
     description: nodeClass.description,
+  }));
+}
+
+export async function searchFirmwaresAction(
+  input: unknown,
+): Promise<SearchOptionsPage> {
+  const request = parseSearchOptionsRequest(input);
+  await requirePermission("firmware:get");
+  const response = await listFirmwares(toListQuery(request));
+  return toSearchOptionsPage(response, (firmware) => ({
+    value: firmware.id,
+    label: firmware.name,
   }));
 }
 

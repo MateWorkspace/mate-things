@@ -1,12 +1,8 @@
-import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
-import Button from "@/components/ui/button";
-import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { listNodeClasses } from "@/lib/api/node-classes";
@@ -17,6 +13,7 @@ import {
 import { requirePermission } from "@/lib/session";
 
 import NodeClassCard from "./_components/NodeClassCard";
+import NodeClassFilters from "./_components/NodeClassFilters";
 import NodeClassForm from "./_components/NodeClassForm";
 
 export const metadata: Metadata = {
@@ -61,31 +58,7 @@ export default async function NodeClassesPage({
         }
       />
 
-      <CollectionToolbar filterTitle="Filter node classes">
-        <form
-          action="/node-classes"
-          method="get"
-          className="flex flex-col gap-3 sm:flex-row sm:items-end"
-        >
-          <input type="hidden" name="limit" value={query.limit} />
-          <label className="min-w-0 flex-1">
-            <span className="text-foreground/80 mb-1.5 block text-sm font-medium">
-              Search classes
-            </span>
-            <Input
-              key={query.search ?? ""}
-              name="search"
-              type="search"
-              defaultValue={query.search}
-              placeholder="Search by name or description"
-            />
-          </label>
-          <Button type="submit" className="min-h-11 gap-2">
-            <Search aria-hidden="true" className="size-4" />
-            Search
-          </Button>
-        </form>
-      </CollectionToolbar>
+      <NodeClassFilters search={query.search} />
 
       <div className="px-1">
         <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
@@ -110,15 +83,7 @@ export default async function NodeClassesPage({
       ) : query.search ? (
         <EmptyState
           title="No matching node classes"
-          description="No classes match the current search."
-          action={
-            <Link
-              className="bg-primary text-surface focus-visible:ring-focus focus-visible:ring-offset-background inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-              href={firstPageHref}
-            >
-              Clear search
-            </Link>
-          }
+          description="Clear or change the search to broaden the results."
         />
       ) : query.page > 1 ? (
         <EmptyState

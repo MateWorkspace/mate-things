@@ -32,10 +32,15 @@ export default function AppShell({
   );
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const sidebarPreferenceWrite = useRef(Promise.resolve());
+  const mainContentRef = useRef<HTMLDivElement>(null);
   const navigation = visibleNavigation(new Set(permissions));
 
   useEffect(() => {
     setMobileNavigationOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    mainContentRef.current?.scrollTo(0, 0);
   }, [pathname]);
 
   const toggleDesktopSidebar = () => {
@@ -47,7 +52,7 @@ export default function AppShell({
   };
 
   return (
-    <div className="bg-background min-h-screen overflow-x-clip">
+    <div className="bg-background flex h-screen flex-col overflow-x-clip">
       <a
         href="#main-content"
         className="bg-primary text-surface focus-visible:ring-focus fixed top-2 left-4 z-50 -translate-y-20 rounded-xl px-4 py-2.5 text-sm font-semibold transition-transform focus-visible:translate-y-0 focus-visible:ring-2 focus-visible:outline-none"
@@ -62,9 +67,9 @@ export default function AppShell({
         onDesktopSidebarToggle={toggleDesktopSidebar}
         onMobileNavigationOpen={() => setMobileNavigationOpen(true)}
       />
-      <div className="flex min-h-[calc(100vh-4rem)]">
+      <div className="flex min-h-0 flex-1">
         <aside
-          className={`border-border bg-surface/30 hidden shrink-0 border-r transition-[width] lg:block ${
+          className={`border-border bg-surface/30 hidden shrink-0 overflow-y-auto border-r transition-[width] lg:block ${
             sidebarCollapsed ? "w-20" : "w-64"
           }`}
         >
@@ -76,9 +81,10 @@ export default function AppShell({
           />
         </aside>
         <div
+          ref={mainContentRef}
           id="main-content"
           tabIndex={-1}
-          className="min-w-0 flex-1 focus:outline-none"
+          className="min-w-0 flex-1 overflow-y-auto focus:outline-none"
         >
           {children}
         </div>

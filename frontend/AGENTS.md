@@ -50,8 +50,13 @@ tabs and are individually permission-gated.
 
 Navigation definitions live in `src/config/navigation.ts`, grouped by product
 purpose and filtered through `visibleNavigation()`. Route authorization is
-centralized in `src/lib/route-access.ts`. These are presentation conveniences,
-not substitutes for page-level and Server Action permission checks.
+centralized in `src/config/route-policies.ts` (`ROUTE_POLICIES`,
+`isProtectedRoute`, `canVisitRoute`, `findRoutePolicy`) — `isProtectedRoute`
+is the actual authentication gate consumed by the root `proxy.ts` middleware,
+not just a display concern, and a pathname with no matching entry fails
+closed (treated as protected/not-visitable) rather than silently granting
+access. These are presentation/routing conveniences, not substitutes for
+page-level and Server Action permission checks.
 
 # Code Rules
 
@@ -155,8 +160,17 @@ most of the tree stays server-rendered.
   normalization, and same-origin/backend-base resolution. Do not duplicate
   those concerns in resource wrappers.
 - Collection wrappers accept typed queries and return the backend's paginated
-  envelope. Complete selectors use tested all-page helpers with deduplication
-  and safe termination; never impose a silent `48`-item option cap.
+  envelope. Complete selectors (`listAll*` functions) call the shared
+  `collectAllPages` helper (`src/lib/api/collect-all-pages.ts`) for
+  deduplication and safe termination (it throws past a 1000-page safety
+  ceiling rather than looping forever) instead of hand-rolling a page-walk
+  loop; never impose a silent per-caller item cap.
+- Resolving an optional filter's display name from an id (e.g. a `role_id`
+  query param → its role name for a combobox default) goes through
+  `getOptionalById` (`src/lib/api/optional.ts`), which returns `null` on a
+  backend 404 but rethrows everything else — never hand-roll
+  `.catch(() => null)`, which would also swallow a transient 5xx as "not
+  found".
 - Node `device_id` is immutable. Show it as identity/context, never as an
   ordinary editable field.
 - OTA dispatch sends `{ firmware_id }`. The backend authoritatively checks node
@@ -181,6 +195,18 @@ most of the tree stays server-rendered.
   pairs that table with real `page`/`limit` pagination (`<Pagination>`,
   like Users/Nodes) rather than Telemetry/Node Logs' unpaginated
   batch-load, since it's a bounded per-user resource, not a time-series one.
+- Every collection page's filter form uses the shared
+  `src/components/collection/FilterBar.tsx` shell (a `<form>` with a
+  `grid gap-3 sm:grid-cols-2 lg:grid-cols-3` field area and a `border-t`
+  footer with a "Clear" link + "Apply" button) — filters are always
+  visible; there is no collapsible mobile filter drawer. Entity-reference
+  filters (node, node class, firmware, action, role, user) use the
+  matching `*SearchCombobox` component, backed by a `search<Entity>Action`
+  Server Action in `src/lib/actions/entity-search-actions.ts` (typed via
+  `src/lib/actions/search-options.ts`) — never a native `<select>`
+  populated from a full `listAll*()` fetch. Enum-valued filters (status,
+  level) use `src/components/ui/select.tsx`, not a raw `<select>`, so the
+  dropdown chevron doesn't collide with the browser's own arrow.
 - Secret-bearing values (API keys) are shown in full exactly once,
   immediately after generate/regenerate, next to a copy-to-clipboard
   control (`src/components/ui/copy-button.tsx`); every list/table view
@@ -195,9 +221,25 @@ most of the tree stays server-rendered.
 - Action history, telemetry, and node logs share
   `src/components/records/` controls for bounded time ranges, JSON inspection,
   record windows, and scoped deletion.
-- Destructive actions require explicit confirmation, remain open while
-  pending, surface backend failures, and cannot repeat from stale success
-  state. Keep dialogs mounted and control `open` so focus restoration works.
+- Destructive and result-bearing dialogs (delete confirmations, API key
+  generation, action dispatch) share `useActionDialog`
+  (`src/hooks/use-action-dialog.ts`) for open/reset/remount-on-reopen
+  lifecycle instead of hand-rolling `[open, setOpen]` +
+  `[generation, setGeneration]` + `key={generation}`. It defaults to
+  closing (and resetting the form) as soon as the action state reaches
+  `"success"` — pass `closeOnSuccess: false` for dialogs that must stay
+  open to show a result in place (a one-time secret, a "Done"
+  confirmation) instead of auto-closing over it. Destructive actions
+  require explicit confirmation, remain open while pending, surface
+  backend failures, and cannot repeat from stale success state. Keep
+  dialogs mounted and control `open` so focus restoration works.
+- Permission/action-checklist assignment UI (role permissions, node-class
+  actions) uses `useAssignmentSelection`
+  (`src/hooks/use-assignment-selection.ts`) to reconcile optimistic
+  checkbox overrides against the authoritative server-confirmed set across
+  submissions. It keys its reconciliation off the authoritative `Set`'s
+  reference identity, not its contents — memoize the `Set` you pass it
+  (`useMemo`) rather than constructing a new one inline every render.
 
 ## TypeScript
 
@@ -256,9 +298,17 @@ visible focus state — don't strip default focus rings without replacing
 them.
 
 The shell includes a skip link, modal focus containment/restoration, and a
-mobile drawer. Preserve those behaviors when changing navigation, the profile
-dialog, or shared `Dialog`; Escape/overlay close must be ignored while a
-mutation is pending.
+mobile navigation drawer. Preserve those behaviors when changing navigation,
+the profile dialog, or shared `Dialog`; Escape/overlay close must be ignored
+while a mutation is pending.
+
+The sidebar and the main content pane (`#main-content`) are independent
+scroll regions inside a fixed `h-screen` shell
+(`src/components/layout/AppShell.tsx`) — the document itself never scrolls.
+A `pathname`-keyed effect resets `#main-content`'s scroll to top on
+navigation, since Next.js's default scroll-to-top targets `window`, which no
+longer scrolls here. Preserve both properties (independent scroll regions,
+scroll-reset-on-navigate) when touching the shell.
 
 # Design Rules
 

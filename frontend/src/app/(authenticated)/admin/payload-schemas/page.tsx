@@ -1,12 +1,7 @@
-import { Search } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
-import Button from "@/components/ui/button";
-import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { listPayloadSchemas } from "@/lib/api/payload-schemas";
@@ -17,6 +12,7 @@ import {
 import { requirePermission } from "@/lib/session";
 
 import PayloadSchemaCard from "./_components/PayloadSchemaCard";
+import PayloadSchemaFilters from "./_components/PayloadSchemaFilters";
 import PayloadSchemaForm from "./_components/PayloadSchemaForm";
 
 export const metadata: Metadata = { title: "Payload Schemas — Mate Things" };
@@ -52,35 +48,7 @@ export default async function PayloadSchemasPage({
           ) : undefined
         }
       />
-      <CollectionToolbar filterTitle="Filter payload schemas">
-        <form
-          action="/admin/payload-schemas"
-          className="flex flex-wrap items-center gap-3"
-        >
-          <Input
-            name="search"
-            type="search"
-            defaultValue={base.search}
-            placeholder="Search schema names"
-            aria-label="Search schemas"
-            className="min-w-0 flex-1"
-          />
-          <label className="flex items-center gap-1.5 text-sm whitespace-nowrap">
-            <input
-              type="checkbox"
-              name="still_valid"
-              value="1"
-              defaultChecked={stillValid}
-              className="accent-primary size-4"
-            />
-            Still valid
-          </label>
-          <Button type="submit" className="gap-2">
-            <Search className="size-4" aria-hidden="true" />
-            Filter
-          </Button>
-        </form>
-      </CollectionToolbar>
+      <PayloadSchemaFilters search={base.search} stillValid={stillValid} />
       <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         Showing {result.data.length} of {result.page.total_items} versions
       </p>
@@ -99,18 +67,8 @@ export default async function PayloadSchemasPage({
           }
           description={
             base.search || stillValid
-              ? "No schema version matches these filters."
+              ? "Clear or change the filters to broaden the results."
               : "Create a versioned schema for validated action payloads."
-          }
-          action={
-            base.search || stillValid ? (
-              <Link
-                href="/admin/payload-schemas"
-                className="text-primary font-semibold"
-              >
-                Clear filters
-              </Link>
-            ) : undefined
           }
         />
       )}

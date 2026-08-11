@@ -1,13 +1,7 @@
-import { Search } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
-import RoleSearchCombobox from "@/components/roles/RoleSearchCombobox";
-import Button from "@/components/ui/button";
-import Input from "@/components/ui/input";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
 import { getOptionalById } from "@/lib/api/optional";
@@ -21,6 +15,7 @@ import { firstQueryValue } from "@/lib/query";
 import { requirePermission } from "@/lib/session";
 
 import UserCard from "./_components/UserCard";
+import UserFilters from "./_components/UserFilters";
 import UserForm from "./_components/UserForm";
 
 export const metadata: Metadata = { title: "Users — Mate Things" };
@@ -58,39 +53,12 @@ export default async function UsersPage({
           ) : undefined
         }
       />
-      <CollectionToolbar filterTitle="Filter users">
-        <form
-          action="/admin/users"
-          className="flex flex-col gap-3 sm:flex-row sm:items-end"
-        >
-          <input type="hidden" name="limit" value={query.limit} />
-          <label className="flex-1">
-            <span className="text-foreground/70 mb-1.5 block text-xs font-semibold">
-              Search
-            </span>
-            <Input
-              name="search"
-              type="search"
-              defaultValue={query.search}
-              placeholder="Search name or username"
-              aria-label="Search users"
-            />
-          </label>
-          {canReadRoles ? (
-            <div className="sm:w-56">
-              <RoleSearchCombobox
-                name="role_id"
-                defaultRoleId={roleId}
-                defaultRoleName={selectedRole?.name}
-              />
-            </div>
-          ) : null}
-          <Button type="submit" className="gap-2">
-            <Search className="size-4" aria-hidden="true" />
-            Search
-          </Button>
-        </form>
-      </CollectionToolbar>
+      <UserFilters
+        canReadRoles={canReadRoles}
+        search={query.search}
+        roleId={roleId}
+        roleName={selectedRole?.name}
+      />
       <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         Showing {users.data.length} of {users.page.total_items} users
       </p>
@@ -112,15 +80,8 @@ export default async function UsersPage({
           title={query.search || roleId ? "No matching users" : "No users yet"}
           description={
             query.search || roleId
-              ? "No accounts match the current filters."
+              ? "Clear or change the filters to broaden the results."
               : "Create the first managed account when a role is available."
-          }
-          action={
-            query.search || roleId ? (
-              <Link href="/admin/users" className="text-primary font-semibold">
-                Clear filters
-              </Link>
-            ) : undefined
           }
         />
       )}

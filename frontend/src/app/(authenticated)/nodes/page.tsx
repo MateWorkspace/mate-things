@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
 import PageHeader from "@/components/ui/page-header";
 import {
@@ -88,12 +87,6 @@ export default async function NodesPage({ searchParams }: NodesPageProps) {
     firmware_id: firmwareId,
   };
   const cardPermissions = [...permissions];
-  const filterKey = JSON.stringify([
-    pageQuery.search,
-    nodeClassId,
-    firmwareId,
-    pageQuery.limit,
-  ]);
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -102,19 +95,15 @@ export default async function NodesPage({ searchParams }: NodesPageProps) {
         description="Monitor self-registered devices, connection health, class assignments, and deployed firmware."
       />
 
-      <CollectionToolbar filterTitle="Filter nodes">
-        <NodeFilters
-          key={filterKey}
-          classes={classOptions}
-          firmwareId={firmwareId}
-          firmwares={firmwareOptions}
-          limit={pageQuery.limit}
-          nodeClassId={nodeClassId}
-          search={pageQuery.search}
-          showClassFilter={canReadClasses}
-          showFirmwareFilter={canReadFirmware}
-        />
-      </CollectionToolbar>
+      <NodeFilters
+        search={pageQuery.search}
+        nodeClassId={nodeClassId}
+        nodeClassName={nodeClassId ? classNames.get(nodeClassId) : undefined}
+        firmwareId={firmwareId}
+        firmwareName={firmwareId ? firmwareNames.get(firmwareId) : undefined}
+        showClassFilter={canReadClasses}
+        showFirmwareFilter={canReadFirmware}
+      />
 
       <div className="px-1">
         <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">

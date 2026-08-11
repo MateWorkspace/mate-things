@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import CollectionToolbar from "@/components/collection/CollectionToolbar";
 import Pagination from "@/components/collection/Pagination";
 import PageHeader from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/states";
@@ -55,13 +54,7 @@ export default async function ApiKeysPage({
           permissions.has("api_key:add") ? <GenerateApiKeyDialog /> : undefined
         }
       />
-      <CollectionToolbar filterTitle="Filter API keys">
-        <ApiKeyFilters
-          search={query.search}
-          status={status}
-          limit={query.limit}
-        />
-      </CollectionToolbar>
+      <ApiKeyFilters search={query.search} status={status} />
       <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
         Showing {apiKeys.data.length} of {apiKeys.page.total_items} API keys
       </p>

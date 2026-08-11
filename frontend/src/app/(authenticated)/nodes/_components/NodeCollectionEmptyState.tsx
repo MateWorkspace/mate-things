@@ -44,8 +44,7 @@ export default function NodeCollectionEmptyState({
     return (
       <EmptyState
         title="No matching nodes"
-        description="No nodes match the current search and filters."
-        action={<StateLink href={firstPageHref}>Clear filters</StateLink>}
+        description="Clear or change the filters to broaden the results."
       />
     );
   }
