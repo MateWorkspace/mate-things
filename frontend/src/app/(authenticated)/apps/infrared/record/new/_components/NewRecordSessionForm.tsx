@@ -73,7 +73,7 @@ export default function NewRecordSessionForm({
   );
 
   useEffect(() => {
-    if (wizardStep !== 2 || !deviceTypeId) {
+    if (!deviceTypeId) {
       return;
     }
     let cancelled = false;
@@ -92,7 +92,7 @@ export default function NewRecordSessionForm({
     return () => {
       cancelled = true;
     };
-  }, [wizardStep, deviceTypeId]);
+  }, [deviceTypeId]);
 
   function goToStep2() {
     if (!nodeId || !deviceTypeId || !brand.trim() || !model.trim()) {
