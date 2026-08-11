@@ -184,10 +184,10 @@ export default function LlmConfigForm({
           variant="secondary"
           disabled={pending || testPending}
         >
-          {testPending ? "Testing…" : "Test connection"}
+          {testPending ? "Testing…" : "Test"}
         </Button>
         <Button type="submit" disabled={pending || testPending}>
-          {pending ? "Saving…" : "Save configuration"}
+          {pending ? "Saving…" : "Save"}
         </Button>
       </div>
     </form>

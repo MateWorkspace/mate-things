@@ -17,7 +17,7 @@ export default function TestConnectionButton() {
   return (
     <form action={action} className="flex flex-wrap items-center gap-3">
       <Button type="submit" variant="secondary" disabled={pending}>
-        {pending ? "Testing…" : "Test connection"}
+        {pending ? "Testing…" : "Test"}
       </Button>
       {state.status === "result" ? (
         <StatusBadge
