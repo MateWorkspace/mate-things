@@ -35,8 +35,8 @@ type fakeSessionRepository struct {
 	// written (and, on the already-used fixture, never written again).
 	checksumClarificationMarks int
 	deleteErr                  error
-	deletedId            uuid.UUID
-	deletedBy            *uuid.UUID
+	deletedId                  uuid.UUID
+	deletedBy                  *uuid.UUID
 }
 
 func (f *fakeSessionRepository) Create(_ context.Context, nodeId uuid.UUID, deviceId uuid.UUID, _ *uuid.UUID) (uuid.UUID, error) {
