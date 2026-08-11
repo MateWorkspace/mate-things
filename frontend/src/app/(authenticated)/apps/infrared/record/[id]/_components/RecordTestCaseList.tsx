@@ -1,6 +1,10 @@
 import StatusBadge from "@/components/ui/status-badge";
-import type { InfraredTestCaseResponse } from "@/lib/api/infrared";
+import type {
+  InfraredStateResponse,
+  InfraredTestCaseResponse,
+} from "@/lib/api/infrared";
 
+import CaseStateTable from "./CaseStateTable";
 import RecordTestCaseControls from "./RecordTestCaseControls";
 
 const TEST_STATUS_VARIANT = {
@@ -12,9 +16,11 @@ const TEST_STATUS_VARIANT = {
 export default function RecordTestCaseList({
   testCases,
   canMutate,
+  stateDefinitions,
 }: {
   testCases: readonly InfraredTestCaseResponse[];
   canMutate: boolean;
+  stateDefinitions: readonly InfraredStateResponse[];
 }) {
   return (
     <ul className="space-y-3">
@@ -23,9 +29,11 @@ export default function RecordTestCaseList({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="font-semibold">{tc.description}</p>
-              <p className="text-muted-foreground text-xs">
-                {tc.states.map((s) => s.state_value).join(", ")}
-              </p>
+              <CaseStateTable
+                states={tc.states}
+                previousCase={undefined}
+                stateDefinitions={stateDefinitions}
+              />
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge variant={TEST_STATUS_VARIANT[tc.status]}>

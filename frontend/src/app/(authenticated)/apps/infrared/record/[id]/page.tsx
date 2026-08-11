@@ -120,7 +120,11 @@ export default async function RecordSessionDetailPage({
           <h2 className="font-display text-primary text-xl tracking-wide">
             Test cases
           </h2>
-          <RecordTestCaseList testCases={testCases} canMutate={canMutate} />
+          <RecordTestCaseList
+            testCases={testCases}
+            canMutate={canMutate}
+            stateDefinitions={stateDefinitions}
+          />
         </section>
       ) : null}
     </main>

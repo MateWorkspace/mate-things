@@ -135,7 +135,11 @@ export default function RecordSessionWizard({
       ) : null}
 
       {session.recording_state === "TESTING" ? (
-        <RecordTestCaseList testCases={testCases} canMutate={canMutate} />
+        <RecordTestCaseList
+          testCases={testCases}
+          canMutate={canMutate}
+          stateDefinitions={stateDefinitions}
+        />
       ) : null}
     </div>
   );
