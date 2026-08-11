@@ -50,6 +50,7 @@ func WriteCoder(
 	states []domainmodels.InfraredState,
 	definitions []domainmodels.InfraredStateDeviceDefinition,
 	payload applicationinfraredanalysis.AnalysisPayload,
+	baselineValues map[string]string,
 ) (Coder, error) {
 	stateNameById := make(map[string]string, len(states))
 	for _, state := range states {
@@ -60,6 +61,17 @@ func WriteCoder(
 	fmt.Fprintf(&promptBuilder, "Device: %s %s\n\n", deviceBrand, deviceModel)
 	fmt.Fprintf(&promptBuilder, "Frame is %d bits. Baseline bits: %v. Checksum bit offsets (do not treat as state data): %v. Volatile bit offsets (rolling/timestamp, ignore): %v.\n\n",
 		payload.FrameBitLength, payload.BaselineBits, payload.ChecksumBits, payload.VolatileBits)
+	if len(baselineValues) > 0 {
+		var baselineParts []string
+		for _, s := range states {
+			if value, ok := baselineValues[s.Name]; ok {
+				baselineParts = append(baselineParts, fmt.Sprintf("%s=%s", s.Name, value))
+			}
+		}
+		if len(baselineParts) > 0 {
+			fmt.Fprintf(&promptBuilder, "The baseline (most common) state is: %s. Every state's baseline value MUST be a valid, correctly-encoded input to your encoder — do not write validation logic that only accepts the specific non-baseline values mentioned below.\n\n", strings.Join(baselineParts, ", "))
+		}
+	}
 	promptBuilder.WriteString("Per-state bit ownership and observed value patterns:\n")
 	for _, s := range payload.States {
 		fmt.Fprintf(&promptBuilder, "- %s: bit offsets %v\n", stateNameById[s.StateId.String()], s.BitOffsets)

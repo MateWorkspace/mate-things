@@ -3,6 +3,7 @@ package applicationinfraredcodergeneration
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	applicationinfraredanalysis "github.com/MateWorkspace/mate-things/backend/internal/application/infrared/analysis"
@@ -40,7 +41,8 @@ func TestWriteCoderParsesStructuredResponse(t *testing.T) {
 	})
 	client := &fakeLlmClient{responseText: string(responseBody)}
 
-	coder, err := WriteCoder(context.Background(), client, "Polytron", "PAC-09HDN", states, definitions, payload)
+	baselineValues := map[string]string{"POWER": "OFF"}
+	coder, err := WriteCoder(context.Background(), client, "Polytron", "PAC-09HDN", states, definitions, payload, baselineValues)
 	if err != nil {
 		t.Fatalf("WriteCoder() error = %v, want nil", err)
 	}
@@ -54,11 +56,15 @@ func TestWriteCoderParsesStructuredResponse(t *testing.T) {
 	if client.lastRequest.MaxOutputTokens <= 0 {
 		t.Fatalf("GenerateText() request had MaxOutputTokens = %d, want > 0", client.lastRequest.MaxOutputTokens)
 	}
+
+	if !strings.Contains(client.lastRequest.Prompt, "POWER=OFF") {
+		t.Fatalf("prompt = %q, want it to state the baseline value POWER=OFF explicitly", client.lastRequest.Prompt)
+	}
 }
 
 func TestWriteCoderPropagatesLlmError(t *testing.T) {
 	client := &fakeLlmClient{err: context.DeadlineExceeded}
-	_, err := WriteCoder(context.Background(), client, "Polytron", "PAC-09HDN", nil, nil, applicationinfraredanalysis.AnalysisPayload{})
+	_, err := WriteCoder(context.Background(), client, "Polytron", "PAC-09HDN", nil, nil, applicationinfraredanalysis.AnalysisPayload{}, nil)
 	if err == nil {
 		t.Fatal("WriteCoder() error = nil, want propagated error")
 	}
@@ -66,7 +72,7 @@ func TestWriteCoderPropagatesLlmError(t *testing.T) {
 
 func TestWriteCoderErrorsOnMalformedResponse(t *testing.T) {
 	client := &fakeLlmClient{responseText: "not json"}
-	_, err := WriteCoder(context.Background(), client, "Polytron", "PAC-09HDN", nil, nil, applicationinfraredanalysis.AnalysisPayload{})
+	_, err := WriteCoder(context.Background(), client, "Polytron", "PAC-09HDN", nil, nil, applicationinfraredanalysis.AnalysisPayload{}, nil)
 	if err == nil {
 		t.Fatal("WriteCoder() error = nil, want a malformed-response error")
 	}
