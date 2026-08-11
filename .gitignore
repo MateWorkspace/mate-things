@@ -2,4 +2,4 @@
 !.env.example
 .todo
 .worktrees/
-*.creds
+*.creds.worktrees/
