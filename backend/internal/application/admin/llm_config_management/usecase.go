@@ -2,6 +2,7 @@ package applicationadminllmconfigmanagement
 
 import (
 	"context"
+	"encoding/json"
 
 	applicationshared "github.com/MateWorkspace/mate-things/backend/internal/application/shared"
 	domaincontractsllm "github.com/MateWorkspace/mate-things/backend/internal/domain/contracts/llm"
@@ -143,14 +144,42 @@ func (u *usecase) requireExistingConfig(ctx context.Context, tag string) (*domai
 	return existing, nil
 }
 
+// pingResponseSchema requests the same class of response real generation
+// calls always use (structured JSON output via an object-rooted schema) -
+// a plain-text ping can succeed against a provider/model/base_url
+// combination that then fails every real generation call, because
+// structured output support is a narrower capability than plain chat.
+// Confirmed live against OpenRouter: a working chat completion still
+// rejected a schema-constrained request with "schema must be type object".
+const pingResponseSchema = `{
+	"type": "object",
+	"properties": {
+		"status": {"type": "string"}
+	},
+	"required": ["status"],
+	"additionalProperties": false
+}`
+
+type pingResponse struct {
+	Status string `json:"status"`
+}
+
 func (u *usecase) ping(ctx context.Context, tag string, client domaincontractsllm.Client) (domainmodels.LlmClientStatus, error) {
-	if _, err := client.GenerateText(ctx, domaincontractsllm.GenerateTextRequest{
+	result, err := client.GenerateText(ctx, domaincontractsllm.GenerateTextRequest{
 		System:          "You are a connectivity test.",
-		Prompt:          "Reply with the single word OK.",
-		MaxOutputTokens: 16,
-	}); err != nil {
+		Prompt:          `Respond with JSON matching the given schema, setting "status" to the single word OK.`,
+		MaxOutputTokens: 32,
+		ResponseSchema:  []byte(pingResponseSchema),
+	})
+	if err != nil {
 		u.logger.Error(ctx, tag, "llm connectivity test failed", domainmodels.LoggerMeta{"err": err})
 		return "", err
+	}
+
+	var parsed pingResponse
+	if err := json.Unmarshal([]byte(result.Text), &parsed); err != nil {
+		u.logger.Error(ctx, tag, "llm connectivity test returned malformed structured output", domainmodels.LoggerMeta{"err": err})
+		return "", domainmodels.NewError("llm connectivity test returned malformed structured output", domainmodels.ErrTypeFailure, err)
 	}
 
 	return domainmodels.LlmClientStatusConnected, nil

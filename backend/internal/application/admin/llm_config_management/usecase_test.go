@@ -2,6 +2,7 @@ package applicationadminllmconfigmanagement
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -48,14 +49,20 @@ func (f *noopLogger) Info(_ context.Context, _ string, _ string, _ domainmodels.
 func (f *noopLogger) Debug(_ context.Context, _ string, _ string, _ domainmodels.LoggerMeta) {}
 
 type fakeClient struct {
-	generateErr error
+	generateErr  error
+	responseText string
+	lastRequest  domaincontractsllm.GenerateTextRequest
 }
 
-func (f *fakeClient) GenerateText(_ context.Context, _ domaincontractsllm.GenerateTextRequest) (domaincontractsllm.GenerateTextResult, error) {
+func (f *fakeClient) GenerateText(_ context.Context, req domaincontractsllm.GenerateTextRequest) (domaincontractsllm.GenerateTextResult, error) {
+	f.lastRequest = req
 	if f.generateErr != nil {
 		return domaincontractsllm.GenerateTextResult{}, f.generateErr
 	}
-	return domaincontractsllm.GenerateTextResult{Text: "OK"}, nil
+	if f.responseText != "" {
+		return domaincontractsllm.GenerateTextResult{Text: f.responseText}, nil
+	}
+	return domaincontractsllm.GenerateTextResult{Text: `{"status": "OK"}`}, nil
 }
 
 type fakeClientFactory struct {
@@ -211,6 +218,50 @@ func TestTestConnectionReturnsConnectedStatusOnSuccess(t *testing.T) {
 	}
 	if status != domainmodels.LlmClientStatusConnected {
 		t.Fatalf("TestConnection() status = %v, want CONNECTED", status)
+	}
+}
+
+// Real generation calls always request structured JSON output (an
+// object-rooted response_format schema), and a provider/model/base_url
+// combination can support plain chat while rejecting that - confirmed
+// live against OpenRouter, where a working chat completion still failed
+// structured output with "schema must be type object". A ping that never
+// exercises this exact code path is a false positive: it reports
+// "Connected" for a configuration that generation will fail against.
+func TestTestConnectionRequestsAnObjectRootedSchema(t *testing.T) {
+	client := &fakeClient{}
+	factory := &fakeClientFactory{client: client}
+	repository := &recordingLlmConfigRepository{}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	if _, err := usecase.TestConnection(context.Background()); err != nil {
+		t.Fatalf("TestConnection() error = %v, want nil", err)
+	}
+
+	if client.lastRequest.ResponseSchema == nil {
+		t.Fatal("GenerateText() request had no ResponseSchema — the ping doesn't exercise structured output, so it can't catch a config that fails on it")
+	}
+	var schema map[string]any
+	if err := json.Unmarshal(client.lastRequest.ResponseSchema, &schema); err != nil {
+		t.Fatalf("ResponseSchema is not valid JSON: %v", err)
+	}
+	if schema["type"] != "object" {
+		t.Fatalf("ResponseSchema root type = %v, want \"object\" (OpenAI's Structured Outputs rejects any other root type)", schema["type"])
+	}
+}
+
+// A provider that accepts the schema but doesn't actually honor it (garbled
+// or missing output) should still fail the check, not just "the call didn't
+// error" — ping() parses the response and confirms it round-tripped.
+func TestTestConnectionFailsWhenStructuredResponseIsMalformed(t *testing.T) {
+	client := &fakeClient{responseText: "not json"}
+	factory := &fakeClientFactory{client: client}
+	repository := &recordingLlmConfigRepository{}
+	usecase := NewUsecaseImpl(repository, recordingEncryptor{}, factory, &noopLogger{})
+
+	_, err := usecase.TestConnection(context.Background())
+	if err == nil {
+		t.Fatal("TestConnection() error = nil, want an error when the structured response doesn't parse")
 	}
 }
 
