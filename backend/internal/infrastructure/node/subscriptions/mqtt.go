@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	registrationQos  = 1
-	statusQos        = 1
-	logQos           = 0
-	actionAckQos     = 1
-	telemetryQos     = 1
-	irRxQos    = 1
-	irTxAckQos = 1
+	registrationQos = 1
+	statusQos       = 1
+	logQos          = 0
+	actionAckQos    = 1
+	telemetryQos    = 1
+	irRxQos         = 1
+	irTxAckQos      = 1
 )
 
 type mqttImpl struct {

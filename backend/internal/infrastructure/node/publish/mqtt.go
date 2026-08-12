@@ -16,7 +16,7 @@ const (
 	otaQos             = 1
 	actionQos          = 1
 	configQos          = 1
-	irTxQos = 1
+	irTxQos            = 1
 )
 
 type mqttImpl struct {
