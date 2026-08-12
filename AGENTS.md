@@ -325,6 +325,18 @@ table/type.
   `success` field, and an unparseable payload all restart the device
   immediately (see `mate-espidf-base/AGENTS.md`'s MQTT protocol contracts).
   Keep both repos' handling of this payload shape in sync.
+- Infrared MQTT topics are `/pub/<device_id>/ir/rx` (capture),
+  `/sub/<device_id>/ir/tx` (transmit command), and
+  `/pub/<device_id>/ir/tx_ack` (transmit result) — renamed from the older
+  flat `ir_capture`/`ir_transmit`/`ir_transmit_ack` suffixes to match
+  `mate-espidf-base`'s `composition/infrared` build variant, which is the
+  only firmware composition that publishes/subscribes to them (see
+  `mate-espidf-base/AGENTS.md`'s MQTT protocol contracts). Payload shapes
+  are unchanged (`IrCapture`, `IrTransmitPayload`, `IrTransmitAck` DTOs) —
+  only the topic strings moved. `extractTopicParts`
+  (`presentation/mqtt/event/message.go`) supports arbitrarily-nested
+  suffixes (joined with `/`) specifically because of this rename; don't
+  reintroduce a flat 2-or-3-segment-only assumption there.
 
 ### Infrared record-session broadcast
 
