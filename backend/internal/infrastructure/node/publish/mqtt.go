@@ -16,7 +16,7 @@ const (
 	otaQos             = 1
 	actionQos          = 1
 	configQos          = 1
-	irTransmitQos      = 1
+	irTxQos = 1
 )
 
 type mqttImpl struct {
@@ -124,8 +124,8 @@ func (m *mqttImpl) IrTransmit(
 	}
 
 	return m.publish(
-		ctx, infrastructurenodeshared.NodeSubTopic(nodeDeviceId, "ir_transmit"),
-		irTransmitQos, false, payload,
+		ctx, infrastructurenodeshared.NodeSubTopic(nodeDeviceId, "ir/tx"),
+		irTxQos, false, payload,
 	)
 }
 

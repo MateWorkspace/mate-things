@@ -15,8 +15,8 @@ const (
 	logQos           = 0
 	actionAckQos     = 1
 	telemetryQos     = 1
-	irCaptureQos     = 1
-	irTransmitAckQos = 1
+	irRxQos    = 1
+	irTxAckQos = 1
 )
 
 type mqttImpl struct {
@@ -50,11 +50,11 @@ func (m *mqttImpl) Telemetry(ctx context.Context, nodeDeviceId string) (err erro
 }
 
 func (m *mqttImpl) IrCapture(ctx context.Context, nodeDeviceId string) (err error) {
-	return m.subscribe(ctx, infrastructurenodeshared.NodePubTopic(nodeDeviceId, "ir_capture"), irCaptureQos)
+	return m.subscribe(ctx, infrastructurenodeshared.NodePubTopic(nodeDeviceId, "ir/rx"), irRxQos)
 }
 
 func (m *mqttImpl) IrTransmitAck(ctx context.Context, nodeDeviceId string) (err error) {
-	return m.subscribe(ctx, infrastructurenodeshared.NodePubTopic(nodeDeviceId, "ir_transmit_ack"), irTransmitAckQos)
+	return m.subscribe(ctx, infrastructurenodeshared.NodePubTopic(nodeDeviceId, "ir/tx_ack"), irTxAckQos)
 }
 
 func (m *mqttImpl) subscribe(ctx context.Context, topic string, qos byte) error {
