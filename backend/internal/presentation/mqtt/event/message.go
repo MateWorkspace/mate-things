@@ -70,8 +70,8 @@ func OnMessage(_ mqtt.Client, msg mqtt.Message) {
 
 func extractTopicParts(topic string) (topicParts, bool) {
 	parts := strings.Split(strings.Trim(topic, "/"), "/")
-	switch len(parts) {
-	case 2:
+	switch {
+	case len(parts) == 2:
 		if parts[0] == "" || parts[1] == "" {
 			return topicParts{}, false
 		}
@@ -81,14 +81,19 @@ func extractTopicParts(topic string) (topicParts, bool) {
 			IsGlobal:  true,
 		}, true
 
-	case 3:
-		if parts[0] == "" || parts[1] == "" || parts[2] == "" {
+	case len(parts) >= 3:
+		if parts[0] == "" || parts[1] == "" {
 			return topicParts{}, false
+		}
+		for _, segment := range parts[2:] {
+			if segment == "" {
+				return topicParts{}, false
+			}
 		}
 		return topicParts{
 			Direction: parts[0],
 			DeviceId:  parts[1],
-			Suffix:    parts[2],
+			Suffix:    strings.Join(parts[2:], "/"),
 		}, true
 
 	default:
